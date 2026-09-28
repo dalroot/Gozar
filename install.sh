@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ==================================================================================
-# ===         GozarNet Automated Installer for Ubuntu 22.04 / 24.04 LTS          ===
-# ===         https://github.com/dalroot/GozarNet                                ===
+# ===         Gozar Automated Installer for Ubuntu 22.04 / 24.04 LTS          ===
+# ===         https://github.com/dalroot/Gozar                                ===
 # ==================================================================================
 
 set -e
@@ -16,13 +16,13 @@ RED='[0;31m'
 BOLD='[1m'
 NC='[0m'
 
-PROJECT_PATH="/var/www/gozarnet"
-GITHUB_REPO="https://github.com/dalroot/GozarNet.git"
+PROJECT_PATH="/var/www/gozar"
+GITHUB_REPO="https://github.com/dalroot/Gozar.git"
 PHP_VERSION="8.3"
 
 clear
 echo -e "${CYAN}=====================================================================${NC}"
-echo -e "${BOLD}${CYAN}            ⚡️ GozarNet - Automated Installation Script ⚡️         ${NC}"
+echo -e "${BOLD}${CYAN}            ⚡️ Gozar - Automated Installation Script ⚡️         ${NC}"
 echo -e "${CYAN}=====================================================================${NC}"
 echo
 
@@ -91,7 +91,7 @@ sudo ufw allow 'Nginx Full' > /dev/null 2>&1 || true
 echo "y" | sudo ufw enable > /dev/null 2>&1 || true
 
 # --- Step 4: Clone Repository ---
-echo -e "${YELLOW}[4/11] ⬇️ Downloading GozarNet repository...${NC}"
+echo -e "${YELLOW}[4/11] ⬇️ Downloading Gozar repository...${NC}"
 sudo rm -rf "$PROJECT_PATH"
 sudo git clone $GITHUB_REPO $PROJECT_PATH
 sudo chown -R www-data:www-data $PROJECT_PATH
@@ -107,7 +107,7 @@ sudo mysql -e "FLUSH PRIVILEGES;"
 # --- Step 6: Configure Environment (.env) ---
 echo -e "${YELLOW}[6/11] ⚙️ Configuring .env file...${NC}"
 sudo -u www-data cp .env.example .env
-sudo sed -i "s|APP_NAME=.*|APP_NAME=GozarNet|" .env
+sudo sed -i "s|APP_NAME=.*|APP_NAME=Gozar|" .env
 sudo sed -i "s|DB_CONNECTION=.*|DB_CONNECTION=mysql|" .env
 sudo sed -i "s|DB_DATABASE=.*|DB_DATABASE=$DB_NAME|" .env
 sudo sed -i "s|DB_USERNAME=.*|DB_USERNAME=$DB_USER|" .env
@@ -208,7 +208,7 @@ fi
 
 echo
 echo -e "${GREEN}=====================================================================${NC}"
-echo -e "${BOLD}${GREEN}   🎉 GozarNet has been successfully installed and configured! 🎉   ${NC}"
+echo -e "${BOLD}${GREEN}   🎉 Gozar has been successfully installed and configured! 🎉   ${NC}"
 echo -e "${GREEN}=====================================================================${NC}"
 echo -e "🌐 Web URL: ${CYAN}https://$DOMAIN${NC}"
 echo -e "🔑 Admin Panel: ${CYAN}https://$DOMAIN/admin${NC}"

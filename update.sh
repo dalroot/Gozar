@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ==================================================================================
-# ===          GozarNet Safe & Automated Updater for Ubuntu Server               ===
-# ===          https://github.com/dalroot/GozarNet                               ===
+# ===          Gozar Safe & Automated Updater for Ubuntu Server               ===
+# ===          https://github.com/dalroot/Gozar                               ===
 # ==================================================================================
 
 set -e
@@ -18,7 +18,7 @@ PROJECT_PATH="${PWD}"
 WEB_USER="www-data"
 
 echo -e "${CYAN}=====================================================================${NC}"
-echo -e "${BOLD}${CYAN}               🔄 GozarNet System Updater 🔄                         ${NC}"
+echo -e "${BOLD}${CYAN}               🔄 Gozar System Updater 🔄                         ${NC}"
 echo -e "${CYAN}=====================================================================${NC}"
 
 if [ ! -f ".env" ]; then
@@ -64,5 +64,5 @@ sudo -u $WEB_USER php artisan up || true
 
 echo
 echo -e "${GREEN}=====================================================================${NC}"
-echo -e "${BOLD}${GREEN}   ✅ GozarNet has been successfully updated to the latest version!   ${NC}"
+echo -e "${BOLD}${GREEN}   ✅ Gozar has been successfully updated to the latest version!   ${NC}"
 echo -e "${GREEN}=====================================================================${NC}"

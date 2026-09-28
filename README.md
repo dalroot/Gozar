@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">⚡️ GozarNet (گذر نت)</h1>
+  <h1 align="center">⚡️ Gozar (گذر)</h1>
   <p align="center">
     <strong>پلتفرم جامع، هوشمند و ماژولار مدیریت، فروش و خودکارسازی سرویس‌های اینترنت آزاد و VPN</strong>
   </p>
@@ -15,9 +15,9 @@
 
 ---
 
-## 📖 درباره گذر نت (GozarNet)
+## 📖 درباره گذر (Gozar)
 
-**GozarNet (گذر نت)** یک اکوسیستم کامل و متن‌باز برای مدیریت، توزیع و فروش اشتراک‌های VPN بر پایه فریم‌ورک قدرتمند **Laravel 11** و پنل مدیریت فوق‌سریع **Filament 3** است. 
+**Gozar (گذر)** یک اکوسیستم کامل و متن‌باز برای مدیریت، توزیع و فروش اشتراک‌های VPN بر پایه فریم‌ورک قدرتمند **Laravel 11** و پنل مدیریت فوق‌سریع **Filament 3** است. 
 این پلتفرم با هدف ساده‌سازی، خودکارسازی ۱۰۰٪ فرآیندها، ارائه تجربه کاربری لوکس و بدون قطعی در تلگرام و وب توسعه یافته است و به صورت پیش‌فرض از معماری **White-label (برندینگ سفارشی)** پشتیبانی می‌کند.
 
 ---
@@ -71,7 +71,7 @@
 ### روش ۱: نصب سریع با یک دستور (پیشنهادی)
 وارد سرور ابونتو خود شوید و دستور زیر را اجرا کنید:
 ```bash
-wget -O install.sh https://raw.githubusercontent.com/dalroot/GozarNet/main/install.sh && sudo bash install.sh
+wget -O install.sh https://raw.githubusercontent.com/dalroot/Gozar/main/install.sh && sudo bash install.sh
 ```
 
 ---
@@ -81,7 +81,7 @@ wget -O install.sh https://raw.githubusercontent.com/dalroot/GozarNet/main/insta
 #### ۱. کلون کردن مخزن و نصب وابستگی‌ها
 ```bash
 cd /var/www
-git clone https://github.com/dalroot/GozarNet.git gozarnet
+git clone https://github.com/dalroot/Gozar.git gozarnet
 cd gozarnet
 composer install --no-dev --optimize-autoloader
 ```
@@ -107,7 +107,7 @@ php artisan optimize:clear
 server {
     listen 80;
     server_name panel.yourdomain.com;
-    root /var/www/gozarnet/public;
+    root /var/www/gozar/public;
 
     index index.php;
     client_max_body_size 20M;
@@ -144,7 +144,7 @@ crontab -e
 ```
 خط زیر را در انتهای فایل اضافه کنید:
 ```cron
-* * * * * cd /var/www/gozarnet && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/gozar && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ---
@@ -178,13 +178,13 @@ crontab -e
 برای بازگرداندن فایل بکاپ `.sql.gz` روی دیتابیس سرور:
 ```bash
 zcat /مسیر/backup_vpnmarket_YYYY-MM-DD_HH-mm-ss.sql.gz | mysql -u[یوزر_دیتابیس] -p'[رمز_دیتابیس]' [نام_دیتابیس]
-cd /var/www/gozarnet && php artisan cache:clear && php artisan optimize:clear
+cd /var/www/gozar && php artisan cache:clear && php artisan optimize:clear
 ```
 
 ---
 
 ## 🤝 تشکر و قدردانی (Acknowledgments)
-پلتفرم **گذر نت (GozarNet)** با الهام و ارتقای ایده‌های پروژه‌های اولیه مدیریت VPN و جامعه متن‌باز توسعه یافته است. از تمامی توسعه‌دهندگان و بنیان‌گذاران اولیه‌ای که در شکل‌گیری نسخه اولیه این سیستم نقش داشته‌اند، صمیمانه سپاسگزاری و قدردانی می‌کنیم. معماری فعلی با بازنویسی کامل هسته، اضافه شدن ماژول منشی هوشمند کسب‌وکار، سیستم توزیع کانال‌های سه‌گانه و اسکریپت‌های مدرن به عنوان یک پروژه مستقل و پایدار به مسیر خود ادامه می‌دهد.
+پلتفرم **گذر (Gozar)** با الهام و ارتقای ایده‌های پروژه‌های اولیه مدیریت VPN و جامعه متن‌باز توسعه یافته است. از تمامی توسعه‌دهندگان و بنیان‌گذاران اولیه‌ای که در شکل‌گیری نسخه اولیه این سیستم نقش داشته‌اند، صمیمانه سپاسگزاری و قدردانی می‌کنیم. معماری فعلی با بازنویسی کامل هسته، اضافه شدن ماژول منشی هوشمند کسب‌وکار، سیستم توزیع کانال‌های سه‌گانه و اسکریپت‌های مدرن به عنوان یک پروژه مستقل و پایدار به مسیر خود ادامه می‌دهد.
 
 ---
 

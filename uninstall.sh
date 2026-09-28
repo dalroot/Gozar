@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==================================================================================
-# ===          GozarNet Complete & Clean Uninstaller for Ubuntu Server           ===
+# ===          Gozar Complete & Clean Uninstaller for Ubuntu Server           ===
 # ==================================================================================
 
 set -e
@@ -12,10 +12,10 @@ RED='[0;31m'
 BOLD='[1m'
 NC='[0m'
 
-PROJECT_PATH="/var/www/gozarnet"
+PROJECT_PATH="/var/www/gozar"
 
 echo -e "${RED}=====================================================================${NC}"
-echo -e "${BOLD}${RED}              ⚠️ GozarNet Uninstaller ⚠️                             ${NC}"
+echo -e "${BOLD}${RED}              ⚠️ Gozar Uninstaller ⚠️                             ${NC}"
 echo -e "${RED}=====================================================================${NC}"
 echo -e "${YELLOW}WARNING: This action is irreversible. It will delete all files, configs and database.${NC}"
 echo
@@ -25,7 +25,7 @@ read -p "🗃 Enter MySQL Database name to drop: " DB_NAME
 read -p "👤 Enter MySQL Username to drop: " DB_USER
 echo
 
-read -p "Are you sure you want to permanently remove GozarNet? (y/n): " CONFIRMATION
+read -p "Are you sure you want to permanently remove Gozar? (y/n): " CONFIRMATION
 if [[ "$CONFIRMATION" != "y" && "$CONFIRMATION" != "Y" ]]; then
     echo -e "${YELLOW}Operation cancelled.${NC}"
     exit 0
@@ -62,5 +62,5 @@ fi
 
 echo
 echo -e "${GREEN}=====================================================================${NC}"
-echo -e "${BOLD}${GREEN}   ✅ GozarNet has been completely removed from the system.          ${NC}"
+echo -e "${BOLD}${GREEN}   ✅ Gozar has been completely removed from the system.          ${NC}"
 echo -e "${GREEN}=====================================================================${NC}"
