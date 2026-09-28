@@ -1,0 +1,395 @@
+/* ============================================
+   Studio-Grade Footer — Rozaneh Mobile First
+   ============================================ */
+
+/* ── Wrapper ── */
+.site-footer {
+    background: #1C0A04 !important;
+    color: #E8C9B5 !important;
+    padding: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    direction: rtl !important;
+    font-family: 'Vazirmatn', sans-serif !important;
+}
+
+/* Warm glow top accent */
+.site-footer::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 60% !important;
+    height: 2px !important;
+    background: linear-gradient(90deg, transparent, #FF7A3C 30%, #FFD369 60%, transparent) !important;
+}
+
+/* ── CTA Band ── */
+.footer-cta-band {
+    background: linear-gradient(135deg, #FF7A3C 0%, #F75C1E 50%, #E8440A 100%) !important;
+    padding: 24px 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 14px !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+@media (min-width: 640px) {
+    .footer-cta-band {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        padding: 24px 40px !important;
+        text-align: right !important;
+    }
+}
+
+.footer-cta-band .cta-text {
+    display: block !important;
+}
+
+.footer-cta-band .cta-text strong {
+    display: block !important;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    color: #FFFFFF !important;
+    margin-bottom: 4px !important;
+    line-height: 1.4 !important;
+}
+
+.footer-cta-band .cta-text span {
+    display: block !important;
+    font-size: 12px !important;
+    color: rgba(255,255,255,0.85) !important;
+    font-weight: 500 !important;
+}
+
+.footer-cta-btns {
+    display: flex !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.footer-cta-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 10px 16px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    border: 1.5px solid transparent !important;
+    line-height: 1 !important;
+}
+
+.footer-cta-btn.tg {
+    background: rgba(255,255,255,0.18) !important;
+    border-color: rgba(255,255,255,0.35) !important;
+    color: #FFFFFF !important;
+}
+
+.footer-cta-btn.wa {
+    background: #25D366 !important;
+    border-color: #1eba58 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(37,211,102,0.35) !important;
+}
+
+/* ── Main Body ── */
+.footer-body {
+    padding: 36px 20px 28px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+@media (min-width: 640px) {
+    .footer-body {
+        grid-template-columns: 1.4fr 1fr 1fr !important;
+        gap: 48px !important;
+        padding: 48px 40px 36px !important;
+    }
+}
+
+/* ── Brand Column ── */
+.footer-brand {
+    display: block !important;
+}
+
+.footer-brand .brand-logo {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+    flex-direction: row !important;
+}
+
+.footer-brand .brand-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 13px !important;
+    background: linear-gradient(135deg, #FF7A3C, #F75C1E) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 6px 16px rgba(255,122,60,0.4) !important;
+    flex-shrink: 0 !important;
+}
+
+.footer-brand .brand-icon i {
+    color: #FFFFFF !important;
+    font-size: 20px !important;
+}
+
+.footer-brand .brand-name {
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    color: #FFFFFF !important;
+    letter-spacing: -0.3px !important;
+    display: inline !important;
+}
+
+.footer-brand .brand-desc {
+    font-size: 13px !important;
+    color: #A87E6E !important;
+    line-height: 1.8 !important;
+    font-weight: 500 !important;
+    margin-bottom: 16px !important;
+    display: block !important;
+}
+
+/* Trust Badges */
+.footer-trust-badges {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+.footer-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    border: 1px solid !important;
+    line-height: 1.2 !important;
+}
+
+.footer-badge.shield {
+    background: rgba(255,122,60,0.12) !important;
+    border-color: rgba(255,122,60,0.3) !important;
+    color: #FF9D6C !important;
+}
+
+.footer-badge.speed {
+    background: rgba(255,211,105,0.1) !important;
+    border-color: rgba(255,211,105,0.3) !important;
+    color: #FFD369 !important;
+}
+
+/* ── Nav Columns ── */
+.footer-nav-col {
+    display: block !important;
+}
+
+.footer-nav-col h5 {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: #FF7A3C !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    margin-bottom: 14px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid rgba(255,122,60,0.2) !important;
+    display: block !important;
+}
+
+.footer-nav-col ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+.footer-nav-col ul li {
+    display: block !important;
+}
+
+.footer-nav-col ul li a {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #A87E6E !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    transition: color 0.2s ease !important;
+    line-height: 1.4 !important;
+    flex-direction: row !important;
+}
+
+.footer-nav-col ul li a i {
+    font-size: 14px !important;
+    flex-shrink: 0 !important;
+    color: #FF7A3C !important;
+}
+
+.footer-nav-col ul li a.accent-tg { color: #7FBBDF !important; }
+.footer-nav-col ul li a.accent-wa { color: #6FCF97 !important; }
+.footer-nav-col ul li a.accent-tg i { color: #7FBBDF !important; }
+.footer-nav-col ul li a.accent-wa i { color: #6FCF97 !important; }
+
+/* ── Download Pills ── */
+.footer-dl-pills {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.footer-dl-pill {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 12px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    flex-direction: row !important;
+    box-sizing: border-box !important;
+}
+
+.footer-dl-pill .pill-icon {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 9px !important;
+    background: rgba(255,122,60,0.15) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    font-size: 17px !important;
+    color: #FF7A3C !important;
+}
+
+.footer-dl-pill .pill-text {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+}
+
+.footer-dl-pill .pill-text strong {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #E8C9B5 !important;
+    line-height: 1.2 !important;
+    display: block !important;
+}
+
+.footer-dl-pill .pill-text span {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #A87E6E !important;
+    display: block !important;
+}
+
+/* ── Bottom Bar ── */
+.footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.07) !important;
+    padding: 18px 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+@media (min-width: 640px) {
+    .footer-bottom {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        text-align: right !important;
+        padding: 20px 40px !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+    }
+}
+
+.footer-bottom .copy {
+    font-size: 12.5px !important;
+    color: #6D4035 !important;
+    font-weight: 600 !important;
+    display: block !important;
+}
+
+.footer-bottom .copy .brand-accent {
+    color: #FF7A3C !important;
+    font-weight: 800 !important;
+}
+
+.footer-bottom-links {
+    display: flex !important;
+    gap: 16px !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+}
+
+.footer-bottom-links a {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #6D4035 !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+    display: inline !important;
+}
+
+/* ── Modal (unchanged logic) ── */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(67, 20, 7, 0.5);
+    backdrop-filter: blur(12px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.auth-card, .user-dashboard-card {
+    background: #FFFFFF;
+    border: 3px solid var(--color-border);
+    border-radius: 28px;
+    width: 100%;
+    max-width: 480px;
+    padding: 32px 24px;
+    box-shadow: 0 20px 50px rgba(67, 20, 7, 0.2);
+}

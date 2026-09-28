@@ -1,0 +1,388 @@
+/* ==========================================================================
+   ROZANEH STRICT MOBILE ENGINE (< 768px Scope) - 100% Desktop Isolation
+   Strictly Enforces User Directives for Mobile Header & Hero
+   ========================================================================== */
+
+@media (max-width: 767px) {
+    /* 1. Global Reset & Fluid Bounds */
+    html, body {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .pet-grooming {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    /* 2. STRICT HEADER MOBILE (Fixed 64px Height, 16px Edge Margins) */
+    .navbar-pet {
+        position: fixed !important;
+        top: 12px !important;
+        left: 16px !important;
+        right: 16px !important;
+        transform: none !important;
+        width: calc(100% - 32px) !important;
+        max-width: none !important;
+        height: 64px !important;
+        padding: 0 16px !important;
+        border-radius: var(--radius-md) !important;
+        background: rgba(255, 247, 237, 0.95) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid var(--color-border) !important;
+        box-shadow: none !important;
+        z-index: 990 !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .navbar-pet .max-w-7xl {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .navbar-pet .flex.items-center.justify-between.h-16 {
+        height: 64px !important;
+    }
+
+    /* Controls Minimum 44x44px Touch Targets */
+    #btn-mobile-auth {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        padding: 0 12px !important;
+        border-radius: var(--radius-sm) !important;
+        font-size: 0.85rem !important;
+        font-weight: 800 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+    }
+
+    #mobile-menu-toggle {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: var(--radius-sm) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* 3. STRICT HERO MOBILE (Single Static Hero, Disabled Slider) */
+    #hero-section {
+        padding-top: 92px !important;
+        padding-bottom: 32px !important;
+        min-height: auto !important;
+    }
+
+    #hero-section .max-w-7xl {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       Hero Slider Mobile Rules — MOVED to css/mobile-hero.css
+       All hero-slide responsive rules are now centralized there.
+       ═══════════════════════════════════════════════════════════════ */
+
+        /* 4. Section Spacing System (8px Grid) */
+    section {
+        padding-top: 32px !important;
+        padding-bottom: 32px !important;
+    }
+
+    .service-card, .pricing-card, .bento-card {
+        width: 100% !important;
+        padding: 16px !important;
+        border-radius: var(--radius-md) !important;
+        margin-bottom: 16px !important;
+    }
+
+    /* Mobile Smart Routing Section Refinements */
+    .feature-route-box {
+        padding: 16px 10px !important;
+        border-radius: var(--radius-lg) !important;
+    }
+
+    .feature-core-orb {
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: var(--radius-md) !important;
+    }
+
+    .feature-mode-tab {
+        padding: 6px 14px !important;
+        font-size: 0.82rem !important;
+    }
+
+    /* 5. Mobile Navigation Drawer & Overlay Styles */
+    .mobile-menu-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(15, 23, 42, 0.6) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        z-index: 995 !important;
+    }
+
+    .mobile-menu-overlay.active {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+
+    .mobile-menu-drawer {
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 310px !important;
+        max-width: 85vw !important;
+        background: #FFF7ED !important;
+        box-shadow: -10px 0 35px rgba(0, 0, 0, 0.25) !important;
+        padding: 24px 20px !important;
+        z-index: 999 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        transform: translateX(100%) !important;
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .mobile-menu-drawer.active {
+        transform: translateX(0) !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+
+
+    .marquee-container, .marquee-wrapper {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        width: 100% !important;
+    }
+
+    .marquee-content {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: max-content !important;
+    }
+
+    .marquee-card {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+    }
+
+    /* Mobile Country Server Slider Fixes */
+    .country-radar-bar {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        padding: 8px 10px !important;
+    }
+
+    .radar-node-btn {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        height: 38px !important;
+        padding: 0 14px !important;
+    }
+
+    .country-cards-track {
+        position: relative !important;
+        width: 100% !important;
+        min-height: 440px !important;
+    }
+
+    .country-3d-card {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transform: none !important;
+    }
+
+    .country-3d-card.active {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+}
+
+/* ==========================================================================
+   ROZANEH DEDICATED MOBILE APP ENGINE & PHONE DEVICE MOCKUP (Scoped)
+   ========================================================================== */
+
+/* 1. Phone Frame Device Mockup Container for Desktop & Mobile */
+.mobile-app-body {
+    background-color: #12161F !important;
+}
+
+.mobile-frame-container {
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.mobile-device-screen {
+    width: 100%;
+    background-color: #12161F;
+    color: #F3F4F6;
+    min-height: 840px;
+    border-radius: 44px;
+    border: 8px solid #232B3B;
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 767px) {
+    .mobile-app-body {
+        background-color: #12161F !important;
+        padding: 0 !important;
+    }
+
+    .mobile-frame-container {
+        max-width: 100% !important;
+    }
+
+    .mobile-device-screen {
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        min-height: 100vh !important;
+    }
+
+    .bottom-nav-bar {
+        border-radius: 0 !important;
+    }
+}
+
+
+/* 2. Bottom Navigation Bar Interactivity */
+.bottom-nav-bar .tab-item {
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-nav-bar .tab-item.active {
+    color: var(--color-primary) !important;
+    background: rgba(255, 122, 60, 0.15);
+    transform: translateY(-2px);
+}
+
+.bottom-nav-bar .tab-item.active i {
+    transform: scale(1.15);
+}
+
+/* 3. VPN Power Connect Button & Animations */
+.power-button {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.power-button.connected {
+    border-color: rgba(16, 185, 129, 0.5) !important;
+    box-shadow: 0 0 45px rgba(16, 185, 129, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3) !important;
+}
+
+.power-button.connected .power-icon-wrapper {
+    background: linear-gradient(135deg, #10B981, #059669) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+}
+
+/* Connecting Waves & Pulse Animation */
+.pulse-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.power-button.connected ~ .pulse-ring,
+.vpn-connect-card.connecting .pulse-ring {
+    animation: rippleWave 2.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.ring-1 {
+    width: 140px;
+    height: 140px;
+}
+
+.ring-2 {
+    width: 180px;
+    height: 180px;
+    animation-delay: 0.8s !important;
+}
+
+@keyframes rippleWave {
+    0% {
+        transform: translate(-50%, -50%) scale(0.7);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.4);
+        opacity: 0;
+    }
+}
+
+/* 4. Server Items Selector */
+.server-item-row.selected {
+    border-color: var(--color-primary) !important;
+    background: rgba(255, 122, 60, 0.1) !important;
+    box-shadow: 0 4px 15px rgba(255, 122, 60, 0.15);
+}
+
+.server-item-row.selected .server-check-icon {
+    color: var(--color-primary) !important;
+}
+
+/* 5. Smooth Tab Page Transitions */
+.app-page {
+    animation: fadeInSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>روزنه وی‌پی‌ان | پنل مدیریت اشتراک</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    
+    <!-- Google Fonts: Vazirmatn & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- QR Code Generator library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#FFF8F1] text-[var(--color-text)] font-sans antialiased min-h-screen flex flex-col selection:bg-orange-100 selection:text-orange-900">
+
+    <!-- Header Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#EEDFD5] transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Logo & Mobile Drawer Toggle -->
+                <div class="flex items-center gap-3">
+                    <button id="btn-toggle-mobile-drawer" class="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center justify-center min-w-[40px] min-h-[40px]" aria-label="منوی ناوبری">
+                        <i class="ph-bold ph-list text-xl"></i>
+                    </button>
+                    <a href="index.html" class="flex items-center gap-2.5 group" aria-label="روزنه وی‌پی‌ان">
+                        <div class="w-9 h-9 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
+                            <i class="ph-bold ph-rocket-launch"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-base font-extrabold text-[var(--color-text)] leading-none tracking-tight">روزنه <span class="gradient-text">وی‌پی‌ان</span></span>
+                            <span class="text-[9px] font-bold text-[var(--color-primary)] tracking-widest uppercase mt-0.5">پنل مدیریت</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Header Quick Actions -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <a href="index.html" class="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-1.5 rounded-xl border border-[#EEDFD5] text-xs font-bold text-gray-700 hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] transition-all">
+                        <i class="ph-bold ph-house text-sm"></i>
+                        <span class="hidden sm:inline">صفحه اصلی</span>
+                    </a>
+
+                    <a href="https://t.me/rozaneh_vpn_bot" target="_blank" class="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-all">
+                        <i class="ph-bold ph-telegram-logo text-sm"></i>
+                        <span class="hidden sm:inline">ربات تلگرام</span>
+                    </a>
+
+                    <button id="btn-logout" class="min-w-[40px] min-h-[40px] px-3 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all flex items-center gap-1 text-xs font-bold" title="خروج از حساب" aria-label="خروج از حساب">
+                        <i class="ph-bold ph-sign-out text-base"></i>
+                        <span class="hidden sm:inline">خروج</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Drawer Backdrop & Content -->
+    <div id="mobile-drawer" class="fixed inset-0 z-50 lg:hidden pointer-events-none opacity-0 transition-opacity duration-300">
+        <div id="mobile-drawer-overlay" class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
+        <aside id="mobile-drawer-content" class="absolute top-0 right-0 w-72 h-full bg-white p-5 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col justify-between overflow-y-auto">
+            <div>
+                <div class="flex items-center justify-between pb-4 mb-4 border-b border-gray-100">
+                    <span class="font-extrabold text-sm text-gray-800">منوی پنل کاربری</span>
+                    <button id="btn-close-mobile-drawer" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 font-bold">✕</button>
+                </div>
+                <!-- Profile Box in Drawer (Minimal User Icon) -->
+                <div class="p-3 rounded-xl bg-[#FFF8F1] border border-[#EEDFD5] mb-4 text-right">
+                    <div class="flex items-center gap-2.5 mb-1.5">
+                        <div class="w-9 h-9 rounded-lg bg-[#FFF0E6] border border-orange-300 flex items-center justify-center font-extrabold text-[var(--color-primary)] text-sm flex-shrink-0">
+                            <i class="ph-bold ph-user text-base"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <span id="drawer-user-name" class="block text-xs font-bold text-gray-900 truncate">کاربر ۱۱۲۲</span>
+                            <span id="drawer-user-id" class="block text-[10px] text-gray-600 font-en truncate">09120001122</span>
+                        </div>
+                    </div>
+                    <span class="inline-block px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-bold text-[10px]">اشتراک فعال پرو ✓</span>
+                </div>
+                <!-- Nav Links -->
+                <div id="drawer-nav-container" class="space-y-1"></div>
+            </div>
+            <button id="drawer-logout-btn" class="w-full py-2.5 rounded-xl bg-red-50 text-red-600 font-bold text-xs border border-red-200 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2">
+                <i class="ph-bold ph-sign-out text-base"></i>
+                <span>خروج از حساب</span>
+            </button>
+        </aside>
+    </div>
+
+    <!-- Main SaaS Dashboard Container Layout -->
+    <main class="flex-1 py-6 sm:py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="grid lg:grid-cols-4 gap-6 items-start">
+                
+                <!-- RIGHT SIDEBAR MENU (1 Column in LG = ~260px) -->
+                <aside class="dash-sidebar hidden lg:block lg:col-span-1 sticky top-20">
+                    
+                    <!-- Compact User Profile Header (Minimal User Icon) -->
+                    <div class="p-3.5 rounded-xl bg-[#FFF8F1] border border-[#EEDFD5] text-right mb-4">
+                        <div class="flex items-center gap-2.5 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-[#FFF0E6] border border-orange-300 flex items-center justify-center font-extrabold text-[var(--color-primary)] text-sm flex-shrink-0 shadow-sm">
+                                <i class="ph-bold ph-user text-lg"></i>
+                            </div>
+                            <div class="overflow-hidden">
+                                <span id="user-display-name" class="block text-xs font-extrabold text-[var(--color-text)] truncate">کاربر ۱۱۲۲</span>
+                                <span id="user-identifier" class="block text-[10px] font-semibold text-gray-600 font-en truncate">09120001122</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] font-bold text-emerald-700 bg-emerald-50/90 px-2.5 py-1 rounded-lg border border-emerald-200">
+                            <span>وضعیت:</span>
+                            <span>اشتراک فعال پرو ✓</span>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Navigation Links (46px height) -->
+                    <nav class="space-y-1" aria-label="منوی اصلی داشبورد">
+                        <button data-tab="pane-overview" class="dash-nav-link active w-full text-right">
+                            <i class="ph-bold ph-squares-four"></i>
+                            <span>داشبورد اصلی</span>
+                        </button>
+
+                        <button data-tab="pane-subscription" class="dash-nav-link w-full text-right">
+                            <i class="ph-bold ph-key"></i>
+                            <span>اشتراک v2ray و سرورها</span>
+                        </button>
+
+                        <button data-tab="pane-analytics" class="dash-nav-link w-full text-right">
+                            <i class="ph-bold ph-chart-line-up"></i>
+                            <span>چارت مصرف روزانه</span>
+                        </button>
+
+                        <button data-tab="pane-transactions" class="dash-nav-link w-full text-right">
+                            <i class="ph-bold ph-receipt"></i>
+                            <span>تراکنش‌ها و خریدها</span>
+                        </button>
+
+                        <button data-tab="pane-devices" class="dash-nav-link w-full text-right">
+                            <i class="ph-bold ph-devices"></i>
+                            <span>دستگاه‌های فعال</span>
+                        </button>
+
+                        <button data-tab="pane-downloads" class="dash-nav-link w-full text-right">
+                            <i class="ph-bold ph-download-simple"></i>
+                            <span>دانلود برنامه‌ها</span>
+                        </button>
+
+                        <button data-tab="pane-settings" class="dash-nav-link w-full text-right">
+                            <i class="ph-bold ph-gear"></i>
+                            <span>تنظیمات حساب</span>
+                        </button>
+
+                        <a href="https://t.me/rozaneh_vpn_bot" target="_blank" class="dash-nav-link text-blue-600 hover:bg-blue-50">
+                            <i class="ph-bold ph-telegram-logo"></i>
+                            <span>ربات تلگرام روزنه</span>
+                        </a>
+                    </nav>
+
+                    <div class="pt-3 mt-3 border-t border-gray-100">
+                        <button id="sidebar-logout-btn" class="dash-nav-link w-full text-red-600 hover:bg-red-50 hover:border-red-200">
+                            <i class="ph-bold ph-sign-out"></i>
+                            <span>خروج از حساب</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- MAIN MULTI-TAB PANES AREA (3 Columns in LG) -->
+                <div class="lg:col-span-3 w-full min-w-0">
+                    
+                    <!-- TAB PANE 1: OVERVIEW DASHBOARD -->
+                    <div id="pane-overview" class="dash-pane active space-y-6">
+                        
+                        <!-- Header Above Fold (Perfectly Aligned Title & Renewal CTA Button) -->
+                        <div class="flex items-center justify-between pb-3 border-b border-[#EEDFD5]">
+                            <div>
+                                <h1 class="text-xl sm:text-2xl font-extrabold text-[var(--color-text)] tracking-tight leading-none">داشبورد مدیریت</h1>
+                                <p class="text-xs font-medium text-gray-600 mt-1">سلام <span id="user-welcome-name" class="font-bold text-[var(--color-text)]">کاربر ۱۱۲۲</span>، وضعیت اشتراک شما در یک نگاه</p>
+                            </div>
+
+                            <button onclick="switchTab('pane-subscription')" class="min-h-[42px] px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:opacity-95 text-white font-extrabold text-xs shadow-sm transition-all flex items-center gap-2 flex-shrink-0">
+                                <i class="ph-bold ph-arrows-clockwise text-base"></i>
+                                <span>تمدید اشتراک</span>
+                            </button>
+                        </div>
+
+                        <!-- Row 1: Four Equal-sized Compact KPI Stat Cards -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            
+                            <!-- Card 1: Volume Remaining -->
+                            <div class="saas-card p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-gray-700">حجم باقی‌مانده</span>
+                                    <div class="w-7 h-7 rounded-lg bg-orange-50 text-[var(--color-primary)] flex items-center justify-center text-sm font-bold border border-orange-200">
+                                        <i class="ph-bold ph-database"></i>
+                                    </div>
+                                </div>
+                                <div class="flex items-baseline gap-1 mb-2">
+                                    <span id="volume-remaining" class="text-xl font-extrabold text-[var(--color-text)] font-en tabular-nums">42.5</span>
+                                    <span class="text-xs text-gray-600 font-medium">از <span class="font-en">50 GB</span></span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-gray-100 overflow-hidden border border-gray-200">
+                                    <div id="volume-progress-bar" class="h-full bg-[var(--color-primary)] rounded-full transition-all duration-700" style="width: 85%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Time Remaining (Synchronized 18 days & 1404/12/15) -->
+                            <div class="saas-card p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-gray-700">زمان باقی‌مانده</span>
+                                    <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold border border-blue-200">
+                                        <i class="ph-bold ph-clock"></i>
+                                    </div>
+                                </div>
+                                <div class="flex items-baseline gap-1 mb-1">
+                                    <span id="days-remaining" class="text-xl font-extrabold text-[var(--color-text)] font-en tabular-nums">18</span>
+                                    <span class="text-xs text-gray-600 font-medium">روز</span>
+                                </div>
+                                <span class="text-[10px] font-semibold text-gray-600 font-en">انقضا: 1404/12/15</span>
+                            </div>
+
+                            <!-- Card 3: Subscription Status (Refined without VLESS text) -->
+                            <div class="saas-card p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-gray-700">وضعیت اشتراک</span>
+                                    <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold border border-emerald-200">
+                                        <i class="ph-bold ph-shield-check"></i>
+                                    </div>
+                                </div>
+                                <div class="text-base font-extrabold text-emerald-600 mb-1 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>پرو فعال</span>
+                                </div>
+                                <span class="text-[10px] font-semibold text-gray-600">سرعت بالا • ترافیک اختصاصی</span>
+                            </div>
+
+                            <!-- Card 4: Connected Devices -->
+                            <div class="saas-card p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-gray-700">دستگاه‌های متصل</span>
+                                    <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm font-bold border border-purple-200">
+                                        <i class="ph-bold ph-devices"></i>
+                                    </div>
+                                </div>
+                                <div class="text-xl font-extrabold text-[var(--color-text)] mb-1 font-en tabular-nums">
+                                    2 <span class="text-xs font-medium text-gray-600">از 3 دستگاه</span>
+                                </div>
+                                <span class="text-[10px] font-semibold text-gray-600">آیفون + ویندوز</span>
+                            </div>
+
+                        </div>
+
+                        <!-- Row 2: Main Two-Column SaaS Grid -->
+                        <div class="grid lg:grid-cols-3 gap-6 items-start">
+                            
+                            <!-- Column 1: Traffic Chart (2 Columns in LG - Specified Gigabytes Unit) -->
+                            <div class="lg:col-span-2 saas-card p-5">
+                                <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                                    <div class="flex items-center gap-2">
+                                        <i class="ph-bold ph-chart-line-up text-[var(--color-primary)] text-lg"></i>
+                                        <h2 class="text-sm font-bold text-[var(--color-text)]">نمودار مصرف ترافیک (گیگابایت)</h2>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-[11px] font-bold">
+                                        <span class="text-gray-700">امروز: <strong class="text-[var(--color-text)] font-en">1.5 GB</strong></span>
+                                        <span class="text-gray-400">|</span>
+                                        <span class="text-gray-700">میانگین: <strong class="text-[var(--color-text)] font-en">2.1 GB/روز</strong></span>
+                                    </div>
+                                </div>
+
+                                <div class="relative h-56 w-full">
+                                    <canvas id="usageChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Column 2: Quick Connection & Smart Config (VLESS + Reality Prominent Here) -->
+                            <div class="saas-card p-5 space-y-4">
+                                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                                    <div class="flex items-center gap-2">
+                                        <i class="ph-bold ph-lightning text-[var(--color-primary)] text-lg"></i>
+                                        <h2 class="text-sm font-bold text-[var(--color-text)]">اتصال سریع و سرور پیشنهادی</h2>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">آنلاین</span>
+                                </div>
+
+                                <!-- Recommended Server Pill with VLESS + Reality Badge -->
+                                <div class="p-3 rounded-xl bg-orange-50/60 border border-orange-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="text-xl">🇩🇪</span>
+                                        <div>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="block text-xs font-bold text-gray-900">آلمان - فرانکفورت</span>
+                                                <span class="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 font-bold text-[9px] font-en">VLESS + Reality</span>
+                                            </div>
+                                            <span class="text-[10px] text-gray-600 font-en">Ping: 32 ms • 10 Gbps</span>
+                                        </div>
+                                    </div>
+                                    <button onclick="showQRCode('https://sub.rozaneh.net/v2ray/sub/usr_892398')" class="p-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:text-[var(--color-primary)] hover:border-orange-400 transition-all text-xs shadow-sm" title="اسکن QR Code">
+                                        <i class="ph-bold ph-qr-code text-base"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Smart Sub Link Quick Copy (Clean SaaS Flex Box with Instant Feedback) -->
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-700 mb-1.5">لینک هوشمند اشتراک v2ray</label>
+                                    <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#FFF8F1] border border-[#EEDFD5]">
+                                        <div id="v2ray-sub-link-quick" class="truncate font-mono text-[11px] font-bold text-[var(--color-text)] font-en dir-ltr px-1.5 select-all flex-1">
+                                            https://sub.rozaneh.net/v2ray/sub/usr_892398
+                                        </div>
+                                        <button onclick="copyTextById('v2ray-sub-link-quick', this)" class="min-h-[34px] px-3 bg-[var(--color-primary)] hover:opacity-90 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1 shadow-sm flex-shrink-0">
+                                            <i class="ph-bold ph-copy text-xs"></i>
+                                            <span>کپی</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Brand Cohesive Action Button (No Black!) -->
+                                <button onclick="switchTab('pane-subscription')" class="w-full min-h-[42px] py-2.5 rounded-xl bg-[var(--color-primary)] hover:opacity-90 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2">
+                                    <i class="ph-bold ph-key text-base"></i>
+                                    <span>مشاهده تمام کانفیگ‌ها و لینک اشتراک</span>
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <!-- Row 3: Recent Transactions & Active Devices Grid -->
+                        <div class="grid lg:grid-cols-2 gap-6 items-start">
+                            
+                            <!-- Card 1: Recent Transactions Table -->
+                            <div class="saas-card p-5">
+                                <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                                    <h3 class="text-xs font-bold text-[var(--color-text)] flex items-center gap-2">
+                                        <i class="ph-bold ph-receipt text-purple-600 text-base"></i>
+                                        <span>آخرین تراکنش‌ها</span>
+                                    </h3>
+                                    <button onclick="switchTab('pane-transactions')" class="text-[11px] font-bold text-[var(--color-primary)] hover:underline">مشاهده همه</button>
+                                </div>
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-right text-[11px]">
+                                        <thead>
+                                            <tr class="border-b border-gray-200 text-gray-600 font-bold">
+                                                <th class="pb-2">عنوان</th>
+                                                <th class="pb-2">تاریخ</th>
+                                                <th class="pb-2">مبلغ</th>
+                                                <th class="pb-2 text-center">وضعیت</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-100 font-medium">
+                                            <tr>
+                                                <td class="py-2.5 font-bold text-gray-900">اشتراک ۵۰ گیگابایت (۱ ماهه)</td>
+                                                <td class="py-2.5 text-gray-700 font-en">1404/11/02</td>
+                                                <td class="py-2.5 font-bold text-gray-800 font-en">149,000 تومان</td>
+                                                <td class="py-2.5 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[9px]">موفق ✓</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-2.5 font-bold text-gray-900">تست رایگان ۲ گیگابایت</td>
+                                                <td class="py-2.5 text-gray-700 font-en">1404/10/05</td>
+                                                <td class="py-2.5 font-bold text-emerald-600">رایگان</td>
+                                                <td class="py-2.5 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[9px]">فعال ✓</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Connected Devices List -->
+                            <div class="saas-card p-5">
+                                <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                                    <h3 class="text-xs font-bold text-[var(--color-text)] flex items-center gap-2">
+                                        <i class="ph-bold ph-devices text-blue-600 text-base"></i>
+                                        <span>دستگاه‌های فعال اخیر</span>
+                                    </h3>
+                                    <button onclick="switchTab('pane-devices')" class="text-[11px] font-bold text-[var(--color-primary)] hover:underline">مدیریت دستگاه‌ها</button>
+                                </div>
+
+                                <div class="space-y-2.5 text-xs">
+                                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                                        <div class="flex items-center gap-2.5">
+                                            <i class="ph-bold ph-device-mobile-camera text-lg text-gray-700"></i>
+                                            <div>
+                                                <span class="block font-bold text-gray-900 font-en">iPhone 15 Pro</span>
+                                                <span class="text-[9px] text-gray-600 font-en">185.220.101.4</span>
+                                            </div>
+                                        </div>
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500" title="آنلاین"></span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                                        <div class="flex items-center gap-2.5">
+                                            <i class="ph-bold ph-laptop text-lg text-gray-700"></i>
+                                            <div>
+                                                <span class="block font-bold text-gray-900 font-en">Windows PC</span>
+                                                <span class="text-[9px] text-gray-600 font-en">185.220.101.4</span>
+                                            </div>
+                                        </div>
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500" title="آنلاین"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- TAB PANE 2: V2RAY SUBSCRIPTION & CONFIGS -->
+                    <div id="pane-subscription" class="dash-pane space-y-6">
+                        
+                        <!-- Smart Subscription URL Card -->
+                        <div class="saas-card p-6 border-2 border-orange-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-[var(--color-primary-light)] text-[var(--color-primary)] flex items-center justify-center text-xl font-bold border border-orange-200">
+                                        <i class="ph-bold ph-link"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-base font-bold text-[var(--color-text)]">لینک هوشمند اشتراک v2ray (Subscription URL)</h2>
+                                        <p class="text-xs font-medium text-gray-600">اضافه شدن خودکار تمام سرورها در نرم‌افزار</p>
+                                    </div>
+                                </div>
+                                <button onclick="showQRCode('https://sub.rozaneh.net/v2ray/sub/usr_892398')" class="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-gray-50 text-gray-800 font-bold text-xs hover:border-[var(--color-primary)] transition-all flex items-center gap-1.5 border border-gray-300 shadow-sm">
+                                    <i class="ph-bold ph-qr-code text-base text-[var(--color-primary)]"></i>
+                                    <span>اسکن QR Code</span>
+                                </button>
+                            </div>
+
+                            <!-- Subscription Link Box (Clean Light SaaS Flex Box) -->
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-xl bg-[#FFF8F1] border border-[#EEDFD5] mb-3">
+                                <div id="v2ray-sub-link" class="truncate font-mono text-xs font-bold text-[var(--color-text)] font-en dir-ltr px-2 select-all flex-1">
+                                    https://sub.rozaneh.net/v2ray/sub/usr_892398?token=RozanehSecToken9021
+                                </div>
+                                <button onclick="copyTextById('v2ray-sub-link', this)" class="min-h-[38px] px-4 bg-[var(--color-primary)] hover:opacity-90 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm flex-shrink-0">
+                                    <i class="ph-bold ph-copy text-sm"></i>
+                                    <span>کپی لینک اشتراک</span>
+                                </button>
+                            </div>
+
+                            <div class="p-3.5 rounded-xl bg-[#FFF8F1] border border-[#EEDFD5] text-xs text-gray-700 font-medium leading-relaxed">
+                                💡 <strong>راهنما:</strong> این لینک را در v2rayNG (اندروید) یا FoXray / Streisand (آیفون) وارد کنید تا جدیدترین سرورها خودکار اضافه شوند.
+                            </div>
+                        </div>
+
+                        <!-- Individual Server Configs List -->
+                        <div class="saas-card p-6">
+                            <h3 class="text-sm font-bold text-[var(--color-text)] mb-1 flex items-center gap-2">
+                                <i class="ph-bold ph-list-checks text-[var(--color-primary)] text-lg"></i>
+                                <span>کانفیگ‌های مستند تک به تک (سرورهای اختصاصی)</span>
+                            </h3>
+                            <p class="text-xs font-medium text-gray-600 mb-5">در صورت عدم استفاده از لینک اشتراک، هر کانفیگ را دستی وارد کنید</p>
+
+                            <div class="space-y-3">
+                                
+                                <!-- Server 1: Germany -->
+                                <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xl">🇩🇪</span>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-xs text-[var(--color-text)]">سرور آلمان - فرانکفورت</span>
+                                                <span class="px-2 py-0.5 rounded-md bg-orange-100 text-orange-800 font-bold text-[10px] font-en">VLESS + Reality</span>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-gray-600 font-en">Ping: 32 ms • 10 Gbps Port</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="copyString('vless://rozaneh-de1@de.rozaneh.net:443?security=reality&sni=yahoo.com&fp=chrome#Rozaneh-Germany-Reality', this)" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:border-[var(--color-primary)] font-bold text-xs text-[var(--color-text)] transition-all flex items-center gap-1 shadow-sm">
+                                            <i class="ph-bold ph-copy text-xs text-[var(--color-primary)]"></i>
+                                            <span>کپی کانفیگ</span>
+                                        </button>
+                                        <button onclick="showQRCode('vless://rozaneh-de1@de.rozaneh.net:443?security=reality&sni=yahoo.com&fp=chrome#Rozaneh-Germany-Reality')" class="p-1.5 rounded-lg bg-gray-200/80 hover:bg-gray-200 text-gray-700 transition-all">
+                                            <i class="ph-bold ph-qr-code text-base"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Server 2: Finland -->
+                                <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xl">🇫🇮</span>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-xs text-[var(--color-text)]">سرور فنلاند - هلسینکی</span>
+                                                <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-bold text-[10px] font-en">VLESS + gRPC</span>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-gray-600 font-en">Ping: 45 ms • High Speed</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="copyString('vless://rozaneh-fi1@fi.rozaneh.net:443?encryption=none&security=tls&type=grpc#Rozaneh-Finland-gRPC', this)" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:border-[var(--color-primary)] font-bold text-xs text-[var(--color-text)] transition-all flex items-center gap-1 shadow-sm">
+                                            <i class="ph-bold ph-copy text-xs text-[var(--color-primary)]"></i>
+                                            <span>کپی کانفیگ</span>
+                                        </button>
+                                        <button onclick="showQRCode('vless://rozaneh-fi1@fi.rozaneh.net:443?encryption=none&security=tls&type=grpc#Rozaneh-Finland-gRPC')" class="p-1.5 rounded-lg bg-gray-200/80 hover:bg-gray-200 text-gray-700 transition-all">
+                                            <i class="ph-bold ph-qr-code text-base"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Server 3: USA -->
+                                <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xl">🇺🇸</span>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-xs text-[var(--color-text)]">سرور آمریکا - شیکاگو</span>
+                                                <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 font-bold text-[10px] font-en">Shadowsocks 2022</span>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-gray-600 font-en">Ping: 110 ms • Clean IP</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="copyString('ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNjpSb3phbmVoU2VjcmV0S2V5OTAyMQ@us.rozaneh.net:8388#Rozaneh-USA-Shadowsocks', this)" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:border-[var(--color-primary)] font-bold text-xs text-[var(--color-text)] transition-all flex items-center gap-1 shadow-sm">
+                                            <i class="ph-bold ph-copy text-xs text-[var(--color-primary)]"></i>
+                                            <span>کپی کانفیگ</span>
+                                        </button>
+                                        <button onclick="showQRCode('ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNjpSb3phbmVoU2VjcmV0S2V5OTAyMQ@us.rozaneh.net:8388#Rozaneh-USA-Shadowsocks')" class="p-1.5 rounded-lg bg-gray-200/80 hover:bg-gray-200 text-gray-700 transition-all">
+                                            <i class="ph-bold ph-qr-code text-base"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Server 4: France -->
+                                <div class="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xl">🇫🇷</span>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-xs text-[var(--color-text)]">سرور فرانسه - پاریس</span>
+                                                <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px] font-en">VLESS + Reality</span>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-gray-600 font-en">Ping: 38 ms • Fixed IP</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="copyString('vless://rozaneh-fr1@fr.rozaneh.net:443?security=reality&sni=google.com&fp=chrome#Rozaneh-France-Reality', this)" class="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:border-[var(--color-primary)] font-bold text-xs text-[var(--color-text)] transition-all flex items-center gap-1 shadow-sm">
+                                            <i class="ph-bold ph-copy text-xs text-[var(--color-primary)]"></i>
+                                            <span>کپی کانفیگ</span>
+                                        </button>
+                                        <button onclick="showQRCode('vless://rozaneh-fr1@fr.rozaneh.net:443?security=reality&sni=google.com&fp=chrome#Rozaneh-France-Reality')" class="p-1.5 rounded-lg bg-gray-200/80 hover:bg-gray-200 text-gray-700 transition-all">
+                                            <i class="ph-bold ph-qr-code text-base"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB PANE 3: ANALYTICS CHART -->
+                    <div id="pane-analytics" class="dash-pane space-y-6">
+                        <div class="saas-card p-6">
+                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                                <div>
+                                    <h2 class="text-base font-bold text-[var(--color-text)]">چارت کامل آمار مصرف روزانه (گیگابایت)</h2>
+                                    <p class="text-xs font-medium text-gray-600">میزان ترافیک آپلود و دانلود بر حسب گیگابایت</p>
+                                </div>
+                                <span class="text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-3 py-1 rounded-lg font-en">7 Days Data</span>
+                            </div>
+
+                            <div class="relative h-64 w-full">
+                                <canvas id="expandedUsageChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB PANE 4: TRANSACTIONS & ORDERS -->
+                    <div id="pane-transactions" class="dash-pane space-y-6">
+                        <div class="saas-card p-6">
+                            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                                <div>
+                                    <h2 class="text-base font-bold text-[var(--color-text)]">تاریخچه کامل تراکنش‌ها و خریدها</h2>
+                                    <p class="text-xs font-medium text-gray-600">سابقه سفارشات و تمدیدهای مالی حساب</p>
+                                </div>
+                                <span class="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg">فاکتورها</span>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-right text-xs">
+                                    <thead>
+                                        <tr class="border-b border-gray-200 text-gray-600 font-bold">
+                                            <th class="pb-3 pr-2">عنوان سرویس</th>
+                                            <th class="pb-3">تاریخ تمدید</th>
+                                            <th class="pb-3">مبلغ پرداختی</th>
+                                            <th class="pb-3">روش پرداخت</th>
+                                            <th class="pb-3 text-center">وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 font-medium">
+                                        <tr>
+                                            <td class="py-3 pr-2 font-bold text-[var(--color-text)]">اشتراک ۵۰ گیگابایت پرو (۱ ماهه)</td>
+                                            <td class="py-3 text-gray-700 font-en">1404/11/02</td>
+                                            <td class="py-3 font-bold text-gray-800 font-en">149,000 تومان</td>
+                                            <td class="py-3 text-gray-600">کارت به کارت هوشمند</td>
+                                            <td class="py-3 text-center"><span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">موفق ✓</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-3 pr-2 font-bold text-[var(--color-text)]">تست رایگان ۲ گیگابایت (هدیه)</td>
+                                            <td class="py-3 text-gray-700 font-en">1404/10/05</td>
+                                            <td class="py-3 font-bold text-emerald-600">رایگان</td>
+                                            <td class="py-3 text-gray-600">ربات تلگرام</td>
+                                            <td class="py-3 text-center"><span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">فعال شده ✓</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB PANE 5: CONNECTED DEVICES -->
+                    <div id="pane-devices" class="dash-pane space-y-6">
+                        <div class="saas-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-bold text-[var(--color-text)]">دستگاه‌های فعال متصل</h3>
+                                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">۲ از ۳ دستگاه متصل</span>
+                            </div>
+
+                            <div class="grid sm:grid-cols-2 gap-4 text-xs">
+                                <div class="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+                                    <div class="flex items-center gap-3">
+                                        <i class="ph-bold ph-device-mobile-camera text-xl text-gray-700"></i>
+                                        <div>
+                                            <span class="block font-bold text-gray-900 font-en">iPhone 15 Pro</span>
+                                            <span class="text-[10px] text-gray-600 font-en">DE Server • 185.220.101.4</span>
+                                        </div>
+                                    </div>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500" title="آنلاین"></span>
+                                </div>
+
+                                <div class="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+                                    <div class="flex items-center gap-3">
+                                        <i class="ph-bold ph-laptop text-xl text-gray-700"></i>
+                                        <div>
+                                            <span class="block font-bold text-gray-900 font-en">Windows PC</span>
+                                            <span class="text-[10px] text-gray-600 font-en">DE Server • 185.220.101.4</span>
+                                        </div>
+                                    </div>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500" title="آنلاین"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB PANE 6: DOWNLOAD CLIENT APPS -->
+                    <div id="pane-downloads" class="dash-pane space-y-6">
+                        <div class="saas-card p-6">
+                            <h3 class="text-base font-bold text-[var(--color-text)] mb-1">دانلود برنامه‌های اتصال v2ray</h3>
+                            <p class="text-xs font-medium text-gray-600 mb-5">نرم‌افزار مناسب سیستم‌عامل خود را دریافت کنید</p>
+
+                            <div class="grid sm:grid-cols-3 gap-4">
+                                <a href="https://github.com/2dust/v2rayNG/releases" target="_blank" class="flex flex-col p-4 rounded-xl border border-gray-200 hover:border-[var(--color-primary)] hover:bg-orange-50/30 transition-all group">
+                                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold border border-emerald-200 mb-2">
+                                        <i class="ph-bold ph-android-logo"></i>
+                                    </div>
+                                    <span class="block text-xs font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] font-en">v2rayNG</span>
+                                    <span class="text-[10px] text-gray-500">اندروید</span>
+                                </a>
+
+                                <a href="https://apps.apple.com/us/app/foxray/id6448892567" target="_blank" class="flex flex-col p-4 rounded-xl border border-gray-200 hover:border-[var(--color-primary)] hover:bg-orange-50/30 transition-all group">
+                                    <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg font-bold border border-blue-200 mb-2">
+                                        <i class="ph-bold ph-apple-logo"></i>
+                                    </div>
+                                    <span class="block text-xs font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] font-en">FoXray / Streisand</span>
+                                    <span class="text-[10px] text-gray-500">آیفون / آیپد</span>
+                                </a>
+
+                                <a href="https://github.com/2dust/v2rayN/releases" target="_blank" class="flex flex-col p-4 rounded-xl border border-gray-200 hover:border-[var(--color-primary)] hover:bg-orange-50/30 transition-all group">
+                                    <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center text-lg font-bold border border-sky-200 mb-2">
+                                        <i class="ph-bold ph-desktop"></i>
+                                    </div>
+                                    <span class="block text-xs font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] font-en">v2rayN</span>
+                                    <span class="text-[10px] text-gray-500">ویندوز</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB PANE 7: ACCOUNT SETTINGS -->
+                    <div id="pane-settings" class="dash-pane space-y-6">
+                        
+                        <!-- Profile Settings -->
+                        <div class="saas-card p-6">
+                            <div class="pb-3 mb-4 border-b border-gray-100">
+                                <h2 class="text-base font-bold text-[var(--color-text)]">تنظیمات پروفایل و مشخصات</h2>
+                                <p class="text-xs font-medium text-gray-600">اطلاعات کاربری خود را به‌روزرسانی کنید</p>
+                            </div>
+
+                            <form id="form-profile" class="space-y-4 max-w-md">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">نام کاربر</label>
+                                    <input type="text" id="setting-name" value="کاربر ۱۱۲۲" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-900 outline-none focus:border-[var(--color-primary)] transition-all" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">شماره یا ایمیل ثبت‌شده</label>
+                                    <input type="text" id="setting-identifier" value="09120001122" readonly class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-bold text-gray-600 font-en outline-none" />
+                                </div>
+                                <button type="submit" class="min-h-[40px] px-5 py-2 rounded-xl bg-[var(--color-primary)] hover:opacity-95 text-white font-bold text-xs shadow-sm transition-all">
+                                    ذخیره مشخصات
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Password Security (Brand Cohesive Colors) -->
+                        <div class="saas-card p-6">
+                            <div class="pb-3 mb-4 border-b border-gray-100">
+                                <h2 class="text-base font-bold text-[var(--color-text)]">تغییر رمز عبور</h2>
+                                <p class="text-xs font-medium text-gray-600">جهت امنیت بیشتر، رمز عبور قوی انتخاب کنید</p>
+                            </div>
+
+                            <form id="form-password" class="space-y-4 max-w-md">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">رمز عبور فعلی</label>
+                                    <input type="password" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-900 outline-none focus:border-[var(--color-primary)] transition-all" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">رمز عبور جدید</label>
+                                    <input type="password" placeholder="حداقل ۸ کاراکتر" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-900 outline-none focus:border-[var(--color-primary)] transition-all" />
+                                </div>
+                                <button type="submit" class="min-h-[40px] px-5 py-2 rounded-xl bg-[var(--color-primary)] hover:opacity-95 text-white font-bold text-xs shadow-sm transition-all">
+                                    تغییر رمز عبور
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Reset Subscription Token -->
+                        <div class="saas-card p-5 border border-red-200 bg-red-50/30">
+                            <h3 class="text-xs font-bold text-red-950 mb-1">بازنشانی امنیتی لینک اشتراک (Reset Token)</h3>
+                            <p class="text-xs text-red-800 font-medium mb-3 leading-relaxed">
+                                در صورت لو رفتن لینک اشتراک v2ray، با کلیک روی دکمه زیر توکن جدید ایجاد کنید تا سرورهای قبلی مسدود شوند.
+                            </p>
+                            <button onclick="showToast('لینک جدید اشتراک صادر شد.')" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition-all min-h-[38px]">
+                                بازنشانی توکن اشتراک
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-5 bg-white border-t border-[#EEDFD5] text-center text-xs font-medium text-gray-600">
+        <div class="max-w-7xl mx-auto px-4">
+            روزنه وی‌پی‌ان | پنل مدیریت اشتراک © ۲۰۲۶
+        </div>
+    </footer>
+
+    <!-- QR Code Modal -->
+    <dialog id="qr-modal" class="p-0 rounded-2xl border border-gray-200 bg-white shadow-2xl backdrop:bg-gray-900/60 max-w-xs w-full mx-auto">
+        <div class="p-5 text-center">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-sm text-[var(--color-text)]">QR Code کانفیگ / اشتراک</h3>
+                <button id="btn-close-qr" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center font-bold text-xs" aria-label="بستن">✕</button>
+            </div>
+            <div id="qrcode-container" class="flex justify-center p-3 bg-white border border-gray-200 rounded-xl mb-3"></div>
+            <p class="text-[11px] font-medium text-gray-600">دوربین v2rayNG یا FoXray را روی کد بالا بگیرید</p>
+        </div>
+    </dialog>
+
+    <!-- Interactive Scripts & SPA Logic -->
+    <script src="auth-script.js"></script>
+    <script>
+        // Global Tab Switcher Function with Hash Deep-Linking
+        function switchTab(paneId) {
+            const panes = document.querySelectorAll('.dash-pane');
+            const navButtons = document.querySelectorAll('[data-tab]');
+
+            panes.forEach(pane => pane.classList.remove('active'));
+            navButtons.forEach(btn => btn.classList.remove('active'));
+
+            const targetPane = document.getElementById(paneId);
+            if (targetPane) {
+                targetPane.classList.add('active');
+            }
+
+            const targetNavBtns = document.querySelectorAll(`[data-tab="${paneId}"]`);
+            targetNavBtns.forEach(btn => btn.classList.add('active'));
+
+            // Sync with URL Hash without page scroll
+            if (history.pushState) {
+                history.pushState(null, null, '#' + paneId.replace('pane-', ''));
+            }
+
+            // Close Mobile Drawer if open
+            closeMobileDrawer();
+        }
+
+        // Toast Feedback Notification
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-5 left-5 z-50 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-xl flex items-center gap-2 transition-all duration-300 transform translate-y-8 opacity-0 ${type === 'success' ? 'bg-emerald-600' : 'bg-orange-600'}`;
+            toast.innerHTML = `<i class="ph-bold ${type === 'success' ? 'ph-check-circle text-base' : 'ph-info text-base'}"></i> <span>${message}</span>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-8', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-8', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // Global Copy Helper
+        function copyString(str, btnEl) {
+            navigator.clipboard.writeText(str).then(() => {
+                showToast('لینک با موفقیت کپی شد! ✓');
+                if (btnEl) {
+                    const originalHTML = btnEl.innerHTML;
+                    btnEl.innerHTML = '<span class="text-emerald-600 font-bold">کپی شد! ✓</span>';
+                    setTimeout(() => { btnEl.innerHTML = originalHTML; }, 2000);
+                }
+            });
+        }
+
+        function copyTextById(elementId, btnEl) {
+            const text = document.getElementById(elementId).textContent.trim();
+            copyString(text, btnEl);
+        }
+
+        // QR Code Modal Helper
+        function showQRCode(text) {
+            const qrModal = document.getElementById('qr-modal');
+            const qrContainer = document.getElementById('qrcode-container');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: text,
+                width: 180,
+                height: 180,
+                colorDark: "#111827",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            qrModal.showModal();
+        }
+
+        // Mobile Drawer Toggle Helpers
+        function openMobileDrawer() {
+            const drawer = document.getElementById('mobile-drawer');
+            const content = document.getElementById('mobile-drawer-content');
+            drawer.classList.remove('pointer-events-none', 'opacity-0');
+            content.classList.remove('translate-x-full');
+        }
+
+        function closeMobileDrawer() {
+            const drawer = document.getElementById('mobile-drawer');
+            const content = document.getElementById('mobile-drawer-content');
+            content.classList.add('translate-x-full');
+            setTimeout(() => {
+                drawer.classList.add('pointer-events-none', 'opacity-0');
+            }, 200);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.RozanehAuth) {
+                const user = window.RozanehAuth.getUser();
+                if (!user) {
+                    window.location.href = 'index.html?auth=open';
+                    return;
+                }
+
+                // Populate User Data across elements
+                const userName = user.name || 'کاربر ۱۱۲۲';
+                const userIdent = user.identifier || '09120001122';
+
+                const welcomeEl = document.getElementById('user-welcome-name');
+                const displayEl = document.getElementById('user-display-name');
+                const identEl = document.getElementById('user-identifier');
+                const drawerNameEl = document.getElementById('drawer-user-name');
+                const drawerIdEl = document.getElementById('drawer-user-id');
+                const settingName = document.getElementById('setting-name');
+                const settingId = document.getElementById('setting-identifier');
+
+                if (welcomeEl) welcomeEl.textContent = userName;
+                if (displayEl) displayEl.textContent = userName;
+                if (identEl) identEl.textContent = userIdent;
+                if (drawerNameEl) drawerNameEl.textContent = userName;
+                if (drawerIdEl) drawerIdEl.textContent = userIdent;
+                if (settingName) settingName.value = userName;
+                if (settingId) settingId.value = userIdent;
+
+                // Clone Nav Items to Mobile Drawer
+                const navLinks = document.querySelector('aside.dash-sidebar nav').cloneNode(true);
+                document.getElementById('drawer-nav-container').appendChild(navLinks);
+
+                // Setup Logout Buttons
+                const handleLogout = () => window.RozanehAuth.logout();
+                document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
+                document.getElementById('sidebar-logout-btn')?.addEventListener('click', handleLogout);
+                document.getElementById('drawer-logout-btn')?.addEventListener('click', handleLogout);
+
+                // Setup Mobile Drawer Listeners
+                document.getElementById('btn-toggle-mobile-drawer')?.addEventListener('click', openMobileDrawer);
+                document.getElementById('btn-close-mobile-drawer')?.addEventListener('click', closeMobileDrawer);
+                document.getElementById('mobile-drawer-overlay')?.addEventListener('click', closeMobileDrawer);
+
+                // Modal Close Event
+                document.getElementById('btn-close-qr')?.addEventListener('click', () => {
+                    document.getElementById('qr-modal').close();
+                });
+
+                // Attach Click Listeners to all tab buttons (Desktop & Mobile Drawer)
+                document.querySelectorAll('[data-tab]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const tabId = btn.getAttribute('data-tab');
+                        switchTab(tabId);
+                    });
+                });
+
+                // Check URL Hash on load
+                const hash = window.location.hash.replace('#', '');
+                if (hash && document.getElementById('pane-' + hash)) {
+                    switchTab('pane-' + hash);
+                }
+
+                // Form Submissions Feedback Toasts
+                document.getElementById('form-profile')?.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    showToast('اطلاعات پروفایل با موفقیت بروزرسانی شد ✓');
+                });
+
+                document.getElementById('form-password')?.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    showToast('رمز عبور شما با موفقیت تغییر یافت ✓');
+                });
+
+                // Chart.js Usage Analytics Setup (Explicit Y-Axis Unit "گیگابایت (GB)")
+                const renderChart = (canvasId) => {
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+                    gradient.addColorStop(0, 'rgba(255, 106, 50, 0.20)');
+                    gradient.addColorStop(1, 'rgba(255, 106, 50, 0.0)');
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'],
+                            datasets: [{
+                                label: 'مصرف ترافیک (GB)',
+                                data: [1.2, 0.8, 2.4, 1.9, 3.1, 2.8, 1.5],
+                                borderColor: '#FF6932',
+                                borderWidth: 2.5,
+                                backgroundColor: gradient,
+                                fill: true,
+                                tension: 0.35,
+                                pointBackgroundColor: '#FF6932',
+                                pointBorderColor: '#FFFFFF',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#1F2937',
+                                    titleFont: { family: 'Vazirmatn', size: 11 },
+                                    bodyFont: { family: 'Outfit', size: 11 },
+                                    padding: 10,
+                                    cornerRadius: 8,
+                                    displayColors: false,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return context.parsed.y + ' گیگابایت (GB)';
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { font: { family: 'Vazirmatn', size: 10 }, color: '#4B5563' }
+                                },
+                                y: {
+                                    grid: { color: 'rgba(243, 244, 246, 0.8)' },
+                                    ticks: {
+                                        font: { family: 'Outfit', size: 10 },
+                                        color: '#4B5563',
+                                        callback: function(value) { return value + ' GB'; }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'حجم ترافیک (گیگابایت)',
+                                        font: { family: 'Vazirmatn', size: 10 },
+                                        color: '#4B5563'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                };
+
+                renderChart('usageChart');
+                renderChart('expandedUsageChart');
+            }
+        });
+    </script>
+</body>
+</html>

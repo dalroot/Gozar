@@ -1,0 +1,274 @@
+/* ==========================================================================
+   MOBILE HERO — Viewport Filling & Locked Uniform Image Dimensions
+   Ensures ALL 3 slide images have the EXACT SAME fixed dimensions (No layout jumps)
+   ========================================================================== */
+
+@media (max-width: 1023px) {
+
+    /* ── Section Container ── */
+    #hero-section {
+        min-height: calc(100dvh - 72px) !important;
+        height: auto !important;
+        padding-top: clamp(80px, 11vh, 92px) !important;
+        padding-bottom: 20px !important;
+        text-align: center !important;
+        overflow: visible !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+    }
+
+    /* ── Slider Track ── */
+    .hero-slider-track {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        flex: 1 1 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    /* ── Slides ── */
+    .hero-slide {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        grid-column: unset !important;
+        grid-row: unset !important;
+        transform: none !important;
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    .hero-slide.active {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: space-evenly !important;
+        flex: 1 1 auto !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transform: none !important;
+    }
+
+    /* ── Grid Container ── */
+    .hero-grid-container {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    /* ── Text Column ── */
+    .hero-text-col {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    /* ── Gaming Badge (hide on mobile) ── */
+    .badge-gaming,
+    .badge {
+        display: none !important;
+    }
+
+    /* ── Title ── */
+    .hero-title,
+    .hero-slide h1,
+    .hero-slide h2 {
+        text-align: center !important;
+        font-size: clamp(1.35rem, 5vw, 1.6rem) !important;
+        line-height: 1.4 !important;
+        font-weight: 900 !important;
+        margin: 0 auto 10px auto !important;
+        transform: none !important;
+        text-wrap: balance !important;
+    }
+
+    /* ── Description ── */
+    .hero-description,
+    .hero-slide .hero-desc {
+        text-align: center !important;
+        font-size: clamp(0.82rem, 3.5vw, 0.9rem) !important;
+        line-height: 1.7 !important;
+        margin: 0 auto 12px auto !important;
+        max-width: 400px !important;
+        transform: none !important;
+        text-wrap: pretty !important;
+    }
+
+    /* ── Locked Mobile Visual Wrapper (EXACT SAME FIXED SQUARE FRAME FOR ALL 3 SLIDES) ── */
+    .hero-visual-col-mobile,
+    .hero-slide .block.lg\:hidden {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 6px auto 12px auto !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        position: relative !important;
+        transform: none !important;
+        border-radius: 0 !important;
+    }
+
+    .hero-visual-col-mobile .hero-visual-container,
+    .hero-visual-col-mobile .hero-clay-frame {
+        width: clamp(165px, 44vw, 185px) !important;
+        height: clamp(165px, 44vw, 185px) !important;
+        max-width: 185px !important;
+        max-height: 185px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        aspect-ratio: 1 / 1 !important;
+        overflow: visible !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        transform: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* ── Images locked to 100% of the fixed container ── */
+    .hero-visual-col-mobile img,
+    .hero-slide .block.lg\:hidden img {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
+        object-position: center !important;
+        display: block !important;
+        margin: 0 auto !important;
+        border: none !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        transform: none !important;
+        filter: drop-shadow(0 10px 22px rgba(251,146,60,0.35)) !important;
+    }
+
+    /* ── Hide desktop-only elements ── */
+    .floating-card-top-left,
+    .floating-card-bottom-right {
+        display: none !important;
+    }
+
+    .hero-slide .grid > .relative,
+    .hero-slide .hidden.lg\:block {
+        display: none !important;
+    }
+
+    /* ── CTA Buttons ── */
+    .hero-cta-group {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        width: 100% !important;
+        max-width: 320px !important;
+        margin: 4px auto 14px auto !important;
+        position: relative !important;
+        transform: none !important;
+        z-index: 5 !important;
+    }
+
+    .btn-hero-primary,
+    .btn-hero-secondary {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        height: 46px !important;
+        min-height: 46px !important;
+        padding: 0 16px !important;
+        font-size: 0.9rem !important;
+        white-space: nowrap !important;
+        touch-action: manipulation !important;
+        border-radius: 14px !important;
+    }
+
+    /* ── Stats Row ── */
+    .hero-stats-group {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        text-align: center !important;
+        padding: 10px 8px !important;
+        width: 100% !important;
+        max-width: 360px !important;
+        margin: 4px auto 12px auto !important;
+        border-radius: 16px !important;
+        transform: none !important;
+    }
+
+    .stat-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
+    .stat-val-pink,
+    .stat-val-purple,
+    .stat-val-blue {
+        font-size: 1.1rem !important;
+        font-weight: 800 !important;
+        white-space: nowrap !important;
+    }
+
+    .stat-label-text {
+        font-size: 0.7rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* ── Slider Navigation Controls ── */
+    .hero-slider-nav {
+        margin: 10px auto 4px auto !important;
+        transform: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #hero-section .absolute.inset-0.z-0 {
+        display: none !important;
+    }
+}
+
+/* Desktop Locked Uniform Image Dimensions */
+@media (min-width: 1024px) {
+    .hero-slide .hero-visual-container {
+        width: 420px !important;
+        height: 420px !important;
+        max-width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 auto !important;
+        position: relative !important;
+    }
+    
+    .hero-slide .hero-visual-container img {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
+        object-position: center !important;
+    }
+}

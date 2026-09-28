@@ -2,7 +2,7 @@
 
 # ==================================================================================
 # ===         GozarNet Automated Installer for Ubuntu 22.04 / 24.04 LTS          ===
-# ===         https://github.com/T4wroot/GozarNet                                ===
+# ===         https://github.com/dalroot/GozarNet                                ===
 # ==================================================================================
 
 set -e
@@ -17,7 +17,7 @@ BOLD='[1m'
 NC='[0m'
 
 PROJECT_PATH="/var/www/gozarnet"
-GITHUB_REPO="https://github.com/T4wroot/GozarNet.git"
+GITHUB_REPO="https://github.com/dalroot/GozarNet.git"
 PHP_VERSION="8.3"
 
 clear

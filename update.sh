@@ -2,7 +2,7 @@
 
 # ==================================================================================
 # ===          GozarNet Safe & Automated Updater for Ubuntu Server               ===
-# ===          https://github.com/T4wroot/GozarNet                               ===
+# ===          https://github.com/dalroot/GozarNet                               ===
 # ==================================================================================
 
 set -e

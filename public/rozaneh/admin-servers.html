@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>روزنه | پنل مدیریت - وضعیت سرورها</title>
+    
+    <!-- Google Fonts: Fredoka & Vazirmatn -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Vazirmatn:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF7A3C',
+                        secondary: '#FFD369',
+                        accent: '#2563EB',
+                        pink: '#EC4899',
+                        purple: '#8B5CF6',
+                        blue: '#3B82F6',
+                        bg: '#FFF7ED',
+                        'bg-alt': '#FFF1E2',
+                        'bg-card': '#FFFFFF',
+                        border: '#FED7AA',
+                        text: '#431407',
+                        'text-muted': '#7C2D12',
+                    },
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                        fredoka: ['Fredoka', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Style for Premium Claymorphism -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="bg-[var(--color-bg)] text-[var(--color-text)] font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Top Admin Header -->
+    <header class="bg-white border-b-2 border-[var(--color-border)] sticky top-0 z-40 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center border-2 border-[rgba(0,0,0,0.1)] shadow-xs">
+                        <i class="ph-fill ph-sun-dim text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-black text-[var(--color-text)]">پنل مدیریت روزنه</span>
+                        <span class="block text-[10px] font-bold text-[var(--color-text-muted)] font-en">Rozaneh Core v4.2</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Header Quick Search & Live Server Status -->
+            <div class="hidden md:flex items-center gap-4 flex-1 max-w-md mx-4">
+                <div class="relative w-full">
+                    <i class="ph-bold ph-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="جستجوی سریع کاربر، کد پیگیری یا آی‌پی..." class="w-full pr-9 pl-4 py-2 text-xs rounded-xl bg-[var(--color-bg-alt)] border border-[var(--color-border)] focus:outline-none focus:border-[var(--color-primary)] font-medium">
+                </div>
+            </div>
+
+            <!-- User Profile & System Status Badge -->
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>سرورها آنلاین ۹۹.۹٪</span>
+                </div>
+
+                <!-- Admin Profile Dropdown Trigger -->
+                <div class="flex items-center gap-3 pr-3 border-r border-[var(--color-border)]">
+                    <div class="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 flex items-center justify-center text-[var(--color-primary)] font-bold">
+                        <i class="ph-bold ph-user-gear text-lg"></i>
+                    </div>
+                    <div class="hidden sm:block text-right">
+                        <span class="block text-xs font-bold text-[var(--color-text)]">مدیر ارشد سیستم</span>
+                        <span class="block text-[10px] text-[var(--color-text-muted)] font-en">admin@rozaneh.net</span>
+                    </div>
+                    <a href="index.html" class="p-2 rounded-xl bg-[var(--color-bg-alt)] border border-[var(--color-border)] text-gray-500 hover:text-[var(--color-primary)] transition-colors text-xs font-bold flex items-center gap-1" title="بازگشت به سایت اصلی">
+                        <i class="ph-bold ph-sign-out text-base"></i>
+                        <span class="hidden md:inline">بازگشت به سایت</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container Layout -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Right Navigation Sidebar -->
+            <aside class="lg:col-span-3">
+                <div class="dash-sidebar space-y-2 sticky top-24">
+                    <div class="px-3 py-2 text-[11px] font-extrabold text-[var(--color-text-muted)] tracking-wider">منوی اصلی مدیریت</div>
+                    
+                    <a href="admin.html" class="dash-nav-link w-full flex items-center gap-3">
+                        <i class="ph-bold ph-squares-four"></i>
+                        <span>داشبورد و آمار کلی</span>
+                    </a>
+
+                    <a href="admin-users.html" class="dash-nav-link w-full flex items-center gap-3">
+                        <i class="ph-bold ph-users text-blue-600"></i>
+                        <span>مدیریت کاربران</span>
+                    </a>
+
+                    <a href="admin-servers.html" class="dash-nav-link active w-full flex items-center gap-3">
+                        <i class="ph-bold ph-hard-drives text-emerald-600"></i>
+                        <span>سرورها و نودها</span>
+                    </a>
+
+                    <a href="admin-configs.html" class="dash-nav-link w-full flex items-center gap-3">
+                        <i class="ph-bold ph-key text-amber-600"></i>
+                        <span>مولد کانفیگ V2Ray</span>
+                    </a>
+
+                    <a href="admin-billing.html" class="dash-nav-link w-full flex items-center gap-3">
+                        <i class="ph-bold ph-receipt text-purple-600"></i>
+                        <span>تراکنش‌ها و مالی</span>
+                    </a>
+
+                    <a href="admin-settings.html" class="dash-nav-link w-full flex items-center gap-3">
+                        <i class="ph-bold ph-gear text-rose-600"></i>
+                        <span>تنظیمات ربات و سیستم</span>
+                    </a>
+
+                    <div class="pt-4 border-t border-[var(--color-border)] mt-4">
+                        <div class="p-3 rounded-xl bg-orange-50 border border-orange-200 text-xs text-orange-800 font-medium leading-relaxed">
+                            <i class="ph-bold ph-shield-warning text-base text-[var(--color-primary)] mb-1 block"></i>
+                            اتصال زنده به دیتابیس پروژه متصل است.
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Left Main Content Panes -->
+            <main class="lg:col-span-9 relative">
+                
+                <!-- PANE 3: Servers -->
+                <div id="dash-servers" class="dash-pane active space-y-6">
+                    <div class="saas-card p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="font-bold text-xl text-[var(--color-text)]">وضعیت نودهای سرور</h3>
+                                <p class="text-xs text-[var(--color-text-muted)] font-medium">مانیتورینگ و مدیریت سرورهای اتصال</p>
+                            </div>
+                            <button class="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-sm hover:opacity-90 flex items-center gap-2">
+                                <i class="ph-bold ph-plus"></i> افزودن نود
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl border-2 border-emerald-200 bg-emerald-50 relative">
+                                <div class="absolute top-4 left-4 w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="text-3xl">🇩🇪</span>
+                                    <div>
+                                        <h4 class="font-bold text-emerald-900">فرانکفورت ۰۱ (آلمان)</h4>
+                                        <span class="text-xs font-en text-emerald-700">185.24.8.12</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between text-xs font-bold text-emerald-800">
+                                    <span>ظرفیت: ۴۲٪</span>
+                                    <span>پینگ: ۲۲ms</span>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-xl border-2 border-emerald-200 bg-emerald-50 relative">
+                                <div class="absolute top-4 left-4 w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="text-3xl">🇳🇱</span>
+                                    <div>
+                                        <h4 class="font-bold text-emerald-900">آمستردام ۰۲ (هلند)</h4>
+                                        <span class="text-xs font-en text-emerald-700">91.16.2.45</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between text-xs font-bold text-emerald-800">
+                                    <span>ظرفیت: ۳۶٪</span>
+                                    <span>پینگ: ۲۸ms</span>
+                                </div>
+                            </div>
+                            <div class="p-4 rounded-xl border-2 border-red-200 bg-red-50 relative">
+                                <div class="absolute top-4 left-4 w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="text-3xl">🇫🇷</span>
+                                    <div>
+                                        <h4 class="font-bold text-red-900">پاریس ۰۱ (فرانسه)</h4>
+                                        <span class="text-xs font-en text-red-700">54.12.9.8</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between text-xs font-bold text-red-800">
+                                    <span>آفلاین</span>
+                                    <span>پینگ: --</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Admin Script Interaction Logic -->
+    <script src="admin-script.js"></script>
+</body>
+</html>

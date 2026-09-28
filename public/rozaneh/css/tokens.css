@@ -1,0 +1,50 @@
+/* ==========================================================================
+   DESIGN TOKENS (Rozaneh Modular Design System)
+   ========================================================================== */
+
+html {
+    scroll-padding-top: 100px;
+    scroll-behavior: smooth;
+}
+
+:root {
+    /* Brand Colors */
+    --color-primary: #FF7A3C;
+    --color-primary-dark: #E05A1F;
+    --color-primary-light: #FFEFE6;
+    --color-primary-border: #FFD0B6;
+    
+    /* Secondary & Accent Colors */
+    --color-pink: #FF4D8D;
+    --color-purple: #8B5CF6;
+    --color-blue: #00A3FF;
+    --color-emerald: #10B981;
+    
+    /* Backgrounds */
+    --color-bg: #FFF8F1;
+    --color-bg-alt: #FFF1E2;
+    --color-bg-card: #FFFFFF;
+    --color-bg-header: rgba(255, 245, 234, 0.92);
+    
+    /* Borders & Lines */
+    --color-border: #FED7AA;
+    --color-border-subtle: #FFE4CB;
+    
+    /* Typography */
+    --color-text: #38140B;
+    --color-text-muted: #7C2D12;
+    --color-text-subtle: #A34E36;
+
+    /* Shadows & Elevations */
+    --shadow-soft: 0 10px 30px -5px rgba(255, 122, 60, 0.08);
+    --shadow-card: 0 20px 40px -10px rgba(67, 20, 7, 0.08);
+    --shadow-pill: 0 8px 20px -4px rgba(255, 122, 60, 0.35);
+    --shadow-badge: 0 8px 20px -4px rgba(0, 0, 0, 0.06);
+
+    /* Radius Tokens */
+    --radius-full: 9999px;
+    --radius-xl: 24px; /* Unified to Large */
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+}

@@ -71,7 +71,7 @@
 ### روش ۱: نصب سریع با یک دستور (پیشنهادی)
 وارد سرور ابونتو خود شوید و دستور زیر را اجرا کنید:
 ```bash
-wget -O install.sh https://raw.githubusercontent.com/T4wroot/GozarNet/main/install.sh && sudo bash install.sh
+wget -O install.sh https://raw.githubusercontent.com/dalroot/GozarNet/main/install.sh && sudo bash install.sh
 ```
 
 ---
@@ -81,7 +81,7 @@ wget -O install.sh https://raw.githubusercontent.com/T4wroot/GozarNet/main/insta
 #### ۱. کلون کردن مخزن و نصب وابستگی‌ها
 ```bash
 cd /var/www
-git clone https://github.com/T4wroot/GozarNet.git gozarnet
+git clone https://github.com/dalroot/GozarNet.git gozarnet
 cd gozarnet
 composer install --no-dev --optimize-autoloader
 ```
@@ -183,8 +183,14 @@ cd /var/www/gozarnet && php artisan cache:clear && php artisan optimize:clear
 
 ---
 
+## 🤝 تشکر و قدردانی (Acknowledgments)
+پلتفرم **گذر نت (GozarNet)** با الهام و ارتقای ایده‌های پروژه‌های اولیه مدیریت VPN و جامعه متن‌باز توسعه یافته است. از تمامی توسعه‌دهندگان و بنیان‌گذاران اولیه‌ای که در شکل‌گیری نسخه اولیه این سیستم نقش داشته‌اند، صمیمانه سپاسگزاری و قدردانی می‌کنیم. معماری فعلی با بازنویسی کامل هسته، اضافه شدن ماژول منشی هوشمند کسب‌وکار، سیستم توزیع کانال‌های سه‌گانه و اسکریپت‌های مدرن به عنوان یک پروژه مستقل و پایدار به مسیر خود ادامه می‌دهد.
+
+---
+
 ## 🤝 مشارکت و توسعه (Contributing)
 ما از تمامی پیشنهادات، گزارش باگ‌ها و Pull Request‌های جامعه متن‌باز به گرمی استقبال می‌کنیم.
 
 ## 📄 لایسنس
 این پروژه تحت **[لایسنس MIT](LICENSE)** منتشر شده است و استفاده شخصی و تجاری از آن کاملاً آزاد و رایگان است.
+

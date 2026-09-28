@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>روزنه پت | خدمات تخصصی پیرایش و مراقبت حیوانات خانگی (Pet Grooming)</title>
+    
+    <!-- Google Fonts & Rastikerdar Local Vazirmatn -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Vazirmatn:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/font.css">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Dedicated Claymorphism Pet Styles -->
+    <link rel="stylesheet" href="pet-style.css">
+</head>
+<body>
+
+    <!-- Phone Mockup Frame (Standard 393px x 852px) -->
+    <div class="pet-device-frame">
+        
+        <!-- App Header -->
+        <header class="pet-header">
+            <div class="pet-logo">
+                <div class="pet-logo-badge">
+                    <i class="ph-fill ph-paw-print"></i>
+                </div>
+                <div>
+                    <div class="pet-logo-title">Rozaneh Pet</div>
+                    <div class="pet-logo-sub">مرکز تخصصی آرایش و اسپای پت</div>
+                </div>
+            </div>
+            <button class="pet-logo-badge" style="width:38px; height:38px; font-size:1.1rem; background: #FFEDD5; color: var(--clay-primary);" title="تماس باما">
+                <i class="ph-bold ph-phone"></i>
+            </button>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="pet-content">
+            
+            <!-- Page 1: Home / Services (Active) -->
+            <div class="pet-page active" id="pet-page-home">
+                
+                <!-- Hero Claymorphism Card -->
+                <div class="clay-card" style="background: linear-gradient(135deg, #FFF7ED, #FFEDD5);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="font-size: 0.75rem; font-weight: 800; color: var(--clay-primary); background: #FED7AA; padding: 4px 12px; border-radius: 99px;">تخفیف اول رزرو ۲۰٪</span>
+                        <i class="ph-fill ph-sparkle" style="color: var(--clay-secondary); font-size: 1.4rem;"></i>
+                    </div>
+                    <h1 style="font-size: 1.15rem; font-weight: 900; color: var(--text-dark); line-height: 1.5; margin-bottom: 8px;">پیرایش و اسپای حرفه‌ای برای دوست چهارپای شما 🐶🐱</h1>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">محیطی کاملاً بهداشتی، بدون استرس و آرامش‌بخش با شوینده‌های آرگان ارگانیک.</p>
+                    <button class="clay-btn" id="hero-quick-book-btn">
+                        <i class="ph-bold ph-calendar-plus"></i>
+                        <span>رزرو سریع نوبت آنلاین</span>
+                    </button>
+                </div>
+
+                <!-- Service Packages Grid -->
+                <div class="section-title">
+                    <i class="ph-fill ph-scissors"></i>
+                    <span>پکیج‌های خدماتی ویژه پیرایش</span>
+                </div>
+
+                <div class="services-grid">
+                    <!-- Package 1 -->
+                    <div class="service-card selected" data-service-id="spa">
+                        <div class="service-icon-box"><i class="ph-fill ph-bathtub"></i></div>
+                        <div class="service-name">شستشو و اسپا</div>
+                        <div class="service-desc">حمامات آب گرم، شامپوی ارگانیک، سشوار و ماساژ</div>
+                        <div class="service-price"><span dir="ltr">350,000</span> تومان</div>
+                    </div>
+
+                    <!-- Package 2 -->
+                    <div class="service-card" data-service-id="haircut">
+                        <div class="service-icon-box"><i class="ph-fill ph-scissors"></i></div>
+                        <div class="service-name">اصلاح مو و فشیال</div>
+                        <div class="service-desc">کوتاهی استاندارد نژادی، فرم‌دهی صورت و گره‌زدایی</div>
+                        <div class="service-price"><span dir="ltr">480,000</span> تومان</div>
+                    </div>
+
+                    <!-- Package 3 -->
+                    <div class="service-card" data-service-id="nails">
+                        <div class="service-icon-box"><i class="ph-fill ph-first-aid"></i></div>
+                        <div class="service-name">ناخن و گوش‌بافی</div>
+                        <div class="service-desc">کوتاهی ایمن ناخن، سوهان‌کشی و شستشوی داخل گوش</div>
+                        <div class="service-price"><span dir="ltr">220,000</span> تومان</div>
+                    </div>
+
+                    <!-- Package 4 -->
+                    <div class="service-card" data-service-id="vip">
+                        <div class="service-icon-box"><i class="ph-fill ph-crown"></i></div>
+                        <div class="service-name">پکیج VIP کامل</div>
+                        <div class="service-desc">شامل تمام خدمات بالا + مسواک، عطر ارگانیک و آتلیه عکس</div>
+                        <div class="service-price"><span dir="ltr">850,000</span> تومان</div>
+                    </div>
+                </div>
+
+                <!-- Quick Gallery Preview Card -->
+                <div class="clay-card" style="padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 0.88rem; font-weight: 800; color: var(--text-dark);">نمونه کارهای جدید روزنه پت</span>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--clay-primary); cursor: pointer;" id="view-all-gallery-btn">مشاهده همه ←</span>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <img src="https://images.unsplash.com/photo-1517849845537-4d257902454a?w=300" alt="سگ" style="width: 50%; height: 90px; border-radius: 16px; object-fit: cover;">
+                        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=300" alt="گربه" style="width: 50%; height: 90px; border-radius: 16px; object-fit: cover;">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Page 2: Booking System -->
+            <div class="pet-page" id="pet-page-booking">
+                <div class="section-title">
+                    <i class="ph-bold ph-calendar-check"></i>
+                    <span>سیستم رزرو آنلاین نوبت پیرایش</span>
+                </div>
+
+                <div class="clay-card">
+                    <!-- Pet Type Selector -->
+                    <label class="booking-label">نوع حیوان خانگی شما:</label>
+                    <div class="pet-type-selector">
+                        <button class="pet-type-btn active" data-pet-type="dog">
+                            <i class="ph-bold ph-dog"></i>
+                            <span>سگ (Dog)</span>
+                        </button>
+                        <button class="pet-type-btn" data-pet-type="cat">
+                            <i class="ph-bold ph-cat"></i>
+                            <span>گربه (Cat)</span>
+                        </button>
+                    </div>
+
+                    <!-- Service Selection -->
+                    <div class="booking-form-group">
+                        <label class="booking-label">انتخاب پکیج پیرایش:</label>
+                        <select class="booking-select" id="booking-service-select">
+                            <option value="spa">پکیج شستشو و اسپا (۳۵۰,۰۰۰ تومان)</option>
+                            <option value="haircut">پکیج اصلاح مو و استایل (۴۸۰,۰۰۰ تومان)</option>
+                            <option value="nails">پکیج ناخن و پاکسازی گوش (۲۲۰,۰۰۰ تومان)</option>
+                            <option value="vip" selected>پکیج VIP کامل طلایی (۸۵۰,۰۰۰ تومان)</option>
+                        </select>
+                    </div>
+
+                    <!-- Date & Time Selectors -->
+                    <div class="booking-form-group">
+                        <label class="booking-label">انتخاب روز رزرو:</label>
+                        <select class="booking-select" id="booking-date-select">
+                            <option value="today">امروز - بعد از ظهر (ساعت ۱۶:۰۰ الی ۲۰:۰۰)</option>
+                            <option value="tomorrow">فردا - فروردین ۱۰ (ساعت ۱۰:۰۰ الی ۱۴:۰۰)</option>
+                            <option value="nextday">پس‌فردا - فروردین ۱۱ (ساعت ۱۴:۰۰ الی ۱۸:۰۰)</option>
+                        </select>
+                    </div>
+
+                    <!-- Owner & Pet Details -->
+                    <div class="booking-form-group">
+                        <label class="booking-label">نام شما و نام پت عزیزتان:</label>
+                        <input type="text" class="booking-input" placeholder="مثال: علی محمدی (پت: لوسی)" id="booking-owner-name">
+                    </div>
+
+                    <div class="booking-form-group">
+                        <label class="booking-label">شماره همراه جهت پیامک تایید:</label>
+                        <input type="tel" class="booking-input" placeholder="09123456789" dir="ltr" style="text-align: right;" id="booking-phone-input">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button class="clay-btn" id="confirm-booking-btn" style="margin-top: 10px;">
+                        <i class="ph-bold ph-check-circle"></i>
+                        <span>تایید و ثبت نوبت پیرایش</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page 3: Pet Gallery -->
+            <div class="pet-page" id="pet-page-gallery">
+                <div class="section-title">
+                    <i class="ph-bold ph-image"></i>
+                    <span>گالری قبل و بعد پت‌ها</span>
+                </div>
+
+                <div class="pet-gallery-grid">
+                    <div class="gallery-card">
+                        <img src="https://images.unsplash.com/photo-1517849845537-4d257902454a?w=400" class="gallery-img" alt="سگ لوسی">
+                        <div class="gallery-tag">لوسی (پودل)</div>
+                    </div>
+                    <div class="gallery-card">
+                        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400" class="gallery-img" alt="گربه میلو">
+                        <div class="gallery-tag">میلو (پرشین)</div>
+                    </div>
+                    <div class="gallery-card">
+                        <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400" class="gallery-img" alt="سگ مکس">
+                        <div class="gallery-tag">مکس (بیگل)</div>
+                    </div>
+                    <div class="gallery-card">
+                        <img src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=400" class="gallery-img" alt="گربه بل">
+                        <div class="gallery-tag">بل (اسکاتیش)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 4: Reviews & Testimonials -->
+            <div class="pet-page" id="pet-page-reviews">
+                <div class="section-title">
+                    <i class="ph-fill ph-heart text-[var(--clay-primary)]"></i>
+                    <span>نظرات صاحبان مهربان پت‌ها</span>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="owner-flex">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" class="owner-avatar" alt="سارا">
+                        <div>
+                            <div class="owner-name">سارا ابراهیمی</div>
+                            <div class="owner-pet-tag">سرپرست «لوسی» (هاسکی)</div>
+                        </div>
+                    </div>
+                    <div class="testimonial-rating">★★★★★</div>
+                    <p class="testimonial-text">خیلی برخورد پرسنل عالی و مهربون بود! هاسکی من معمولاً موقع سشوار خیلی می‌ترسید اما اینجا انقدر با آرامش کار کردن که کاملاً آروم بود.</p>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="owner-flex">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" class="owner-avatar" alt="امیر">
+                        <div>
+                            <div class="owner-name">امیرحسین رضایی</div>
+                            <div class="owner-pet-tag">سرپرست «بوفی» (پرشین کت)</div>
+                        </div>
+                    </div>
+                    <div class="testimonial-rating">★★★★★</div>
+                    <p class="testimonial-text">اصلاح موی گربه‌ام دقیقاً طبق همون مدیلی شد که می‌خواستم. شامپوی آرگانشون عطر محشری داره!</p>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Tab Navigation Bar -->
+        <nav class="pet-tab-bar">
+            <button class="pet-tab-item" data-pet-tab="pet-page-reviews">
+                <i class="ph-bold ph-chat-circle-heart"></i>
+                <span>نظرات</span>
+            </button>
+            <button class="pet-tab-item" data-pet-tab="pet-page-gallery">
+                <i class="ph-bold ph-aperture"></i>
+                <span>گالری</span>
+            </button>
+            <button class="pet-tab-item" data-pet-tab="pet-page-booking">
+                <i class="ph-bold ph-calendar-plus"></i>
+                <span>رزرو نوبت</span>
+            </button>
+            <button class="pet-tab-item active" data-pet-tab="pet-page-home">
+                <i class="ph-bold ph-house"></i>
+                <span>خانه</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Dedicated Pet App Logic -->
+    <script src="pet-script.js"></script>
+</body>
+</html>

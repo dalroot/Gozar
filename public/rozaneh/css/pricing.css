@@ -1,0 +1,111 @@
+/* ==========================================================================
+   ROZANEH PRICING CARDS (UI Pro-Max Studio-Grade Aesthetics)
+   ========================================================================== */
+
+#pricing {
+    position: relative;
+    background-color: var(--color-bg);
+}
+
+.pricing-card {
+    background: #FFFFFF !important;
+    border: 1.5px solid var(--color-border-subtle) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 32px 24px !important;
+    box-shadow: var(--shadow-soft) !important;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    position: relative !important;
+}
+
+.pricing-card:hover {
+    transform: translateY(-8px) !important;
+    box-shadow: 0 20px 45px rgba(255, 122, 60, 0.14) !important;
+    border-color: #FF7A3C !important;
+}
+
+/* Featured / Most Popular Plan (Glow Halo & Gradient Accent) */
+.pricing-card.featured {
+    background: linear-gradient(180deg, #FFFDFB 0%, #FFFFFF 100%) !important;
+    border: 2px solid var(--color-primary) !important;
+    box-shadow: 0 16px 40px rgba(255, 122, 60, 0.18) !important;
+    transform: scale(1.02) !important;
+}
+
+.pricing-card.featured:hover {
+    transform: scale(1.02) translateY(-8px) !important;
+    box-shadow: 0 24px 50px rgba(255, 122, 60, 0.25) !important;
+}
+
+/* Price Box */
+.price-box-wrapper {
+    background: #FFF7ED !important;
+    border: 1.5px solid #FFE4CB !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 16px 12px !important;
+    text-align: center !important;
+    margin-bottom: 20px !important;
+}
+
+.pricing-card.featured .price-box-wrapper {
+    background: linear-gradient(135deg, #FFF1E6 0%, #FFE4CB 100%) !important;
+    border-color: #FFD0A8 !important;
+}
+
+/* Duration Selector Bar */
+.pricing-period-selector {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 6px !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid var(--color-border-subtle) !important;
+    border-radius: 9999px !important;
+    box-shadow: var(--shadow-soft) !important;
+}
+
+.pricing-period-btn {
+    padding: 8px 18px !important;
+    border-radius: 9999px !important;
+    font-size: 0.85rem !important;
+    font-weight: 800 !important;
+    color: #38140B !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.pricing-period-btn.active {
+    background: linear-gradient(135deg, #FF7A3C 0%, #FF661A 100%) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(255, 122, 60, 0.3) !important;
+}
+
+.pricing-flag {
+    width: 22px !important;
+    height: 16px !important;
+    object-fit: cover !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .pricing-card {
+        padding: 24px 18px !important;
+    }
+    
+    .pricing-card.featured {
+        transform: none !important;
+    }
+
+    .pricing-card.featured:hover {
+        transform: none !important;
+    }
+}

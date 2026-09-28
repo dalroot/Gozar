@@ -1,0 +1,199 @@
+/* ==========================================================================
+   ROZANEH FAQ COMPONENT STYLES (Pure Vanilla CSS for 100% Layout Stability)
+   ========================================================================== */
+
+.faq-section {
+    padding: 64px 0 !important;
+    background: var(--color-bg, #FFF7ED) !important;
+    direction: rtl !important;
+}
+
+.faq-tabs {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+.faq-tab {
+    background: #FFFFFF !important;
+    border: 1.5px solid #FFE4CB !important;
+    border-radius: 9999px !important;
+    padding: 8px 18px !important;
+    font-size: 0.85rem !important;
+    font-weight: 800 !important;
+    color: #38140B !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.faq-tab:hover {
+    border-color: #FF7A3C !important;
+    color: #FF7A3C !important;
+}
+
+.faq-tab.active {
+    background: linear-gradient(135deg, #FF7A3C 0%, #FF661A 100%) !important;
+    border-color: #FF7A3C !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(255, 122, 60, 0.3) !important;
+}
+
+/* Accordion Item Card */
+.faq-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 100% !important;
+}
+
+.faq-item {
+    background: #FFFFFF !important;
+    border: 1.5px solid #FFE4CB !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+    box-shadow: 0 4px 15px rgba(67, 20, 7, 0.03) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.faq-item:hover {
+    border-color: #FFD0A8 !important;
+}
+
+.faq-item.open {
+    border-color: #FF7A3C !important;
+    box-shadow: 0 8px 24px rgba(255, 122, 60, 0.12) !important;
+}
+
+/* Accordion Question Header Button */
+.faq-question {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 16px 20px !important;
+    background: transparent !important;
+    border: none !important;
+    text-align: right !important;
+    cursor: pointer !important;
+    gap: 12px !important;
+    line-height: 1.5 !important;
+    direction: rtl !important;
+}
+
+.faq-question-content {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+.faq-icon-box {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    border-radius: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+    flex-shrink: 0 !important;
+}
+
+.faq-question-text {
+    font-size: 0.98rem !important;
+    font-weight: 800 !important;
+    color: #38140B !important;
+    line-height: 1.5 !important;
+    text-align: right !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    flex: 1 1 auto !important;
+}
+
+.faq-chevron {
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    border-radius: 50% !important;
+    background: #FFF7ED !important;
+    border: 1.5px solid #FFE4CB !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease !important;
+}
+
+.faq-chevron::after {
+    content: '' !important;
+    display: block !important;
+    width: 6px !important;
+    height: 6px !important;
+    border-right: 2px solid #38140B !important;
+    border-bottom: 2px solid #38140B !important;
+    transform: rotate(45deg) translate(-1px, -1px) !important;
+    transition: transform 0.3s ease, border-color 0.3s ease !important;
+}
+
+.faq-item.open .faq-chevron {
+    background: #FF7A3C !important;
+    border-color: #FF7A3C !important;
+}
+
+.faq-item.open .faq-chevron::after {
+    border-color: #FFFFFF !important;
+    transform: rotate(-135deg) translate(-1px, -1px) !important;
+}
+
+/* 100% BUG-FREE ACCORDION ANSWER WRAPPER */
+.faq-answer-wrap {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, visibility 0.25s ease !important;
+    padding: 0 20px !important;
+    margin: 0 !important;
+    border-top: none !important;
+}
+
+.faq-item.open .faq-answer-wrap {
+    max-height: 500px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    padding: 14px 20px 20px 20px !important;
+    border-top: 1px dashed #FFE4CB !important;
+}
+
+.faq-answer {
+    font-size: 0.92rem !important;
+    color: #7C2D12 !important;
+    font-weight: 500 !important;
+    line-height: 1.85 !important;
+    text-align: right !important;
+    direction: rtl !important;
+}
+
+.faq-empty {
+    display: none;
+    text-align: center;
+    padding: 24px;
+    background: #FFFFFF;
+    border: 2px dashed #FFE4CB;
+    border-radius: 16px;
+    color: #7C2D12;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-top: 12px;
+}

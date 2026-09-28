@@ -1,0 +1,64 @@
+/* Premium Filament Admin Theme - Top Navigation & Glowing Effects */
+
+/* Deep Dark Background with Radial Gradient glow */
+body {
+    background-color: #05050a !important;
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(249, 115, 22, 0.1), transparent 25%);
+    background-attachment: fixed;
+    color: #e2e8f0;
+}
+
+/* Glassmorphism for Top Navigation Header */
+header.fi-topbar {
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    margin: 10px 20px;
+    border-radius: 100px;
+}
+
+/* Reset main content margin due to topbar pill shape */
+.fi-layout > main {
+    margin-top: 20px;
+}
+
+/* Glassy and borderless cards */
+.fi-ta-content, .fi-fo-wizard, .fi-wi-stats-overview-stat {
+    background: rgba(30, 41, 59, 0.5) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-radius: 16px !important;
+}
+
+/* Neon Primary Buttons */
+.fi-btn-color-primary {
+    background-color: #3b82f6 !important;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4) !important;
+    border: none !important;
+    transition: all 0.3s ease;
+}
+
+.fi-btn-color-primary:hover {
+    background-color: #2563eb !important;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6) !important;
+    transform: translateY(-1px);
+}
+
+/* Smooth Table rows */
+.fi-ta-row {
+    transition: background-color 0.2s ease;
+}
+.fi-ta-row:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Sidebar fixes if it appears in mobile */
+.fi-sidebar {
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}

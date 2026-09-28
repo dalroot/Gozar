@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>روزنه | تماشای بدون وقفه، کیفیت 4K بدون بافر</title>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Google Fonts Vazirmatn -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Modular CSS Stylesheets -->
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/hero.css">
+    <link rel="stylesheet" href="css/mobile-hero.css">
+    <link rel="stylesheet" href="css/services.css">
+    <link rel="stylesheet" href="css/servers.css">
+    <link rel="stylesheet" href="css/pricing.css">
+    <link rel="stylesheet" href="css/faq.css">
+    <link rel="stylesheet" href="css/footer.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="mobile.css">
+</head>
+<body class="bg-[var(--color-bg)] text-[#38140B] font-sans antialiased overflow-x-hidden selection:bg-[var(--color-primary)] selection:text-white">
+
+    <div id="app-wrapper" class="pet-grooming">
+
+        <!-- Floating Pill Navbar -->
+        <nav class="navbar-pet">
+            <div class="max-w-7xl mx-auto px-2 sm:px-4">
+                <div class="flex items-center justify-between h-14 sm:h-16">
+                    <!-- Right Side (RTL Start): Logo & Name -->
+                    <div class="flex items-center gap-3">
+                        <div class="nav-brand-icon">
+                            <i class="ph-fill ph-sun text-white text-2xl"></i>
+                        </div>
+                        <span class="text-xl sm:text-2xl font-black text-[#38140B]">روزنه</span>
+                    </div>
+
+                    <!-- Center Links (Desktop Navigation) -->
+                    <div class="hidden md:flex items-center gap-1 sm:gap-2">
+                        <a href="#services" class="nav-link-item">ویژگی‌ها</a>
+                        <a href="#gallery" class="nav-link-item">سرورها</a>
+                        <a href="#pricing" class="nav-link-item">اشتراک‌ها</a>
+                        <a href="#checkout-section" class="nav-link-item">آموزش اتصال</a>
+                        <a href="mobile.html" target="_blank" class="nav-link-item text-[var(--color-primary)] font-bold">شبیه‌ساز اپلیکیشن</a>
+                    </div>
+
+            <!-- Left Side (RTL End): Auth Button & Mobile Menu Trigger -->
+            <div class="flex items-center gap-2">
+                <button id="btn-open-auth-modal" data-target="auth-modal" class="btn-nav-auth btn-open-dialog hidden md:inline-flex">
+                    <i class="ph-bold ph-user-circle text-lg"></i>
+                    <span>ورود / ثبت‌نام</span>
+                </button>
+                <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="منوی موبایل">
+                    <i class="ph ph-list text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+        <!-- Mobile Navigation Drawer Overlay -->
+        <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
+
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobile-menu-drawer" class="mobile-menu-drawer">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-[var(--color-border-subtle)]">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-white shadow-md">
+                        <i class="ph-fill ph-sun text-xl"></i>
+                    </div>
+                    <span class="text-lg font-bold text-[#38140B]">روزنه</span>
+                </div>
+                <button id="mobile-menu-close" class="w-9 h-9 rounded-xl bg-white border-2 border-[var(--color-border-subtle)] flex items-center justify-center text-[#38140B] text-lg cursor-pointer">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            
+            <div class="flex flex-col gap-3 font-semibold text-base py-2">
+                <a href="#services" class="mobile-nav-link text-[#38140B] hover:text-[var(--color-primary)] py-2.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                    <span>ویژگی‌ها</span>
+                    <i class="ph ph-caret-left text-sm opacity-60"></i>
+                </a>
+                <a href="#gallery" class="mobile-nav-link text-[#38140B] hover:text-[var(--color-primary)] py-2.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                    <span>سرورها</span>
+                    <i class="ph ph-caret-left text-sm opacity-60"></i>
+                </a>
+                <a href="#pricing" class="mobile-nav-link text-[#38140B] hover:text-[var(--color-primary)] py-2.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                    <span>اشتراک‌ها</span>
+                    <i class="ph ph-caret-left text-sm opacity-60"></i>
+                </a>
+                <a href="#checkout-section" class="mobile-nav-link text-[#38140B] hover:text-[var(--color-primary)] py-2.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                    <span>آموزش اتصال</span>
+                    <i class="ph ph-caret-left text-sm opacity-60"></i>
+                </a>
+                <a href="mobile.html" target="_blank" class="mobile-nav-link text-[var(--color-primary)] font-bold py-2.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+                    <span>شبیه‌ساز اپلیکیشن</span>
+                    <i class="ph-bold ph-smartphone text-lg"></i>
+                </a>
+            </div>
+
+            <div class="mt-auto pt-6 border-t border-[var(--color-border-subtle)]">
+                <button id="mobile-drawer-auth-btn" data-target="auth-modal" class="btn-open-dialog w-full py-3 rounded-full bg-[var(--color-primary)] text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="ph-bold ph-user-circle text-lg"></i>
+                    <span>ورود / ثبت‌نام حساب</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Rozaneh Multi-Slide Carousel Hero Section -->
+        <section id="hero-section">
+            <div class="hero-glow-orb-1"></div>
+            <div class="hero-glow-orb-2"></div>
+            
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Hero Slider Track -->
+                <div class="hero-slider-track" id="hero-slider-track">
+                    
+                    <!-- SLIDE 1: Streaming (استریم روان 4K) -->
+                    <div class="hero-slide active" data-slide-index="0">
+                        <div class="hero-grid-container grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                            <!-- Main Text & Mobile Content Column -->
+                            <div class="hero-text-col lg:col-span-7 flex flex-col justify-center">
+                                <h1 class="hero-title text-2xl sm:text-4xl lg:text-6xl font-black mb-4 sm:mb-6 text-center lg:text-right">
+                                    تماشای بدون وقفه،<br>
+                                    <span class="gradient-text-pink">کیفیت 4K</span> بدون بافر
+                                </h1>
+                                <p class="hero-description mb-6 sm:mb-8 max-w-2xl text-center lg:text-right mx-auto lg:mx-0">
+                                    دسترسی پرسرعت و پایدار به یوتیوب، نتفلیکس، توییچ و تمامی پلتفرم‌های پخش فیلم و موسیقی جهان.
+                                </p>
+                                
+                                <!-- Mobile Image (Slide 1) -->
+                                <div class="hero-visual-col-mobile block lg:hidden my-6">
+                                    <div class="hero-visual-container flex justify-center">
+                                        <div class="hero-clay-frame">
+                                            <img src="./rozaneh_stream_clay.png" alt="Rozaneh 3D TV Clay Stream Illustration" fetchpriority="high" class="hero-clay-image"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Buttons (Slide 1) -->
+                                <div class="hero-cta-group flex flex-wrap gap-4 mb-8 sm:mb-14">
+                                    <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn-hero-primary">
+                                        <i class="ph-fill ph-play-circle text-xl"></i>
+                                        <span>شروع رایگان استریم</span>
+                                    </a>
+                                    <a href="#services" class="btn-hero-secondary">
+                                        <span>بررسی سرویس‌های بهینه</span>
+                                    </a>
+                                </div>
+
+                                <!-- Stats (Slide 1) -->
+                                <div class="hero-stats-group mt-6">
+                                    <div class="stat-item">
+                                        <span class="stat-val-pink stat-counter stat-num-ltr" data-target="99.9">99.9%</span>
+                                        <span class="stat-label-text">آپتایم سرورها</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-val-purple stat-counter stat-num-ltr" data-target="0">0%</span>
+                                        <span class="stat-label-text">بافرینگ ویدئو</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-val-blue stat-counter stat-gbps stat-num-ltr" data-target="10"><bdi dir="ltr">10 Gbps</bdi></span>
+                                        <span class="stat-label-text">پهنای باند پورت‌ها</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Desktop Image (Slide 1) -->
+                            <div class="hero-visual-col-desktop hidden lg:block lg:col-span-5 relative mt-6 lg:mt-0">
+                                <div class="hero-visual-container">
+                                    <div class="floating-card-top-left">
+                                        <div class="card-icon-orange">
+                                            <i class="ph-fill ph-film-strip"></i>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="card-title-bold">بدون بافر و تاخیر</span>
+                                            <span class="card-subtitle-muted">کیفیت تصویر 4K UHD</span>
+                                        </div>
+                                    </div>
+                                    <div class="hero-clay-frame">
+                                        <img src="./rozaneh_stream_clay.png" alt="Rozaneh 3D TV Clay Stream Illustration" fetchpriority="high" class="hero-clay-image"/>
+                                    </div>
+                                    <div class="floating-card-bottom-right">
+                                        <div class="card-icon-blue">
+                                            <i class="ph-fill ph-broadcast"></i>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="card-title-bold">استریم لایو و توییچ</span>
+                                            <span class="card-subtitle-muted">پایداری کامل در لایو سرورها</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SLIDE 2: Gaming (گیمینگ با پینگ کمینه) -->
+                    <div class="hero-slide" data-slide-index="1">
+                        <div class="hero-grid-container grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                            <div class="hero-text-col lg:col-span-7 flex flex-col justify-center">
+                                <h2 class="hero-title text-2xl sm:text-4xl lg:text-6xl font-black mb-4 sm:mb-6 text-center lg:text-right">
+                                    سرعت بی‌رقیب،<br>
+                                    <span class="gradient-text-pink" style="background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">پینگ کمینه</span> برای گیمرها
+                                </h2>
+                                <p class="hero-description mb-6 sm:mb-8 max-w-2xl text-center lg:text-right mx-auto lg:mx-0">
+                                    مسیریابی فوق‌کوتاه و هوشمند، جیتر نزدیک به صفر و پایداری کامل در بازی‌های آنلاین بدون افت کیفیت.
+                                </p>
+                                
+                                <!-- Mobile Image (Slide 2) -->
+                                <div class="hero-visual-col-mobile block lg:hidden my-6">
+                                    <div class="hero-visual-container flex justify-center">
+                                        <div class="hero-clay-frame">
+                                            <img src="./rozaneh_game_peach.jpg" alt="Rozaneh 3D Gaming Controller" class="hero-clay-image"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Buttons (Slide 2) -->
+                                <div class="hero-cta-group flex flex-wrap gap-4 mb-8 sm:mb-14">
+                                    <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn-hero-primary" style="background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);">
+                                        <i class="ph-bold ph-game-controller text-xl"></i>
+                                        <span>تست پینگ گیمینگ</span>
+                                    </a>
+                                    <a href="#gallery" class="btn-hero-secondary">
+                                        <span>بررسی سرورهای اختصاصی</span>
+                                    </a>
+                                </div>
+
+                                <!-- Stats (Slide 2) -->
+                                <div class="hero-stats-group mt-6">
+                                    <div class="stat-item">
+                                        <span class="stat-val-pink stat-num-ltr" style="color: #EC4899;"><bdi dir="ltr">&lt; 45 ms</bdi></span>
+                                        <span class="stat-label-text">پینگ سرور اروپا</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-val-purple stat-num-ltr"><bdi dir="ltr">~ 0 ms</bdi></span>
+                                        <span class="stat-label-text">جیتر شبکه</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-val-blue stat-num-ltr"><bdi dir="ltr">100%</bdi></span>
+                                        <span class="stat-label-text">بدون پکت لاس</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Desktop Image (Slide 2) -->
+                            <div class="hero-visual-col-desktop hidden lg:block lg:col-span-5 relative mt-6 lg:mt-0">
+                                <div class="hero-visual-container">
+                                    <div class="floating-card-top-left">
+                                        <div class="card-icon-orange" style="background: #FCE7F3; color: #EC4899;">
+                                            <i class="ph-bold ph-game-controller"></i>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="card-title-bold">مسیریابی گیمینگ</span>
+                                            <span class="card-subtitle-muted">پایداری در رقابت‌ها</span>
+                                        </div>
+                                    </div>
+                                    <div class="hero-clay-frame">
+                                        <img src="./rozaneh_game_peach.jpg" alt="Rozaneh 3D Gaming Controller" class="hero-clay-image"/>
+                                    </div>
+                                    <div class="floating-card-bottom-right">
+                                        <div class="card-icon-blue" style="background: #EDE9FE; color: #8B5CF6;">
+                                            <i class="ph-bold ph-chart-line-up"></i>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="card-title-bold">جیتر نزدیک به صفر</span>
+                                            <span class="card-subtitle-muted">بدون تاخیر ناگهانی</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SLIDE 3: Speed & Portal (اینترنت پایدار و سریع) -->
+                    <div class="hero-slide" data-slide-index="2">
+                        <div class="hero-grid-container grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                            <div class="hero-text-col lg:col-span-7 flex flex-col justify-center">
+                                <h2 class="hero-title text-2xl sm:text-4xl lg:text-6xl font-black mb-4 sm:mb-6 text-center lg:text-right">
+                                    اینترنت پایدار و سریع،<br>
+                                    <span class="gradient-text-pink" style="background: linear-gradient(135deg, #FF661A 0%, #D97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">متناسب با اپراتور شما</span>
+                                </h2>
+                                <p class="hero-description mb-6 sm:mb-8 max-w-2xl text-center lg:text-right mx-auto lg:mx-0">
+                                    روزنه با انتخاب هوشمند مسیر و پروتکل‌های مدرن، اتصالی مطمئن برای وبگردی، سرویس‌های مالی و تمامی اپراتورهای همراه و خانگی فراهم می‌سازد.
+                                </p>
+                                
+                                <!-- Mobile Image (Slide 3) -->
+                                <div class="hero-visual-col-mobile block lg:hidden my-6">
+                                    <div class="hero-visual-container flex justify-center">
+                                        <div class="hero-clay-frame">
+                                            <img src="./rozaneh_rocket_clay.jpg" alt="Rozaneh 3D Rocket Connection" class="hero-clay-image"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Buttons (Slide 3) -->
+                                <div class="hero-cta-group flex flex-wrap gap-4 mb-8 sm:mb-14">
+                                    <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn-hero-primary">
+                                        <i class="ph-bold ph-rocket-launch text-xl"></i>
+                                        <span>شروع رایگان با ۲ گیگ هدیه</span>
+                                    </a>
+                                    <a href="#checkout-section" class="btn-hero-secondary">
+                                        <span>آموزش سریع اتصال</span>
+                                    </a>
+                                </div>
+
+                                <!-- Stats (Slide 3) -->
+                                <div class="hero-stats-group mt-6">
+                                    <div class="stat-item">
+                                        <span class="stat-val-pink stat-num-ltr"><bdi dir="ltr">2.5K+</bdi></span>
+                                        <span class="stat-label-text">کاربر فعال</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-val-purple stat-num-ltr"><bdi dir="ltr">99.9%</bdi></span>
+                                        <span class="stat-label-text">آپتایم شبکه</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-val-blue stat-num-ltr"><bdi dir="ltr">24/7</bdi></span>
+                                        <span class="stat-label-text">پایش سرورها</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Desktop Image (Slide 3) -->
+                            <div class="hero-visual-col-desktop hidden lg:block lg:col-span-5 relative mt-6 lg:mt-0">
+                                <div class="hero-visual-container">
+                                    <div class="floating-card-top-left">
+                                        <div class="card-icon-orange">
+                                            <i class="ph-bold ph-lightning"></i>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="card-title-bold">سرعت فوق‌العاده</span>
+                                            <span class="card-subtitle-muted">مسیریابی هوشمند</span>
+                                        </div>
+                                    </div>
+                                    <div class="hero-clay-frame">
+                                        <img src="./rozaneh_rocket_clay.jpg" alt="Rozaneh 3D Rocket Connection" class="hero-clay-image"/>
+                                    </div>
+                                    <div class="floating-card-bottom-right">
+                                        <div class="card-icon-blue">
+                                            <i class="ph-bold ph-shield-check"></i>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="card-title-bold">پروتکل Reality</span>
+                                            <span class="card-subtitle-muted">محافظت از داده‌ها</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Slider Navigation Controls (Dots & Arrows) -->
+                <div class="hero-slider-nav flex items-center justify-center gap-4 mt-8">
+                    <button class="hero-slide-prev w-10 h-10 rounded-full bg-white border-2 border-[var(--color-border-subtle)] text-[#38140B] hover:bg-[#FFF5EA] hover:text-[var(--color-primary)] flex items-center justify-center transition-all shadow-sm cursor-pointer" aria-label="اسلاید قبلی">
+                        <i class="ph-bold ph-caret-right text-lg"></i>
+                    </button>
+                    
+                    <div class="hero-slider-dots flex items-center gap-2">
+                        <span class="hero-dot active" data-slide-target="0"></span>
+                        <span class="hero-dot" data-slide-target="1"></span>
+                        <span class="hero-dot" data-slide-target="2"></span>
+                    </div>
+
+                    <button class="hero-slide-next w-10 h-10 rounded-full bg-white border-2 border-[var(--color-border-subtle)] text-[#38140B] hover:bg-[#FFF5EA] hover:text-[var(--color-primary)] flex items-center justify-center transition-all shadow-sm cursor-pointer" aria-label="اسلاید بعدی">
+                        <i class="ph-bold ph-caret-left text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+
+
+        <!-- Services Compatibility Marquee Section (64px Padding, 10 Unified Logo Cards, Fade Masking) -->
+        <section class="services-marquee-section border-t border-b border-[#EEDFD5]/60">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-8">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] mb-3 leading-tight tracking-tight">
+                    سرویس‌های موردعلاقه‌ات، بدون دردسر در دسترس‌اند
+                </h2>
+                <p class="text-xs sm:text-sm text-[var(--color-text-muted)] max-w-2xl mx-auto font-medium leading-relaxed">
+                    از ابزارهای هوش مصنوعی و سرویس‌های توسعه‌دهندگان تا استریم و پرداخت‌های بین‌المللی؛ با سرورهای بهینه و IP تمیز روزنه.
+                </p>
+            </div>
+
+            <!-- Loop Marquee Container with Fade Masking -->
+            <div class="marquee-container">
+                <div class="marquee-content">
+                    
+                    <!-- 10 Unified Services Cards (Set 1) -->
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cpu text-lg text-emerald-600"></i>
+                        <span class="font-en">ChatGPT</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-sparkle text-lg text-blue-600"></i>
+                        <span class="font-en">Gemini</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-robot text-lg text-amber-600"></i>
+                        <span class="font-en">Claude</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-github-logo text-lg text-gray-900"></i>
+                        <span class="font-en">GitHub</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cube text-lg text-sky-600"></i>
+                        <span class="font-en">Docker</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cloud text-lg text-blue-500"></i>
+                        <span class="font-en">Google Cloud</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-youtube-logo text-lg text-red-600"></i>
+                        <span class="font-en">YouTube</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-spotify-logo text-lg text-emerald-500"></i>
+                        <span class="font-en">Spotify</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-figma-logo text-lg text-purple-600"></i>
+                        <span class="font-en">Figma</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-currency-btc text-lg text-amber-500"></i>
+                        <span class="font-en">Binance</span>
+                    </div>
+
+                    <!-- Repeat Set 2 for Infinite Loop -->
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cpu text-lg text-emerald-600"></i>
+                        <span class="font-en">ChatGPT</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-sparkle text-lg text-blue-600"></i>
+                        <span class="font-en">Gemini</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-robot text-lg text-amber-600"></i>
+                        <span class="font-en">Claude</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-github-logo text-lg text-gray-900"></i>
+                        <span class="font-en">GitHub</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cube text-lg text-sky-600"></i>
+                        <span class="font-en">Docker</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cloud text-lg text-blue-500"></i>
+                        <span class="font-en">Google Cloud</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-youtube-logo text-lg text-red-600"></i>
+                        <span class="font-en">YouTube</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-spotify-logo text-lg text-emerald-500"></i>
+                        <span class="font-en">Spotify</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-figma-logo text-lg text-purple-600"></i>
+                        <span class="font-en">Figma</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-currency-btc text-lg text-amber-500"></i>
+                        <span class="font-en">Binance</span>
+                    </div>
+
+                    <!-- Repeat Set 3 for Seamless Seamless Loop -->
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cpu text-lg text-emerald-600"></i>
+                        <span class="font-en">ChatGPT</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-sparkle text-lg text-blue-600"></i>
+                        <span class="font-en">Gemini</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-robot text-lg text-amber-600"></i>
+                        <span class="font-en">Claude</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-github-logo text-lg text-gray-900"></i>
+                        <span class="font-en">GitHub</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cube text-lg text-sky-600"></i>
+                        <span class="font-en">Docker</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-cloud text-lg text-blue-500"></i>
+                        <span class="font-en">Google Cloud</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-youtube-logo text-lg text-red-600"></i>
+                        <span class="font-en">YouTube</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-spotify-logo text-lg text-emerald-500"></i>
+                        <span class="font-en">Spotify</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-figma-logo text-lg text-purple-600"></i>
+                        <span class="font-en">Figma</span>
+                    </div>
+                    <div class="marquee-card">
+                        <i class="ph-bold ph-currency-btc text-lg text-amber-500"></i>
+                        <span class="font-en">Binance</span>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section (Bento Grid Technical Features) -->
+        <section id="services" class="py-16 sm:py-24 bg-[var(--color-bg-alt)]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Section Header -->
+                <div class="text-center mb-10 sm:mb-12">
+                    <div class="badge badge-primary mx-auto mb-4">
+                        <i class="ph-bold ph-shield-check text-base text-[var(--color-primary)]"></i>
+                        <span>زیرساخت اختصاصی روزنه</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-[var(--color-text)] mb-4 leading-tight">
+                        روزنه فقط یک سرور نیست؛ <span class="gradient-text">یک مسیر هوشمند برای اینترنت شماست</span>
+                    </h2>
+                    <p class="text-base sm:text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto font-medium leading-relaxed mb-6">
+                        موتور مسیر روزنه، نوع استفاده و کیفیت شبکه را بررسی می‌کند و اتصال شما را از مناسب‌ترین مسیر موجود عبور می‌دهد.
+                    </p>
+
+                    <!-- Interactive Mode Filter Tabs -->
+                    <div class="flex justify-center gap-2 sm:gap-3 mt-6 flex-wrap" role="tablist" aria-label="انتخاب نوع استفاده از شبکه">
+                        <button class="feature-mode-tab active" data-mode="daily" role="tab" aria-selected="true">
+                            <i class="ph-bold ph-planet"></i>
+                            <span>استفاده روزمره</span>
+                        </button>
+                        <button class="feature-mode-tab" data-mode="ai" role="tab" aria-selected="false">
+                            <i class="ph-bold ph-cpu"></i>
+                            <span>هوش مصنوعی و ابزارها</span>
+                        </button>
+                        <button class="feature-mode-tab" data-mode="game" role="tab" aria-selected="false">
+                            <i class="ph-bold ph-game-controller"></i>
+                            <span>بازی و استریم</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bento Grid Layout (Clean 3-Card High-Craft Architecture) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                    
+                    <!-- Card 1: Main Route Engine Card (Spans 7 cols) -->
+                    <div class="lg:col-span-7 clay-card p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden bg-white/90">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="badge badge-primary font-bold text-xs">موتور هوشمند مسیریابی روزنه</span>
+                            <span class="badge badge-primary text-xs hidden sm:inline-flex" id="feature-route-state">مسیر پایدار</span>
+                        </div>
+                        
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-2xl bg-orange-100/90 border-2 border-orange-300 flex items-center justify-center text-2xl text-[var(--color-primary)] flex-shrink-0">
+                                <i class="ph-bold ph-gauge"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl sm:text-2xl font-bold text-[var(--color-text)] mb-1" id="feature-route-title">مسیر هوشمند برای اتصال پایدارتر</h3>
+                                <p class="text-sm sm:text-base text-[var(--color-text-muted)] font-medium max-w-lg leading-relaxed" id="feature-route-copy">
+                                    مسیریابی پویا، مسیر مناسب را بر اساس اپراتور و وضعیت لحظه‌ای شبکه انتخاب می‌کند.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Live Route Visualizer Container (50% Centered Axis with Travelling Pulse) -->
+                        <div class="feature-route-box my-2 p-5 sm:p-8 rounded-2xl border-2 border-[var(--color-border)] bg-white relative flex items-center justify-between overflow-hidden" aria-label="نمایش مسیر اتصال از کاربر تا سرور مقصد">
+                            
+                            <!-- User Node -->
+                            <div class="flex flex-col items-center gap-2 relative z-10">
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white border-2 border-[var(--color-border)] flex items-center justify-center text-xl text-[var(--color-text)] shadow-sm">
+                                    <i class="ph-bold ph-devices"></i>
+                                </div>
+                                <span class="text-xs font-bold text-[var(--color-text-muted)]">دستگاه شما</span>
+                            </div>
+
+                            <!-- Rozaneh Core Sun Node -->
+                            <div class="flex flex-col items-center gap-2 relative z-10">
+                                <div class="feature-core-orb flex items-center justify-center" aria-label="هسته شبکه روزنه">
+                                    <i class="ph-bold ph-sun-dim text-white text-xl relative z-10"></i>
+                                </div>
+                                <span class="text-xs font-bold text-[var(--color-primary)]">شبکه روزنه</span>
+                            </div>
+
+                            <!-- Destination Node -->
+                            <div class="flex flex-col items-center gap-2 relative z-10">
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 border-2 border-emerald-300 flex items-center justify-center text-xl text-emerald-600 shadow-sm">
+                                    <i class="ph-bold ph-shield-check"></i>
+                                </div>
+                                <span class="text-xs font-bold text-emerald-700">سرویس مقصد</span>
+                            </div>
+
+                            <!-- Route Line & Traveling Pulse Dot -->
+                            <div class="feature-route-line" aria-hidden="true"></div>
+                            <div class="feature-pulse-dot" aria-hidden="true"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: 2 Clean Compact Cards (Spans 5 cols) -->
+                    <div class="lg:col-span-5 flex flex-col gap-6">
+                        
+                        <!-- Card 2: Dedicated Static IP Card (High-Craft IP Badge & Platform Chips) -->
+                        <div class="clay-card p-5 sm:p-6 flex flex-col justify-between relative bg-white/95 border-2 border-[#FFE4CB] rounded-3xl shadow-sm">
+                            <div class="flex items-center justify-between gap-3 mb-3">
+                                <div class="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-xl text-blue-600 flex-shrink-0 shadow-xs">
+                                    <i class="ph-bold ph-key"></i>
+                                </div>
+                                <div class="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>آی‌پی ثابت:</span>
+                                    <bdi dir="ltr" class="font-mono text-emerald-800">185.162.24.8</bdi>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h3 class="text-base sm:text-lg font-bold text-[#38140B] mb-1">آی‌پی ثابت برای سرویس‌های حساس</h3>
+                                <p class="text-xs sm:text-sm text-[var(--color-text-muted)] font-medium leading-relaxed">
+                                    سرورهای منتخب با IP اختصاصی و بدون تغییر برای ابزارهای کاری، ترید و هوش مصنوعی.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-[#FFE4CB]/60">
+                                <span class="px-3 py-1 rounded-full bg-blue-50/80 border border-blue-200 text-[11px] font-extrabold text-blue-700">OpenAI</span>
+                                <span class="px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200 text-[11px] font-extrabold text-slate-800">GitHub</span>
+                                <span class="px-3 py-1 rounded-full bg-amber-50/80 border border-amber-200 text-[11px] font-extrabold text-amber-700">Binance</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Privacy & Security Card -->
+                        <div class="clay-card p-5 sm:p-6 flex flex-col justify-between relative bg-white/95 border-2 border-[#FFE4CB] rounded-3xl shadow-sm">
+                            <div class="flex items-center justify-between gap-3 mb-3">
+                                <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-xl text-emerald-600 flex-shrink-0 shadow-xs">
+                                    <i class="ph-bold ph-shield-checkered"></i>
+                                </div>
+                                <span class="px-3 py-1.5 rounded-full bg-purple-50 border border-purple-200 text-xs font-bold text-purple-700 flex items-center gap-1.5">
+                                    <i class="ph-bold ph-lock text-xs"></i>
+                                    <span>VLESS & Reality</span>
+                                </span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-base sm:text-lg font-bold text-[#38140B] mb-1">حفاظت از اطلاعات و عدم ثبت لاگ</h3>
+                                <p class="text-xs sm:text-sm text-[var(--color-text-muted)] font-medium leading-relaxed">
+                                    تنظیمات استاندارد برای جلوگیری از نشت داده‌های شبکه و حفظ بی‌قیدوشرط حریم خصوصی.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-2 pt-3 border-t border-[#FFE4CB]/60 flex-wrap">
+                                <span class="px-3 py-1 rounded-full bg-emerald-50/80 border border-emerald-200 text-[11px] font-extrabold text-emerald-700 flex items-center gap-1">
+                                    <i class="ph-bold ph-check-circle text-xs"></i>
+                                    <span>عدم ثبت لاگ (No-Log)</span>
+                                </span>
+                                <span class="px-3 py-1 rounded-full bg-purple-50/80 border border-purple-200 text-[11px] font-extrabold text-purple-700 flex items-center gap-1">
+                                    <i class="ph-bold ph-shield text-xs"></i>
+                                    <span>DNS Shield</span>
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                </div>
+            </div>
+        </section>
+
+
+                <!-- Native Dialog Modals -->
+                <!-- Dialog 1: Speed & Ping -->
+                <dialog id="dialog-speed" class="clay-dialog">
+                    <div class="dialog-wrapper">
+                        <button class="btn-close-dialog" aria-label="بستن"><i class="ph-bold ph-x"></i></button>
+                        <div class="dialog-header flex items-center gap-4 mb-4">
+                            <div class="dialog-icon-badge" style="background-color:rgba(255, 122, 60, 0.15)">🚀</div>
+                            <h3 class="text-xl font-bold text-[var(--color-text)]">سرعت بالا و پینگ پایدار</h3>
+                        </div>
+                        <div class="dialog-body text-[var(--color-text-muted)] font-medium leading-relaxed mb-6">
+                            <p class="mb-4">روزنه با ارائه سرورهای اختصاصی و بهینه‌سازی مسیرهای اینترنتی، حداقل پینگ ممکن و بالاترین سرعت انتقال داده را فراهم می‌کند.</p>
+                            <ul class="list-disc pr-6 space-y-2">
+                                <li>پینگ بسیار پایین مناسب برای بازی‌های آنلاین رقابتی</li>
+                                <li>پهنای باند نامحدود اختصاصی بدون قطعی</li>
+                                <li>بهینه‌سازی ویژه برای استریم 4K یوتیوب و پلتفرم‌های فیلم</li>
+                            </ul>
+                        </div>
+                        <div class="dialog-footer flex justify-between items-center border-t border-[var(--color-border)]/50 pt-4">
+                            <span class="text-xs text-[var(--color-text-muted)] font-bold">بستر اختصاصی بازی و وبگردی</span>
+                            <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn btn-primary py-2 px-6 text-sm">دریافت تست</a>
+                        </div>
+                    </div>
+                </dialog>
+
+                <!-- Dialog 2: Static IP -->
+                <dialog id="dialog-static" class="clay-dialog">
+                    <div class="dialog-wrapper">
+                        <button class="btn-close-dialog" aria-label="بستن"><i class="ph-bold ph-x"></i></button>
+                        <div class="dialog-header flex items-center gap-4 mb-4">
+                            <div class="dialog-icon-badge" style="background-color:rgba(37, 99, 235, 0.15)">🔑</div>
+                            <h3 class="text-xl font-bold text-[var(--color-text)]">آی‌پی ثابت و تمیز (Static)</h3>
+                        </div>
+                        <div class="dialog-body text-[var(--color-text-muted)] font-medium leading-relaxed mb-6">
+                            <p class="mb-4">آی‌پی‌های ثابت و اختصاصی روزنه کاملاً تمیز و بدون تاریخچه سوء استفاده بوده و برای امنیت حساب‌های مالی و تراکنش‌های حساس شما مناسب هستند.</p>
+                            <ul class="list-disc pr-6 space-y-2">
+                                <li>ثبات ۱۰۰٪ آی‌پی در طول کل زمان اتصال شما</li>
+                                <li>رنج آی‌پی‌های امن و تست شده در صرافی‌های بین‌المللی مثل بایننس</li>
+                                <li>جلوگیری قطعی از ریسک مسدودی دارایی‌های دیجیتال</li>
+                            </ul>
+                        </div>
+                        <div class="dialog-footer flex justify-between items-center border-t border-[var(--color-border)]/50 pt-4">
+                            <span class="text-xs text-[var(--color-text-muted)] font-bold">امنیت مطلق فعالیت‌های مالی</span>
+                            <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn btn-primary py-2 px-6 text-sm">دریافت تست</a>
+                        </div>
+                    </div>
+                </dialog>
+
+                <!-- Dialog 3: IP/DNS Leak -->
+                <dialog id="dialog-leak" class="clay-dialog">
+                    <div class="dialog-wrapper">
+                        <button class="btn-close-dialog" aria-label="بستن"><i class="ph-bold ph-x"></i></button>
+                        <div class="dialog-header flex items-center gap-4 mb-4">
+                            <div class="dialog-icon-badge" style="background-color:rgba(236, 72, 153, 0.15)">🛡️</div>
+                            <h3 class="text-xl font-bold text-[var(--color-text)]">عدم نشت IP و DNS</h3>
+                        </div>
+                        <div class="dialog-body text-[var(--color-text-muted)] font-medium leading-relaxed mb-6">
+                            <p class="mb-4">حتی در صورت بروز نوسانات شبکه یا قطع اتصال ناگهانی، سیستم محافظتی روزنه از افشای لوکیشن یا DNS واقعی شما کاملاً جلوگیری می‌کند.</p>
+                            <ul class="list-disc pr-6 space-y-2">
+                                <li>مجهز به Kill Switch بومی پیشرفته در کلاینت‌ها</li>
+                                <li>تونل‌سازی کامل ترافیک IPv6 و جلوگیری از نشت آن</li>
+                                <li>سرورهای DNS خصوصی با پاسخگویی رمزنگاری‌شده</li>
+                            </ul>
+                        </div>
+                        <div class="dialog-footer flex justify-between items-center border-t border-[var(--color-border)]/50 pt-4">
+                            <span class="text-xs text-[var(--color-text-muted)] font-bold">حفاظت ۱۰۰٪ هویت واقعی</span>
+                            <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn btn-primary py-2 px-6 text-sm">دریافت تست</a>
+                        </div>
+                    </div>
+                </dialog>
+
+                <!-- Dialog 4: Privacy -->
+                <dialog id="dialog-privacy" class="clay-dialog">
+                    <div class="dialog-wrapper">
+                        <button class="btn-close-dialog" aria-label="بستن"><i class="ph-bold ph-x"></i></button>
+                        <div class="dialog-header flex items-center gap-4 mb-4">
+                            <div class="dialog-icon-badge" style="background-color:rgba(236, 72, 153, 0.15)">🔒</div>
+                            <h3 class="text-xl font-bold text-[var(--color-text)]">حریم خصوصی بی‌قیدوشرط</h3>
+                        </div>
+                        <div class="dialog-body text-[var(--color-text-muted)] font-medium leading-relaxed mb-6">
+                            <p class="mb-4">ما به حریم خصوصی شما احترام کامل می‌گذاریم و هیچ‌گونه سابقه یا لاگی از فعالیت‌ها، سایت‌های بازدید شده یا لاگین‌هایتان ذخیره نمی‌کنیم.</p>
+                            <ul class="list-disc pr-6 space-y-2">
+                                <li>سیاست رسمی عدم ثبت لاگ فعالیت‌ها (No-Logs Policy)</li>
+                                <li>عدم وابستگی به سازمان‌ها یا واسطه‌های اطلاعاتی</li>
+                                <li>رمزنگاری فوق پیشرفته ترافیک برای وبگردی کاملاً ناشناس</li>
+                            </ul>
+                        </div>
+                        <div class="dialog-footer flex justify-between items-center border-t border-[var(--color-border)]/50 pt-4">
+                            <span class="text-xs text-[var(--color-text-muted)] font-bold">وبگردی آزاد و کاملاً خصوصی</span>
+                            <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn btn-primary py-2 px-6 text-sm">دریافت تست</a>
+                        </div>
+                    </div>
+                </dialog>
+
+                <!-- Dialog 5: Support -->
+                <dialog id="dialog-support" class="clay-dialog">
+                    <div class="dialog-wrapper">
+                        <button class="btn-close-dialog" aria-label="بستن"><i class="ph-bold ph-x"></i></button>
+                        <div class="dialog-header flex items-center gap-4 mb-4">
+                            <div class="dialog-icon-badge" style="background-color:rgba(37, 99, 235, 0.15)">🤝</div>
+                            <h3 class="text-xl font-bold text-[var(--color-text)]">پشتیبانی شبانه‌روزی ۲۴/۷</h3>
+                        </div>
+                        <div class="dialog-body text-[var(--color-text-muted)] font-medium leading-relaxed mb-6">
+                            <p class="mb-4">پشتیبانی ما فراتر از ربات‌های پیام‌رسان است. کارشناسان شبکه واقعی در تمام طول شبانه‌روز آماده حل مشکلات و بهینه‌سازی اتصال شما هستند.</p>
+                            <ul class="list-disc pr-6 space-y-2">
+                                <li>پاسخگویی فوق‌العاده سریع با میانگین زمان زیر ۵ دقیقه</li>
+                                <li>رفع اشکال فنی و مشاوره اختصاصی برای سیستم‌های عامل مختلف</li>
+                                <li>ارائه کانفیگ‌های جایگزین و اختصاصی در زمان شلوغی شبکه</li>
+                            </ul>
+                        </div>
+                        <div class="dialog-footer flex justify-between items-center border-t border-[var(--color-border)]/50 pt-4">
+                            <span class="text-xs text-[var(--color-text-muted)] font-bold">همراه شما در تمام لحظات</span>
+                            <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn btn-primary py-2 px-6 text-sm">دریافت تست</a>
+                        </div>
+                    </div>
+                </dialog>
+
+                <!-- Dialog 6: Whitelist Routing -->
+                <dialog id="dialog-whitelist" class="clay-dialog">
+                    <div class="dialog-wrapper">
+                        <button class="btn-close-dialog" aria-label="بستن"><i class="ph-bold ph-x"></i></button>
+                        <div class="dialog-header flex items-center gap-4 mb-4">
+                            <div class="dialog-icon-badge" style="background-color:rgba(255, 122, 60, 0.15)">🌐</div>
+                            <h3 class="text-xl font-bold text-[var(--color-text)]">خروجی ترافیک وایت‌لیست</h3>
+                        </div>
+                        <div class="dialog-body text-[var(--color-text-muted)] font-medium leading-relaxed mb-6">
+                            <p class="mb-4">سرورهای روزنه در رنج‌های وایت‌لیست‌شده معتبر قرار دارند؛ این امر مانع از نمایش مکرر کپچاهای گوگل یا بلاک شدن توسط سپرهای کلودفلر می‌گردد.</p>
+                            <ul class="list-disc pr-6 space-y-2">
+                                <li>کاهش چشمگیر و چشم‌پوشی از کپچاهای خسته‌کننده گوگل</li>
+                                <li>اتصال مستقیم و سریع به سایت‌های حساس با رنک امنیتی بالا</li>
+                                <li>آی‌پی‌های وایت‌لیست اختصاصی ثبت‌شده در دیتابیس‌های ابری</li>
+                            </ul>
+                        </div>
+                        <div class="dialog-footer flex justify-between items-center border-t border-[var(--color-border)]/50 pt-4">
+                            <span class="text-xs text-[var(--color-text-muted)] font-bold">مرور بدون وقفه و آزاد اینترنت</span>
+                            <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn btn-primary py-2 px-6 text-sm">دریافت تست</a>
+                        </div>
+                    </div>
+                </dialog>
+            </div>
+        </section>
+            </div>
+        </section>
+
+
+
+        <!-- Server Gallery Section — 3D Symmetrical Country Stack Slider -->
+        <section id="gallery" class="py-16 sm:py-24 bg-[var(--color-bg)] border-t-3 border-[var(--color-border)] relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Section Header -->
+                <div class="text-center mb-10 sm:mb-14">
+                    <div class="badge badge-accent mx-auto mb-4">
+                        <i class="ph-bold ph-globe-hemisphere-west text-base text-[var(--color-primary)]"></i>
+                        <span>شبکه جهانی سرورهای روزنه</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-[var(--color-text)] mb-4 leading-tight">
+                        یک مقصد، برای هر کاری <span class="gradient-text">که در وب دارید</span>
+                    </h2>
+                    <p class="text-base sm:text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto font-medium leading-relaxed">
+                        کشور مناسب را انتخاب کنید؛ روزنه سریع‌ترین مسیر را با IP اختصاصی تمیز برایتان آماده می‌کند.
+                    </p>
+                </div>
+
+                <!-- Interactive Server Radar Bar (HD Flag Node Selector) -->
+                <div class="country-radar-bar mb-8 p-3 sm:p-4 rounded-2xl bg-white border-2 border-[var(--color-border)] shadow-sm max-w-3xl mx-auto flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
+                    <button class="radar-node-btn active" data-index="0">
+                        <span class="radar-ping-dot"></span>
+                        <img src="https://flagcdn.com/w40/de.png" alt="DE" class="w-5 h-3.5 object-cover rounded-xs" />
+                        <span class="font-bold text-xs">فرانکفورت</span>
+                        <span class="text-[10px] font-bold opacity-85 font-mono"><bdi dir="ltr">22ms</bdi></span>
+                    </button>
+                    <button class="radar-node-btn" data-index="1">
+                        <span class="radar-ping-dot"></span>
+                        <img src="https://flagcdn.com/w40/nl.png" alt="NL" class="w-5 h-3.5 object-cover rounded-xs" />
+                        <span class="font-bold text-xs">آمستردام</span>
+                        <span class="text-[10px] font-bold opacity-85 font-mono"><bdi dir="ltr">28ms</bdi></span>
+                    </button>
+                    <button class="radar-node-btn" data-index="2">
+                        <span class="radar-ping-dot"></span>
+                        <img src="https://flagcdn.com/w40/fi.png" alt="FI" class="w-5 h-3.5 object-cover rounded-xs" />
+                        <span class="font-bold text-xs">هلسینکی</span>
+                        <span class="text-[10px] font-bold opacity-85 font-mono"><bdi dir="ltr">34ms</bdi></span>
+                    </button>
+                    <button class="radar-node-btn" data-index="3">
+                        <span class="radar-ping-dot"></span>
+                        <img src="https://flagcdn.com/w40/tr.png" alt="TR" class="w-5 h-3.5 object-cover rounded-xs" />
+                        <span class="font-bold text-xs">استانبول</span>
+                        <span class="text-[10px] font-bold opacity-85 font-mono"><bdi dir="ltr">18ms</bdi></span>
+                    </button>
+                    <button class="radar-node-btn" data-index="4">
+                        <span class="radar-ping-dot"></span>
+                        <img src="https://flagcdn.com/w40/ae.png" alt="AE" class="w-5 h-3.5 object-cover rounded-xs" />
+                        <span class="font-bold text-xs">دبی</span>
+                        <span class="text-[10px] font-bold opacity-85 font-mono"><bdi dir="ltr">25ms</bdi></span>
+                    </button>
+                </div>
+
+                <!-- 3D Symmetrical Country Carousel Container -->
+                <div class="country-slider-wrapper relative my-6">
+                    <!-- Nav Arrows (Hidden on Mobile to Prevent Overlap) -->
+                    <button id="country-prev-btn" class="country-arrow-btn prev-btn hidden sm:flex absolute right-0 sm:-right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-2xl bg-white border-2 border-[var(--color-border)] shadow-md items-center justify-center text-[var(--color-text)] hover:text-[var(--color-primary)] transition-all cursor-pointer" aria-label="کشور قبلی">
+                        <i class="ph-bold ph-caret-right text-xl"></i>
+                    </button>
+                    <button id="country-next-btn" class="country-arrow-btn next-btn hidden sm:flex absolute left-0 sm:-left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-2xl bg-white border-2 border-[var(--color-border)] shadow-md items-center justify-center text-[var(--color-text)] hover:text-[var(--color-primary)] transition-all cursor-pointer" aria-label="کشور بعدی">
+                        <i class="ph-bold ph-caret-left text-xl"></i>
+                    </button>
+
+                    <!-- Cards Track Container -->
+                    <div class="country-cards-track relative mx-auto max-w-xl min-h-[460px] flex items-center justify-center py-2">
+                        
+                        <!-- Country 1: Germany (Default Active) -->
+                        <article class="country-3d-card active" data-index="0" data-country="germany">
+                            <div class="country-card-header flex items-center justify-between border-b border-[#FFE4CB]/60 pb-3 mb-4">
+                                <span class="badge badge-primary font-bold text-xs">فرانکفورت — سرور ۰۱</span>
+                                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> آماده اتصال
+                                </span>
+                            </div>
+
+                            <div class="country-card-body flex items-center gap-4 mb-5">
+                                <div class="country-flag-glow-box flex-shrink-0 w-14 h-14 rounded-2xl bg-white border-2 border-[#FFE4CB] flex items-center justify-center shadow-xs overflow-hidden p-1">
+                                    <img src="https://flagcdn.com/w80/de.png" alt="Germany Flag" class="w-full h-full object-cover rounded-xl" fetchpriority="high" />
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-[var(--color-primary)] mb-0.5">دیتاسنتر فرانکفورت</div>
+                                    <h3 class="text-2xl font-black text-[#38140B]">آلمان</h3>
+                                    <p class="text-xs text-[var(--color-text-muted)] font-semibold">بهینه برای استفاده روزمره، وبگردی و دانلود پرسرعت</p>
+                                </div>
+                            </div>
+
+                            <!-- Connection Line Visualizer -->
+                            <div class="country-route-line-box my-4 p-3.5 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] relative flex items-center justify-between">
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center text-sm font-bold text-[#38140B] shadow-xs">
+                                        <i class="ph-bold ph-devices"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-[#38140B]/70">شما</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                                        <i class="ph-bold ph-sun-dim"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-[var(--color-primary)]">مسیر روزنه</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center overflow-hidden p-0.5 shadow-xs">
+                                        <img src="https://flagcdn.com/w80/de.png" alt="Germany" class="w-full h-full object-cover rounded-lg" />
+                                    </div>
+                                    <span class="text-[10px] font-bold text-emerald-700">سرور آلمان</span>
+                                </div>
+                                <div class="mini-line-track"></div>
+                            </div>
+
+                            <!-- Live Country Ping Only (Ultra-Clean Single Metric) -->
+                            <div class="mt-4 pt-4 border-t border-[#FFE4CB]/60">
+                                <div class="p-3 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span class="text-xs font-bold text-[#38140B]/80">پینگ زنده شبکه:</span>
+                                    </div>
+                                    <strong class="text-base font-black text-[var(--color-primary)] font-mono"><bdi dir="ltr" id="ping-val-0">22 ms</bdi></strong>
+                                </div>
+                            </div>
+
+                            <!-- Ping Test Action Button -->
+                            <button class="btn btn-primary w-full mt-4 py-3 text-xs font-black btn-test-country-ping" data-index="0" data-country="germany">
+                                <i class="ph-bold ph-lightning text-sm"></i>
+                                <span>تست آنلاین پینگ سرور آلمان</span>
+                            </button>
+                        </article>
+
+                        <!-- Country 2: Netherlands -->
+                        <article class="country-3d-card" data-index="1" data-country="netherlands">
+                            <div class="country-card-header flex items-center justify-between border-b border-[#FFE4CB]/60 pb-3 mb-4">
+                                <span class="badge badge-accent font-bold text-xs">آمستردام — سرور ۰۲</span>
+                                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> آماده اتصال
+                                </span>
+                            </div>
+
+                            <div class="country-card-body flex items-center gap-4 mb-5">
+                                <div class="country-flag-glow-box flex-shrink-0 w-14 h-14 rounded-2xl bg-white border-2 border-[#FFE4CB] flex items-center justify-center shadow-xs overflow-hidden p-1">
+                                    <img src="https://flagcdn.com/w80/nl.png" alt="Netherlands Flag" class="w-full h-full object-cover rounded-xl" />
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-rose-600 mb-0.5">دیتاسنتر آمستردام</div>
+                                    <h3 class="text-2xl font-black text-[#38140B]">هلند</h3>
+                                    <p class="text-xs text-[var(--color-text-muted)] font-semibold">مناسب ابزارهای هوش مصنوعی و توسعه نرم‌افزار</p>
+                                </div>
+                            </div>
+
+                            <!-- Connection Line Visualizer -->
+                            <div class="country-route-line-box my-4 p-3.5 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] relative flex items-center justify-between">
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center text-sm font-bold text-[#38140B] shadow-xs">
+                                        <i class="ph-bold ph-devices"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-[#38140B]/70">شما</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                                        <i class="ph-bold ph-sun-dim"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-rose-600">مسیر روزنه</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center overflow-hidden p-0.5 shadow-xs">
+                                        <img src="https://flagcdn.com/w80/nl.png" alt="Netherlands" class="w-full h-full object-cover rounded-lg" />
+                                    </div>
+                                    <span class="text-[10px] font-bold text-rose-700">سرور هلند</span>
+                                </div>
+                                <div class="mini-line-track"></div>
+                            </div>
+
+                            <!-- Live Country Ping Only -->
+                            <div class="mt-4 pt-4 border-t border-[#FFE4CB]/60">
+                                <div class="p-3 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                        <span class="text-xs font-bold text-[#38140B]/80">پینگ زنده شبکه:</span>
+                                    </div>
+                                    <strong class="text-base font-black text-rose-600 font-mono"><bdi dir="ltr" id="ping-val-1">28 ms</bdi></strong>
+                                </div>
+                            </div>
+
+                            <!-- Ping Test Action -->
+                            <button class="btn btn-primary w-full mt-4 py-3 text-xs font-black btn-test-country-ping" data-index="1" data-country="netherlands" style="background: linear-gradient(135deg, #EF4444 0%, #F97316 100%);">
+                                <i class="ph-bold ph-lightning text-sm"></i>
+                                <span>تست آنلاین پینگ سرور هلند</span>
+                            </button>
+                        </article>
+
+                        <!-- Country 3: Finland -->
+                        <article class="country-3d-card" data-index="2" data-country="finland">
+                            <div class="country-card-header flex items-center justify-between border-b border-[#FFE4CB]/60 pb-3 mb-4">
+                                <span class="badge badge-accent font-bold text-xs" style="background:rgba(59,130,246,0.1)!important; border-color:rgba(59,130,246,0.25)!important; color:#2563eb!important;">هلسینکی — سرور ۰۳</span>
+                                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> آماده اتصال
+                                </span>
+                            </div>
+
+                            <div class="country-card-body flex items-center gap-4 mb-5">
+                                <div class="country-flag-glow-box flex-shrink-0 w-14 h-14 rounded-2xl bg-white border-2 border-[#FFE4CB] flex items-center justify-center shadow-xs overflow-hidden p-1">
+                                    <img src="https://flagcdn.com/w80/fi.png" alt="Finland Flag" class="w-full h-full object-cover rounded-xl" />
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-blue-600 mb-0.5">دیتاسنتر هلسینکی</div>
+                                    <h3 class="text-2xl font-black text-[#38140B]">فنلاند</h3>
+                                    <p class="text-xs text-[var(--color-text-muted)] font-semibold">پایداری عالی، امنیت ابری و خطوط خلوت اختصاصی</p>
+                                </div>
+                            </div>
+
+                            <!-- Connection Line Visualizer -->
+                            <div class="country-route-line-box my-4 p-3.5 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] relative flex items-center justify-between">
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center text-sm font-bold text-[#38140B] shadow-xs">
+                                        <i class="ph-bold ph-devices"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-[#38140B]/70">شما</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                                        <i class="ph-bold ph-sun-dim"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-blue-600">مسیر روزنه</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center overflow-hidden p-0.5 shadow-xs">
+                                        <img src="https://flagcdn.com/w80/fi.png" alt="Finland" class="w-full h-full object-cover rounded-lg" />
+                                    </div>
+                                    <span class="text-[10px] font-bold text-blue-700">سرور فنلاند</span>
+                                </div>
+                                <div class="mini-line-track"></div>
+                            </div>
+
+                            <!-- Live Country Ping Only -->
+                            <div class="mt-4 pt-4 border-t border-[#FFE4CB]/60">
+                                <div class="p-3 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                        <span class="text-xs font-bold text-[#38140B]/80">پینگ زنده شبکه:</span>
+                                    </div>
+                                    <strong class="text-base font-black text-blue-600 font-mono"><bdi dir="ltr" id="ping-val-2">34 ms</bdi></strong>
+                                </div>
+                            </div>
+
+                            <!-- Ping Test Action -->
+                            <button class="btn btn-primary w-full mt-4 py-3 text-xs font-black btn-test-country-ping" data-index="2" data-country="finland" style="background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);">
+                                <i class="ph-bold ph-lightning text-sm"></i>
+                                <span>تست آنلاین پینگ سرور فنلاند</span>
+                            </button>
+                        </article>
+
+                        <!-- Country 4: Turkey -->
+                        <article class="country-3d-card" data-index="3" data-country="turkey">
+                            <div class="country-card-header flex items-center justify-between border-b border-[#FFE4CB]/60 pb-3 mb-4">
+                                <span class="badge badge-gaming font-bold text-xs" style="background:rgba(239,68,68,0.1)!important; border-color:rgba(239,68,68,0.25)!important; color:#dc2626!important;">استانبول — سرور ۰۴</span>
+                                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> آماده اتصال
+                                </span>
+                            </div>
+
+                            <div class="country-card-body flex items-center gap-4 mb-5">
+                                <div class="country-flag-glow-box flex-shrink-0 w-14 h-14 rounded-2xl bg-white border-2 border-[#FFE4CB] flex items-center justify-center shadow-xs overflow-hidden p-1">
+                                    <img src="https://flagcdn.com/w80/tr.png" alt="Turkey Flag" class="w-full h-full object-cover rounded-xl" />
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-red-600 mb-0.5">دیتاسنتر استانبول</div>
+                                    <h3 class="text-2xl font-black text-[#38140B]">ترکیه</h3>
+                                    <p class="text-xs text-[var(--color-text-muted)] font-semibold">کمترین پینگ منطقه‌ای مناسب گیمینگ آنلاین</p>
+                                </div>
+                            </div>
+
+                            <!-- Connection Line Visualizer -->
+                            <div class="country-route-line-box my-4 p-3.5 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] relative flex items-center justify-between">
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center text-sm font-bold text-[#38140B] shadow-xs">
+                                        <i class="ph-bold ph-devices"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-[#38140B]/70">شما</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                                        <i class="ph-bold ph-sun-dim"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-red-600">مسیر روزنه</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center overflow-hidden p-0.5 shadow-xs">
+                                        <img src="https://flagcdn.com/w80/tr.png" alt="Turkey" class="w-full h-full object-cover rounded-lg" />
+                                    </div>
+                                    <span class="text-[10px] font-bold text-red-700">سرور ترکیه</span>
+                                </div>
+                                <div class="mini-line-track"></div>
+                            </div>
+
+                            <!-- Live Country Ping Only -->
+                            <div class="mt-4 pt-4 border-t border-[#FFE4CB]/60">
+                                <div class="p-3 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                                        <span class="text-xs font-bold text-[#38140B]/80">پینگ زنده شبکه:</span>
+                                    </div>
+                                    <strong class="text-base font-black text-red-600 font-mono"><bdi dir="ltr" id="ping-val-3">18 ms</bdi></strong>
+                                </div>
+                            </div>
+
+                            <!-- Ping Test Action -->
+                            <button class="btn btn-primary w-full mt-4 py-3 text-xs font-black btn-test-country-ping" data-index="3" data-country="turkey" style="background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);">
+                                <i class="ph-bold ph-lightning text-sm"></i>
+                                <span>تست آنلاین پینگ سرور ترکیه</span>
+                            </button>
+                        </article>
+
+                        <!-- Country 5: UAE -->
+                        <article class="country-3d-card" data-index="4" data-country="uae">
+                            <div class="country-card-header flex items-center justify-between border-b border-[#FFE4CB]/60 pb-3 mb-4">
+                                <span class="badge badge-accent font-bold text-xs" style="background:rgba(16,185,129,0.1)!important; border-color:rgba(16,185,129,0.25)!important; color:#059669!important;">دبی — سرور ۰۵</span>
+                                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> آماده اتصال
+                                </span>
+                            </div>
+
+                            <div class="country-card-body flex items-center gap-4 mb-5">
+                                <div class="country-flag-glow-box flex-shrink-0 w-14 h-14 rounded-2xl bg-white border-2 border-[#FFE4CB] flex items-center justify-center shadow-xs overflow-hidden p-1">
+                                    <img src="https://flagcdn.com/w80/ae.png" alt="UAE Flag" class="w-full h-full object-cover rounded-xl" />
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-emerald-600 mb-0.5">دیتاسنتر دبی</div>
+                                    <h3 class="text-2xl font-black text-[#38140B]">امارات</h3>
+                                    <p class="text-xs text-[var(--color-text-muted)] font-semibold">مناسب تراکنش‌های مالی و سرویس‌های خاورمیانه</p>
+                                </div>
+                            </div>
+
+                            <!-- Connection Line Visualizer -->
+                            <div class="country-route-line-box my-4 p-3.5 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] relative flex items-center justify-between">
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center text-sm font-bold text-[#38140B] shadow-xs">
+                                        <i class="ph-bold ph-devices"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-[#38140B]/70">شما</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                                        <i class="ph-bold ph-sun-dim"></i>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-emerald-600">مسیر روزنه</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-1 z-10">
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-[#FFE4CB] flex items-center justify-center overflow-hidden p-0.5 shadow-xs">
+                                        <img src="https://flagcdn.com/w80/ae.png" alt="UAE" class="w-full h-full object-cover rounded-lg" />
+                                    </div>
+                                    <span class="text-[10px] font-bold text-emerald-700">سرور امارات</span>
+                                </div>
+                                <div class="mini-line-track"></div>
+                            </div>
+
+                            <!-- Live Country Ping Only -->
+                            <div class="mt-4 pt-4 border-t border-[#FFE4CB]/60">
+                                <div class="p-3 rounded-2xl bg-[#FFF9F3] border border-[#FFE4CB] flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span class="text-xs font-bold text-[#38140B]/80">پینگ زنده شبکه:</span>
+                                    </div>
+                                    <strong class="text-base font-black text-emerald-600 font-mono"><bdi dir="ltr" id="ping-val-4">25 ms</bdi></strong>
+                                </div>
+                            </div>
+
+                            <!-- Ping Test Action -->
+                            <button class="btn btn-primary w-full mt-4 py-3 text-xs font-black btn-test-country-ping" data-index="4" data-country="uae" style="background: linear-gradient(135deg, #059669 0%, #10B981 100%);">
+                                <i class="ph-bold ph-lightning text-sm"></i>
+                                <span>تست آنلاین پینگ سرور امارات</span>
+                            </button>
+                        </article>
+
+                    </div>
+                </div>
+
+
+
+
+                <!-- Country Footer Quick Tabs Bar -->
+                <div class="country-quick-tabs-container mt-6 max-w-2xl mx-auto flex items-center justify-center gap-2 flex-wrap">
+                    <button class="country-quick-tab active flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#FFE4CB] text-xs font-bold shadow-2xs" data-index="0">
+                        <img src="https://flagcdn.com/w40/de.png" alt="DE" class="w-4 h-3 object-cover rounded-2xs" />
+                        <span>آلمان</span>
+                    </button>
+                    <button class="country-quick-tab flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#FFE4CB] text-xs font-bold shadow-2xs" data-index="1">
+                        <img src="https://flagcdn.com/w40/nl.png" alt="NL" class="w-4 h-3 object-cover rounded-2xs" />
+                        <span>هلند</span>
+                    </button>
+                    <button class="country-quick-tab flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#FFE4CB] text-xs font-bold shadow-2xs" data-index="2">
+                        <img src="https://flagcdn.com/w40/fi.png" alt="FI" class="w-4 h-3 object-cover rounded-2xs" />
+                        <span>فنلاند</span>
+                    </button>
+                    <button class="country-quick-tab flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#FFE4CB] text-xs font-bold shadow-2xs" data-index="3">
+                        <img src="https://flagcdn.com/w40/tr.png" alt="TR" class="w-4 h-3 object-cover rounded-2xs" />
+                        <span>ترکیه</span>
+                    </button>
+                    <button class="country-quick-tab flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#FFE4CB] text-xs font-bold shadow-2xs" data-index="4">
+                        <img src="https://flagcdn.com/w40/ae.png" alt="AE" class="w-4 h-3 object-cover rounded-2xs" />
+                        <span>امارات</span>
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Bento Grid Showcase Section -->
+        <section id="bento-section" class="py-16 sm:py-24 bg-[var(--color-bg)] border-t-3 border-[var(--color-border)]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10 sm:mb-16">
+                    <div class="badge badge-primary mx-auto mb-4">
+                        <span>⚡</span><span>زیرساخت پیشرفته شبکه روزنه</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-[var(--color-text)] mb-4">
+                        پایداری و سرعت خیره‌کننده با <span class="gradient-text">ویترین فنی بانتو</span>
+                    </h2>
+                    <p class="text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto font-medium">
+                        نگاهی علمی و فنی به ویژگی‌های سخت‌افزاری و پروتکل‌های بهینه‌سازی شده روزنه.
+                    </p>
+                </div>
+
+                <div class="bento-grid">
+                    <!-- Card 1: Ping (col-span-1) -->
+                    <div class="clay-card p-6 flex flex-col justify-between" style="min-height: 240px;">
+                        <div class="bento-card-inner">
+                            <div>
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center border-2 border-[var(--color-border)] text-xl">🕹️</div>
+                                    <h3 class="font-extrabold text-[var(--color-text)] text-lg">تاخیر کمینه (Low Ping)</h3>
+                                </div>
+                                <p class="text-xs text-[var(--color-text-muted)] font-semibold leading-relaxed">مسیریابی فوق‌کوتاه برای پایداری ۱۰۰٪ در بازی‌های آنلاین رقابتی و به حداقل رساندن نوسان تاخیر شبکه (Jitter).</p>
+                            </div>
+                            <div>
+                                <div class="ping-value-display">
+                                    <span class="ping-status-dot"></span>
+                                    <span id="bento-ping-val">۳۲</span>
+                                    <span>ms</span>
+                                </div>
+                                <span class="text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">تست آنلاین شبکه پایدار</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: VLESS Encryption (col-span-2) -->
+                    <div class="clay-card p-6 flex flex-col justify-between md:col-span-2" style="min-height: 240px;">
+                        <div class="bento-card-inner">
+                            <div>
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center border-2 border-[var(--color-border)] text-xl text-blue-600">
+                                        <i class="ph-bold ph-shield-check text-xl"></i>
+                                    </div>
+                                    <h3 class="font-extrabold text-[var(--color-text)] text-lg">تونل امن VLESS + Reality</h3>
+                                </div>
+                                <p class="text-xs text-[var(--color-text-muted)] font-semibold leading-relaxed">امنیت بی‌رقیب در سطح هسته ارتباط. ترافیک شما تماماً رمزنگاری و با الگوهای مجاز شبیه‌سازی می‌شود تا از شناسایی یا قطع اتصال ممانعت به عمل آید.</p>
+                            </div>
+                            <div class="tunnel-visualizer">
+                                <div class="tunnel-node" title="دستگاه شما">📱</div>
+                                <div class="tunnel-line">
+                                    <div class="tunnel-particle"></div>
+                                </div>
+                                <div class="tunnel-node" title="سرور روزنه" style="border-color: var(--color-primary);">🛡️</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Static IP (col-span-2) -->
+                    <div class="clay-card p-6 flex flex-col justify-between md:col-span-2" style="min-height: 240px;">
+                        <div class="bento-card-inner">
+                            <div>
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center border-2 border-[var(--color-border)] text-xl">🔑</div>
+                                    <h3 class="font-extrabold text-[var(--color-text)] text-lg">آی‌پی ثابت و وایت‌لیست‌شده تمیز</h3>
+                                </div>
+                                <p class="text-xs text-[var(--color-text-muted)] font-semibold leading-relaxed">آی‌پی‌های ثابت و وایت‌لیست سوئیس، آلمان و فرانسه بدون تاریخچه سوء استفاده؛ مناسب جهت تراکنش‌های حساس صرافی‌های بین‌المللی و کارکردهای فریلنسری.</p>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-4 items-stretch mt-4">
+                                <div class="flex-1 ip-badge-container">
+                                    <span id="bento-ip-address">185.220.101.4</span>
+                                    <button class="ip-copy-btn" id="bento-copy-ip-btn" title="کپی آدرس آی‌پی" aria-label="کپی آدرس آی‌پی">
+                                        <i class="ph-bold ph-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="flex gap-2 items-center justify-center sm:justify-start px-2">
+                                    <img src="https://flagcdn.com/w40/ch.png" alt="سوئیس" class="pricing-flag w-8 h-6 object-cover rounded border border-[var(--color-border)]" title="سوئیس">
+                                    <img src="https://flagcdn.com/w40/de.png" alt="آلمان" class="pricing-flag w-8 h-6 object-cover rounded border border-[var(--color-border)]" title="آلمان">
+                                    <img src="https://flagcdn.com/w40/fr.png" alt="فرانسه" class="pricing-flag w-8 h-6 object-cover rounded border border-[var(--color-border)]" title="فرانسه">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: 4K Stream (col-span-1) -->
+                    <div class="clay-card p-6 flex flex-col justify-between" style="min-height: 240px;">
+                        <div class="bento-card-inner">
+                            <div>
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center border-2 border-[var(--color-border)] text-xl">🍿</div>
+                                    <h3 class="font-extrabold text-[var(--color-text)] text-lg">استریم 4K بدون وقفه</h3>
+                                </div>
+                                <p class="text-xs text-[var(--color-text-muted)] font-semibold leading-relaxed">اتصال پرسرعت به پورت‌های ده‌گیگابیتی و بهینه‌سازی پهنای باند اختصاصی برای لود بدون وقفه یوتیوب و توییچ.</p>
+                            </div>
+                            <div class="buffer-mock-player">
+                                <div class="flex justify-between items-center text-[10px] font-bold text-[var(--color-text-muted)]">
+                                    <span>کیفیت پخش: 2160p (4K UHD)</span>
+                                    <span class="text-[var(--color-pink)]">بدون بافر (۰٪)</span>
+                                </div>
+                                <div class="buffer-progress-bar">
+                                    <div class="buffer-progress-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- Pricing Section -->
+        <section id="pricing" class="py-16 sm:py-24 bg-[var(--color-bg)] border-t-3 border-[var(--color-border)]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-8">
+                    <div class="badge badge-primary mx-auto mb-4">
+                        <span>💰</span><span>اشتراک‌های دسترسی</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-[var(--color-text)] mb-4">
+                        قیمت‌گذاری <span class="gradient-text">ساده و مشخص</span>
+                    </h2>
+                    <p class="text-base sm:text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto font-medium">
+                        بدون هزینه‌های پنهان. بهترین دوره و پکیج را متناسب با نیاز خود انتخاب کنید.
+                    </p>
+                </div>
+
+                <!-- Interactive Duration Toggle -->
+                <div class="flex justify-center mb-12">
+                    <div class="pricing-period-selector">
+                        <button class="pricing-period-btn" data-period="monthly">
+                            <span>۱ ماهه</span>
+                        </button>
+                        <button class="pricing-period-btn active" data-period="quarterly">
+                            <span>۳ ماهه</span>
+                            <span class="discount-badge">تخفیف ویژه 🔥</span>
+                        </button>
+                        <button class="pricing-period-btn" data-period="yearly">
+                            <span>سالانه</span>
+                            <span class="discount-badge secondary">۲۵٪ تخفیف 🌟</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
+                    
+                    <!-- Plan 1: Tabesh (Core Plan) -->
+                    <div class="pricing-card" id="card-core">
+                        <div>
+                            <div class="text-center mb-4">
+                                <div class="w-14 h-14 rounded-2xl bg-orange-50 border-2 border-[#FFE4CB] flex items-center justify-center text-3xl mx-auto mb-3 shadow-xs">
+                                    <span>🌱</span>
+                                </div>
+                                <h3 class="text-2xl font-black text-[#38140B] mb-1">روزنه تابش</h3>
+                                <p class="text-xs text-[var(--color-text-muted)] font-bold">مناسب وب‌گردی و امور روزمره</p>
+                            </div>
+
+                            <!-- Price box -->
+                            <div class="price-box-wrapper">
+                                <span class="text-3xl font-black text-[#38140B] price-val" id="price-core"><bdi dir="ltr">۱۷۵,۰۰۰</bdi></span>
+                                <span class="text-xs text-slate-500 font-bold block mt-0.5 price-period" id="period-core">تومان / ۳ ماهه</span>
+                            </div>
+
+                            <!-- Specifications List -->
+                            <div class="space-y-3 mb-6 text-right">
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-[#FFE4CB]">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-hard-drive text-[var(--color-primary)] text-sm"></i> حجم ترافیک
+                                    </span>
+                                    <span class="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">نامحدود (FUP)</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-[#FFE4CB]">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-users text-[var(--color-primary)] text-sm"></i> دستگاه همزمان
+                                    </span>
+                                    <span class="text-xs font-black text-[#38140B]">۲ دستگاه همزمان</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-[#FFE4CB]">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-globe-hemisphere-west text-[var(--color-primary)] text-sm"></i> لوکیشن‌های فعال
+                                    </span>
+                                    <div class="flex gap-1 items-center">
+                                        <img src="https://flagcdn.com/w40/de.png" alt="آلمان" class="pricing-flag" title="آلمان">
+                                        <img src="https://flagcdn.com/w40/nl.png" alt="هلند" class="pricing-flag" title="هلند">
+                                        <img src="https://flagcdn.com/w40/us.png" alt="آمریکا" class="pricing-flag" title="آمریکا">
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-shield-check text-[var(--color-primary)] text-sm"></i> امنیت شبکه
+                                    </span>
+                                    <span class="text-[10px] font-black text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full">سپر کامل فعال</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <!-- Platforms -->
+                            <div class="flex justify-center gap-3 text-base text-slate-400 mb-5">
+                                <i class="ph-bold ph-android-logo" title="Android"></i>
+                                <i class="ph-bold ph-apple-logo" title="iOS & macOS"></i>
+                                <i class="ph-bold ph-windows-logo" title="Windows"></i>
+                                <i class="ph-bold ph-file-code" title="Linux"></i>
+                            </div>
+
+                            <button class="w-full py-3.5 rounded-2xl font-black transition-all cursor-pointer bg-white text-[#38140B] border-2 border-[#FFE4CB] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] buy-btn shadow-xs" id="btn-core" data-package="روزنه تابش" data-price="۱۷۵,۰۰۰ تومان ۳ ماهه">خرید پلن</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Plan 2: Ofogh (Featured / Most Popular Plan) -->
+                    <div class="pricing-card featured" id="card-pro">
+                        <div>
+                            <div class="badge badge-primary mx-auto mb-3 shadow-xs">
+                                <span>🔥 پرفروش‌ترین اشتراک</span>
+                            </div>
+                            <div class="text-center mb-4">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 border-2 border-orange-300 flex items-center justify-center text-3xl mx-auto mb-3 shadow-xs">
+                                    <span>⚡</span>
+                                </div>
+                                <h3 class="text-2xl font-black text-[#38140B] mb-1">روزنه افق</h3>
+                                <p class="text-xs text-rose-600 font-bold">مخصوص پینگ پایین، گیمینگ و توسعه‌دهندگان</p>
+                            </div>
+
+                            <!-- Price box -->
+                            <div class="price-box-wrapper">
+                                <span class="text-3.5xl font-black text-[var(--color-primary)] price-val" id="price-pro"><bdi dir="ltr">۲۶۵,۰۰۰</bdi></span>
+                                <span class="text-xs text-slate-600 font-bold block mt-0.5 price-period" id="period-pro">تومان / ۳ ماهه</span>
+                            </div>
+
+                            <!-- Specifications List -->
+                            <div class="space-y-3 mb-6 text-right">
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-orange-200">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-hard-drive text-[var(--color-primary)] text-sm"></i> حجم ترافیک
+                                    </span>
+                                    <span class="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">نامحدود (FUP)</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-orange-200">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-users text-[var(--color-primary)] text-sm"></i> دستگاه همزمان
+                                    </span>
+                                    <span class="text-xs font-black text-[#38140B]">۴ دستگاه همزمان</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-orange-200">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-globe-hemisphere-west text-[var(--color-primary)] text-sm"></i> لوکیشن‌های فعال
+                                    </span>
+                                    <div class="flex gap-1 items-center">
+                                        <img src="https://flagcdn.com/w40/de.png" alt="آلمان" class="pricing-flag" title="آلمان">
+                                        <img src="https://flagcdn.com/w40/nl.png" alt="هلند" class="pricing-flag" title="هلند">
+                                        <img src="https://flagcdn.com/w40/us.png" alt="آمریکا" class="pricing-flag" title="آمریکا">
+                                        <img src="https://flagcdn.com/w40/gb.png" alt="بریتانیا" class="pricing-flag" title="بریتانیا">
+                                        <img src="https://flagcdn.com/w40/tr.png" alt="ترکیه" class="pricing-flag" title="ترکیه">
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-lightning text-[var(--color-primary)] text-sm"></i> مسیریابی اختصاصی
+                                    </span>
+                                    <span class="text-[10px] font-black text-orange-700 bg-orange-50 border border-orange-200 px-2.5 py-0.5 rounded-full">پینگ پایین فعال</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <!-- Platforms -->
+                            <div class="flex justify-center gap-3 text-base text-slate-400 mb-5">
+                                <i class="ph-bold ph-android-logo" title="Android"></i>
+                                <i class="ph-bold ph-apple-logo" title="iOS & macOS"></i>
+                                <i class="ph-bold ph-windows-logo" title="Windows"></i>
+                                <i class="ph-bold ph-file-code" title="Linux"></i>
+                            </div>
+
+                            <button class="w-full py-3.5 rounded-2xl font-black transition-all cursor-pointer btn-primary buy-btn shadow-lg shadow-orange-500/25" id="btn-pro" data-package="روزنه افق" data-price="۲۶۵,۰۰۰ تومان ۳ ماهه">خرید پلن پرفروش</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Plan 3: Binahayat (Enterprise / VIP Plan) -->
+                    <div class="pricing-card" id="card-enterprise">
+                        <div>
+                            <div class="badge badge-accent mx-auto mb-3 shadow-xs">
+                                <span>👑 VIP و اختصاصی</span>
+                            </div>
+                            <div class="text-center mb-4">
+                                <div class="w-14 h-14 rounded-2xl bg-purple-50 border-2 border-purple-200 flex items-center justify-center text-3xl mx-auto mb-3 shadow-xs">
+                                    <span>👑</span>
+                                </div>
+                                <h3 class="text-2xl font-black text-[#38140B] mb-1">روزنه بینهایت</h3>
+                                <p class="text-xs text-purple-700 font-bold">برای کارهای حساس، ترید و IP ثابت صرافی</p>
+                            </div>
+
+                            <!-- Price box -->
+                            <div class="price-box-wrapper">
+                                <span class="text-3xl font-black text-slate-900 price-val" id="price-enterprise"><bdi dir="ltr">۴۹۰,۰۰۰</bdi></span>
+                                <span class="text-xs text-slate-500 font-bold block mt-0.5 price-period" id="period-enterprise">تومان / ۳ ماهه</span>
+                            </div>
+
+                            <!-- Specifications List -->
+                            <div class="space-y-3 mb-6 text-right">
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-[#FFE4CB]">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-hard-drive text-[var(--color-primary)] text-sm"></i> حجم ترافیک
+                                    </span>
+                                    <span class="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">نامحدود (FUP)</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-[#FFE4CB]">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-users text-[var(--color-primary)] text-sm"></i> دستگاه همزمان
+                                    </span>
+                                    <span class="text-xs font-black text-[#38140B]">۶ دستگاه همزمان</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-dashed border-[#FFE4CB]">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-globe-hemisphere-west text-[var(--color-primary)] text-sm"></i> لوکیشن‌های فعال
+                                    </span>
+                                    <div class="flex gap-1 items-center flex-wrap max-w-[130px] justify-end">
+                                        <img src="https://flagcdn.com/w40/de.png" alt="آلمان" class="pricing-flag" title="آلمان">
+                                        <img src="https://flagcdn.com/w40/nl.png" alt="هلند" class="pricing-flag" title="هلند">
+                                        <img src="https://flagcdn.com/w40/us.png" alt="آمریکا" class="pricing-flag" title="آمریکا">
+                                        <img src="https://flagcdn.com/w40/gb.png" alt="بریتانیا" class="pricing-flag" title="بریتانیا">
+                                        <img src="https://flagcdn.com/w40/tr.png" alt="ترکیه" class="pricing-flag" title="ترکیه">
+                                        <img src="https://flagcdn.com/w40/ca.png" alt="کانادا" class="pricing-flag" title="کانادا">
+                                        <img src="https://flagcdn.com/w40/fi.png" alt="فنلاند" class="pricing-flag" title="فنلاند">
+                                        <img src="https://flagcdn.com/w40/ae.png" alt="دبی" class="pricing-flag" title="دبی">
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center py-2">
+                                    <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-key text-[var(--color-primary)] text-sm"></i> آی‌پی اختصاصی
+                                    </span>
+                                    <span class="text-[10px] font-black text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-full">IP ثابت صرافی</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <!-- Platforms -->
+                            <div class="flex justify-center gap-3 text-base text-slate-400 mb-5">
+                                <i class="ph-bold ph-android-logo" title="Android"></i>
+                                <i class="ph-bold ph-apple-logo" title="iOS & macOS"></i>
+                                <i class="ph-bold ph-windows-logo" title="Windows"></i>
+                                <i class="ph-bold ph-file-code" title="Linux"></i>
+                            </div>
+
+                            <button class="w-full py-3.5 rounded-2xl font-black transition-all cursor-pointer bg-slate-900 text-white hover:bg-slate-800 buy-btn shadow-md" id="btn-enterprise" data-package="روزنه بینهایت" data-price="۴۹۰,۰۰۰ تومان ۳ ماهه">خرید پلن VIP</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <p class="text-center text-xs text-[var(--color-text-muted)] mt-8 font-medium">* تمامی اشتراک‌ها بر روی پروتکل‌های فوق مدرن Vless با تونل رمزنگاری اختصاصی ارائه می‌شوند.</p>
+            </div>
+        </section>
+
+        <!-- Referral Section -->
+        <section id="referral" class="py-16 sm:py-24 bg-[var(--color-bg-alt)] border-t-3 border-[var(--color-border)]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+                    <div>
+                        <div class="badge badge-primary mb-6">
+                            <span>🔗</span><span>برنامه رشد ارگانیک روزنه</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[var(--color-text)] mb-4">
+                            ترافیک هدیه؛ به پاس <span class="gradient-text">وسعت بخشیدن به روزنه</span>
+                        </h2>
+                        <p class="text-lg text-[var(--color-text-muted)] mb-8 font-medium">
+                            ما به جای هزینه‌های کلان تبلیغاتی، ترجیح می‌دهیم به کاربران خود پاداش دهیم. با دعوت از دوستان خود به روزنه، هم به آن‌ها اتصال پایدار هدیه بدهید و هم حجم هدیه ماهانه خود را برای همیشه افزایش دهید.
+                        </p>
+                        
+                        <!-- Step Cards -->
+                        <div class="space-y-4">
+                            <div class="clay-card p-4 flex items-center gap-4 bg-white">
+                                <div class="w-10 h-10 rounded-xl bg-[var(--color-primary)] text-white flex items-center justify-center font-bold">۱</div>
+                                <span class="text-[var(--color-text)] font-semibold">عضویت در ربات تلگرام روزنه و دریافت ۲ گیگابایت ترافیک هدیه ماهانه اولیه</span>
+                            </div>
+                            <div class="clay-card p-4 flex items-center gap-4 bg-white">
+                                <div class="w-10 h-10 rounded-xl bg-[var(--color-accent)] text-white flex items-center justify-center font-bold">۲</div>
+                                <span class="text-[var(--color-text)] font-semibold">دریافت لینک دعوت اختصاصی خود از درون ربات</span>
+                            </div>
+                            <div class="clay-card p-4 flex items-center gap-4 bg-white">
+                                <div class="w-10 h-10 rounded-xl bg-[var(--color-pink)] text-white flex items-center justify-center font-bold">۳</div>
+                                <span class="text-[var(--color-text)] font-semibold">۵۰۰ مگابایت ترافیک ماهانه همیشگی به ازای هر دعوت موفق برای هر دو نفر شما</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Referral Calculator Container -->
+                    <div class="clay-card p-6 sm:p-8 bg-white relative">
+                        <h3 class="text-xl font-bold text-[var(--color-text)] mb-6 text-center">محاسبه‌گر حجم هدیه ماهانه</h3>
+                        <p class="text-sm text-[var(--color-text-muted)] mb-6 text-center font-medium">
+                            اسلایدر زیر را حرکت دهید تا حجم اینترنت هدیه ماهانه خود را تخمین بزنید:
+                        </p>
+                        
+                        <!-- Range Slider Calculator -->
+                        <div class="mb-8">
+                            <div class="flex justify-between font-bold text-sm mb-2 text-[var(--color-text-muted)]">
+                                <span>تعداد دوستان دعوت‌شده:</span>
+                                <span class="text-[var(--color-primary)] font-extrabold text-lg"><span id="friends-count">۵</span> نفر</span>
+                            </div>
+                            <input type="range" id="referral-slider" min="0" max="30" value="5" class="w-full clay-slider cursor-pointer">
+                        </div>
+                        
+                        <!-- Output Result Card -->
+                        <div class="clay-card p-5 bg-[var(--color-bg-alt)] text-center mb-6">
+                            <div class="text-sm text-[var(--color-text-muted)] font-bold mb-1">کل ترافیک ماهانه رایگان و همیشگی شما:</div>
+                            <div class="text-4xl font-extrabold text-[var(--color-primary)]"><span id="total-gift-data">۴.۵</span> گیگابایت</div>
+                            <div class="text-xs text-[var(--color-text-muted)] mt-2 font-medium">(۲ گیگابایت پایه + ۲.۵ گیگابایت پاداش دعوت)</div>
+                        </div>
+                        
+                        <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn-primary w-full py-4 justify-center">
+                            <i class="ph-bold ph-telegram-logo text-2xl"></i> دریافت لینک دعوت در تلگرام
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section (Interactive Studio-Grade Carousel) -->
+        <section id="testimonials" class="py-16 sm:py-24 bg-[#FFF7ED] relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- Section Header -->
+                <div class="text-center mb-10 sm:mb-14">
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FFEDD5] border border-[#FED7AA] text-[#FF7A3C] text-xs sm:text-sm font-extrabold mb-4">
+                        <i class="ph-bold ph-chat-teardrop-dots text-base"></i>
+                        <span>دیدگاه متخصصان</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-[#38140B] mb-4 leading-tight">
+                        تجربه استفاده در <span class="bg-gradient-to-r from-[#FF7A3C] to-[#F75C1E] bg-clip-text text-transparent">جریان‌های کاری واقعی</span>
+                    </h2>
+                    <p class="text-base sm:text-lg text-[#7C2D12] max-w-2xl mx-auto font-medium leading-relaxed">
+                        نظرات واقعی متخصصانی که برای کار روزانه خود به پایداری شبکه نیاز دارند.
+                    </p>
+                </div>
+
+                <!-- Testimonials Slider Shell -->
+                <div class="testimonial-slider-container relative max-w-4xl mx-auto px-2 sm:px-12">
+                    
+                    <!-- Side Arrows Navigation -->
+                    <button type="button" id="testimonial-prev" class="testimonial-nav-btn prev-btn" aria-label="نظر قبلی">
+                        <i class="ph-bold ph-caret-right text-lg"></i>
+                    </button>
+                    <button type="button" id="testimonial-next" class="testimonial-nav-btn next-btn" aria-label="نظر بعدی">
+                        <i class="ph-bold ph-caret-left text-lg"></i>
+                    </button>
+
+                    <!-- Slider Viewport Window -->
+                    <div class="testimonial-slider-viewport overflow-hidden w-full rounded-3xl py-2">
+                        <!-- Slider Track -->
+                        <div class="testimonial-slider-track flex transition-transform duration-500 ease-out" id="testimonial-slider-track">
+                            
+                            <!-- Testimonial Card 1 -->
+                            <div class="testimonial-card flex-shrink-0 w-full px-2" data-index="0">
+                                <div class="bg-white border-2 border-[#FFE4CB] rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex gap-1 text-amber-400 text-sm">
+                                            <i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i>
+                                        </div>
+                                        <i class="ph-fill ph-quotes text-3xl text-orange-300"></i>
+                                    </div>
+                                    <p class="text-[#38140B]/90 text-sm sm:text-base font-medium leading-relaxed mb-6">
+                                        «به عنوان یک توسعه‌دهنده نرم‌افزار، قطعی‌های لحظه‌ای در ابزارهایی مانند داکر و گیت‌هاب جریان کار ما را فلج می‌کرد. با روزنه پایداری اتصال بسیار مطلوبی را تجربه می‌کنیم.»
+                                    </p>
+                                    <div class="flex items-center gap-3 pt-4 border-t border-[#FFE4CB]">
+                                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" alt="امیرحسین امیری" class="w-12 h-12 rounded-full object-cover border-2 border-[#FF7A3C]"/>
+                                        <div>
+                                            <div class="font-extrabold text-sm text-[#38140B]">امیرحسین امیری</div>
+                                            <div class="text-xs text-[#7C2D12] font-semibold">مهندس ارشد نرم‌افزار</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Testimonial Card 2 -->
+                            <div class="testimonial-card flex-shrink-0 w-full px-2" data-index="1">
+                                <div class="bg-white border-2 border-[#FFE4CB] rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex gap-1 text-amber-400 text-sm">
+                                            <i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i>
+                                        </div>
+                                        <i class="ph-fill ph-quotes text-3xl text-rose-300"></i>
+                                    </div>
+                                    <p class="text-[#38140B]/90 text-sm sm:text-base font-medium leading-relaxed mb-6">
+                                        «دسترسی پایدار به فیگما بدون از دست رفتن پینگ و کیفیت لود تصاویر در حین کار تیمی برای پروژه‌های طراحی ما حیاتی بود. روزنه تاخیر بسیار پایینی برای کار ما دارد.»
+                                    </p>
+                                    <div class="flex items-center gap-3 pt-4 border-t border-[#FFE4CB]">
+                                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="سارا رضایی" class="w-12 h-12 rounded-full object-cover border-2 border-rose-500"/>
+                                        <div>
+                                            <div class="font-extrabold text-sm text-[#38140B]">سارا رضایی</div>
+                                            <div class="text-xs text-[#7C2D12] font-semibold">طراح رابط کاربری (UI/UX)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Testimonial Card 3 -->
+                            <div class="testimonial-card flex-shrink-0 w-full px-2" data-index="2">
+                                <div class="bg-white border-2 border-[#FFE4CB] rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex gap-1 text-amber-400 text-sm">
+                                            <i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i>
+                                        </div>
+                                        <i class="ph-fill ph-quotes text-3xl text-purple-300"></i>
+                                    </div>
+                                    <p class="text-[#38140B]/90 text-sm sm:text-base font-medium leading-relaxed mb-6">
+                                        «من پینگ پایین برای بازی‌های آنلاین و پایداری بالا در حین استریم کردن برام اولویت اصلی بود. روزنه تا امروز بهترین کیفیت و بدون پکت لاس رو برام تضمین کرده.»
+                                    </p>
+                                    <div class="flex items-center gap-3 pt-4 border-t border-[#FFE4CB]">
+                                        <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop" alt="پوریا راد" class="w-12 h-12 rounded-full object-cover border-2 border-purple-500"/>
+                                        <div>
+                                            <div class="font-extrabold text-sm text-[#38140B]">پوریا راد</div>
+                                            <div class="text-xs text-[#7C2D12] font-semibold">استریمر و تولیدکننده محتوا</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Dots Indicator Navigation -->
+                    <div class="testimonial-dots-nav flex items-center justify-center gap-2 mt-6" id="testimonial-dots">
+                        <button type="button" class="testimonial-dot active" data-slide="0" aria-label="اسلاید ۱"></button>
+                        <button type="button" class="testimonial-dot" data-slide="1" aria-label="اسلاید ۲"></button>
+                        <button type="button" class="testimonial-dot" data-slide="2" aria-label="اسلاید ۳"></button>
+                    </div>
+                </div>
+
+                <!-- Trust Stats Bar -->
+                <div class="mt-12 sm:mt-16 bg-white border-2 border-[#FFE4CB] rounded-3xl p-6 sm:p-8 grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 shadow-xs">
+                    <div class="text-center">
+                        <div class="text-2xl sm:text-3xl font-extrabold text-[#FF7A3C]"><bdi dir="ltr">۲,۵۰۰+</bdi></div>
+                        <div class="text-xs sm:text-sm text-[#7C2D12] font-semibold">کاربر فعال</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl sm:text-3xl font-extrabold text-blue-600"><bdi dir="ltr">۴.۹ / ۵</bdi></div>
+                        <div class="text-xs sm:text-sm text-[#7C2D12] font-semibold">رضایت عمومی</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl sm:text-3xl font-extrabold text-pink-600"><bdi dir="ltr">۹۹.۹٪</bdi></div>
+                        <div class="text-xs sm:text-sm text-[#7C2D12] font-semibold">پایداری شبکه (SLA)</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl sm:text-3xl font-extrabold text-purple-600"><bdi dir="ltr">۱۵+</bdi></div>
+                        <div class="text-xs sm:text-sm text-[#7C2D12] font-semibold">دیتاسنتر فعال</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- FAQ Section -->
+        <section id="faq-section" class="faq-section" aria-labelledby="faq-title">
+            <div class="faq-container">
+                <div class="faq-eyebrow">مرکز راهنمای روزنه</div>
+                <h2 id="faq-title" class="faq-heading">سوالات متداول</h2>
+                <p class="faq-lead">جواب سوال‌های پرتکرار درباره تست رایگان، اتصال، خرید و پشتیبانی را کوتاه و شفاف اینجا بخوانید.</p>
+
+                <div class="faq-tabs" role="tablist" aria-label="دسته‌بندی سوالات">
+                    <button class="faq-tab active" data-filter="all">همه سوالات</button>
+                    <button class="faq-tab" data-filter="general">عمومی</button>
+                    <button class="faq-tab" data-filter="connect">نصب و اتصال</button>
+                    <button class="faq-tab" data-filter="buy">خرید و اشتراک</button>
+                </div>
+
+                <div class="faq-list">
+                    <!-- FAQ Item 1 -->
+                    <article class="faq-item open" data-category="general">
+                        <button class="faq-question" aria-expanded="true">
+                            <span class="faq-icon">✨</span>
+                            <span>آیا روزنه تست رایگان دارد؟</span>
+                            <span class="faq-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="faq-answer-wrap"><div class="faq-answer"><p>بله. پیش از خرید می‌توانید سرویس را روی اینترنت و دستگاه خودتان امتحان کنید تا از کیفیت اتصال مطمئن شوید. برای دریافت تست، از طریق ربات تلگرام روزنه اقدام کنید.</p></div></div>
+                    </article>
+
+                    <!-- FAQ Item 2 -->
+                    <article class="faq-item" data-category="connect">
+                        <button class="faq-question" aria-expanded="false">
+                            <span class="faq-icon">📱</span>
+                            <span>روزنه روی چه دستگاه‌هایی قابل استفاده است؟</span>
+                            <span class="faq-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="faq-answer-wrap"><div class="faq-answer"><p>روی اندروید، iOS، ویندوز و macOS قابل استفاده است. پس از خرید، لینک دانلود برنامه مناسب و راهنمای مرحله‌به‌مرحله اتصال را دریافت می‌کنید.</p></div></div>
+                    </article>
+
+                    <!-- FAQ Item 3 -->
+                    <article class="faq-item" data-category="connect">
+                        <button class="faq-question" aria-expanded="false">
+                            <span class="faq-icon">🔌</span>
+                            <span>برای اتصال از چه برنامه‌ای استفاده کنم؟</span>
+                            <span class="faq-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="faq-answer-wrap"><div class="faq-answer"><p>برنامه مناسب به سیستم‌عامل شما بستگی دارد؛ برای نمونه v2rayNG در اندروید و v2rayN در ویندوز. راهنمای دقیق همراه با مشخصات سرویس در اختیارتان قرار می‌گیرد.</p></div></div>
+                    </article>
+
+                    <!-- FAQ Item 4 -->
+                    <article class="faq-item" data-category="buy">
+                        <button class="faq-question" aria-expanded="false">
+                            <span class="faq-icon">💳</span>
+                            <span>روش خرید و پرداخت اشتراک چگونه است؟</span>
+                            <span class="faq-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="faq-answer-wrap"><div class="faq-answer"><p>پلن دلخواه را انتخاب و هزینه را از روش‌های پرداخت موجود (کارت بانکی یا تتر USDT) تسویه می‌کنید. مشخصات اتصال بلافاصله بعد از تأیید پرداخت برای شما ارسال می‌شود.</p></div></div>
+                    </article>
+
+                    <!-- FAQ Item 5 -->
+                    <article class="faq-item" data-category="buy">
+                        <button class="faq-question" aria-expanded="false">
+                            <span class="faq-icon">⚡</span>
+                            <span>سرویس چه زمانی تحویل داده می‌شود؟</span>
+                            <span class="faq-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="faq-answer-wrap"><div class="faq-answer"><p>تحویل به‌صورت خودکار و فوری انجام می‌شود. اگر در دریافت یا راه‌اندازی مشکلی بود، پشتیبانی روزنه همراه شماست.</p></div></div>
+                    </article>
+
+                    <!-- FAQ Item 6 -->
+                    <article class="faq-item" data-category="general">
+                        <button class="faq-question" aria-expanded="false">
+                            <span class="faq-icon">🛡️</span>
+                            <span>سیاست لاگ‌نویسی روزنه چگونه است؟</span>
+                            <span class="faq-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="faq-answer-wrap"><div class="faq-answer"><p>سرورهای روزنه بر پایه خط‌مشی سخت‌گیرانه عدم ثبت لاگ فعالیت (No-Logs Policy) کار می‌کنند. هیچ داده‌ای از مقاصد یا آی‌پی شخصی شما روی سرورها ذخیره نمی‌شود.</p></div></div>
+                    </article>
+                </div>
+
+                <div class="faq-empty">در این دسته‌بندی هنوز سوالی ثبت نشده است.</div>
+
+                <aside class="faq-support">
+                    <div>
+                        <strong>پاسخ سوالت را پیدا نکردی؟</strong>
+                        <span>پشتیبانی روزنه برای راهنمایی قبل و بعد از خرید در دسترس است.</span>
+                    </div>
+                    <a href="https://t.me/rozaneh_vpn_bot" target="_blank">گفتگو با پشتیبانی</a>
+                </aside>
+            </div>
+        </section>
+
+        <!-- Checkout / booking Section (Simulated Checkout) -->
+        <section id="checkout-section" class="py-16 sm:py-24 bg-[var(--color-bg-alt)] border-t-3 border-[var(--color-border)]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+                    <div>
+                        <div class="badge badge-primary mb-6"><span>🛒</span><span>فعال‌سازی بدون ثبت‌نام</span></div>
+                        <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[var(--color-text)] mb-4">
+                            تحویل فوری و هوشمند در <span class="gradient-text">ربات تلگرام</span>
+                        </h2>
+                        <p class="text-lg text-[var(--color-text-muted)] mb-8 font-medium">
+                            ما هیچ‌گونه اطلاعات شخصی یا شماره تماسی از شما دریافت نمی‌کنیم. روند پرداخت شتاب یا تتر، دریافت اکانت ۲ گیگابایتی هدیه، و فعال‌سازی اشتراک‌ها تماماً به صورت ناشناس و امن در بستر تلگرام انجام می‌شود.
+                        </p>
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-[var(--color-bg-card)] border-3 border-[var(--color-border)] flex items-center justify-center text-xl">⚡</div>
+                                <span class="text-[var(--color-text)] font-semibold">تحویل و اتصال در کمتر از ۱ دقیقه</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-[var(--color-bg-card)] border-3 border-[var(--color-border)] flex items-center justify-center text-xl">🛡️</div>
+                                <span class="text-[var(--color-text)] font-semibold">تضمین پایداری کامل با پشتیبانی متخصصین</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-[var(--color-bg-card)] border-3 border-[var(--color-border)] flex items-center justify-center text-xl">👤</div>
+                                <span class="text-[var(--color-text)] font-semibold">ناشناس بودن کامل ترافیک و عدم ثبت فعالیت‌ها</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="clay-card p-6 sm:p-8 bg-white relative">
+                        <h3 class="text-xl font-bold text-[var(--color-text)] mb-6 text-center">راهنمای دریافت و خرید سرویس</h3>
+                        <p class="mb-6 font-bold text-[var(--color-text-muted)] text-center">پلن انتخاب شده شما: <span id="selected-package-text" class="text-[var(--color-primary)]">تست رایگان ۲ گیگابایت</span></p>
+                        
+                        <div class="space-y-4 mb-8">
+                            <div class="clay-card p-4 flex items-center gap-4 bg-[var(--color-bg-alt)] text-right">
+                                <div class="w-8 h-8 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold">۱</div>
+                                <span class="text-sm text-[var(--color-text)] font-semibold">ورود به ربات تلگرام رسمی روزنه</span>
+                            </div>
+                            <div class="clay-card p-4 flex items-center gap-4 bg-[var(--color-bg-alt)] text-right">
+                                <div class="w-8 h-8 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center font-bold">۲</div>
+                                <span class="text-sm text-[var(--color-text)] font-semibold">انتخاب پکیج مورد نظر یا هدیه ۲ گیگابایتی در منو</span>
+                            </div>
+                            <div class="clay-card p-4 flex items-center gap-4 bg-[var(--color-bg-alt)] text-right">
+                                <div class="w-8 h-8 rounded-full bg-[var(--color-pink)] text-white flex items-center justify-center font-bold">۳</div>
+                                <span class="text-sm text-[var(--color-text)] font-semibold">پرداخت آنلاین و دریافت آنی فایل کانفیگ اختصاصی</span>
+                            </div>
+                        </div>
+                        
+                        <a href="https://t.me/RozanehVpnBot" target="_blank" class="btn-primary w-full py-4 justify-center" id="checkout-telegram-cta">
+                            <i class="ph-bold ph-telegram-logo text-2xl"></i> ورود به تلگرام و فعال‌سازی آنی
+                        </a>
+
+                        <div class="mt-4 pt-4 border-t border-dashed border-[var(--color-border)]">
+                            @auth
+                                <form id="checkout-web-form" method="POST" action="">
+                                    @csrf
+                                    <button type="submit" class="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                        <i class="ph-bold ph-credit-card text-xl"></i> پرداخت و فعال‌سازی مستقیم در سایت
+                                    </button>
+                                </form>
+                            @else
+                                <button onclick="document.getElementById('btn-open-auth-modal').click()" class="w-full py-4 rounded-2xl bg-slate-600 hover:bg-slate-700 text-white font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                    <i class="ph-bold ph-user-circle text-xl"></i> ورود به حساب جهت خرید مستقیم از سایت
+                                </button>
+                            @endauth
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- Footer -->
+        <!-- ════════════════════════════════════════════
+             Studio-Grade Footer — Rozaneh Mobile-First
+             ════════════════════════════════════════════ -->
+        <footer class="site-footer">
+
+            <!-- CTA Band -->
+            <div class="footer-cta-band">
+                <div class="cta-text">
+                    <strong>همین حالا متصل شو ☀️</strong>
+                    <span>پشتیبانی آنی، تحویل فوری، بدون لاگ‌برداری</span>
+                </div>
+                <div class="footer-cta-btns">
+                    <a href="https://t.me/RozanehVpnBot" target="_blank" class="footer-cta-btn tg">
+                        <i class="ph-bold ph-telegram-logo"></i>
+                        <span>تلگرام</span>
+                    </a>
+                    <a href="https://wa.me/989000000000" target="_blank" class="footer-cta-btn wa">
+                        <i class="ph-bold ph-whatsapp-logo"></i>
+                        <span>واتساپ</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Body -->
+            <div class="footer-body">
+
+                <!-- Brand Column -->
+                <div class="footer-brand">
+                    <div class="brand-logo">
+                        <div class="brand-icon">
+                            <i class="ph-fill ph-sun-dim"></i>
+                        </div>
+                        <span class="brand-name">روزنه</span>
+                    </div>
+                    <p class="brand-desc">زیرساخت اختصاصی و مهندسی‌شده برای اتصالات پایدار، سریع و امن دیجیتال.</p>
+                    <div class="footer-trust-badges">
+                        <span class="footer-badge shield">
+                            <i class="ph-bold ph-shield-check"></i>
+                            بدون ثبت لاگ
+                        </span>
+                        <span class="footer-badge speed">
+                            <i class="ph-bold ph-lightning"></i>
+                            پرسرعت
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Download Column -->
+                <div class="footer-nav-col">
+                    <h5>دانلود کلاینت</h5>
+                    <div class="footer-dl-pills">
+                        <a href="#" class="footer-dl-pill">
+                            <span class="pill-icon"><i class="ph-bold ph-android-logo"></i></span>
+                            <span class="pill-text">
+                                <strong>اندروید APK</strong>
+                                <span>دانلود مستقیم</span>
+                            </span>
+                        </a>
+                        <a href="#" class="footer-dl-pill">
+                            <span class="pill-icon"><i class="ph-bold ph-google-play-logo"></i></span>
+                            <span class="pill-text">
+                                <strong>گوگل پلی</strong>
+                                <span>نصب از مارکت</span>
+                            </span>
+                        </a>
+                        <a href="#" class="footer-dl-pill">
+                            <span class="pill-icon"><i class="ph-bold ph-apple-logo"></i></span>
+                            <span class="pill-text">
+                                <strong>آیفون iOS</strong>
+                                <span>App Store</span>
+                            </span>
+                        </a>
+                        <a href="#" class="footer-dl-pill">
+                            <span class="pill-icon"><i class="ph-bold ph-windows-logo"></i></span>
+                            <span class="pill-text">
+                                <strong>ویندوز</strong>
+                                <span>نسخه دسکتاپ</span>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Links Column -->
+                <div class="footer-nav-col">
+                    <h5>پشتیبانی ۲۴/۷</h5>
+                    <ul>
+                        <li>
+                            <a href="https://t.me/RozanehVpnBot" target="_blank" class="accent-tg">
+                                <i class="ph-bold ph-telegram-logo"></i>
+                                <span>پشتیبانی تلگرام</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://wa.me/989000000000" target="_blank" class="accent-wa">
+                                <i class="ph-bold ph-whatsapp-logo"></i>
+                                <span>پشتیبانی واتساپ</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#faq-section">
+                                <i class="ph-bold ph-book-open"></i>
+                                <span>راهنمای اتصال</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#faq-section">
+                                <i class="ph-bold ph-question"></i>
+                                <span>سوالات متداول</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="privacy.html">
+                                <i class="ph-bold ph-lock-simple"></i>
+                                <span>حریم خصوصی</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="terms.html">
+                                <i class="ph-bold ph-file-text"></i>
+                                <span>شرایط استفاده</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="about.html">
+                                <i class="ph-bold ph-info"></i>
+                                <span>درباره روزنه</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="footer-bottom">
+                <p class="copy">© ۲۰۲۶ <span class="brand-accent">روزنه</span>. تمامی حقوق محفوظ است.</p>
+                <div class="footer-bottom-links">
+                    <a href="privacy.html">حریم خصوصی</a>
+                    <a href="terms.html">شرایط سرویس</a>
+                    <a href="privacy.html#no-logs">بدون ثبت لاگ</a>
+                </div>
+            </div>
+
+        </footer>
+    </div>
+
+    <!-- Unified Auth Modal (Login / Register with Mobile & Email) -->
+    <dialog id="auth-modal" class="p-0 rounded-3xl border-3 border-[var(--color-border)] bg-white shadow-2xl backdrop:bg-gray-900/60 max-w-md w-full mx-auto my-auto transition-all">
+        <div class="p-6 sm:p-8 relative">
+            <button id="btn-close-auth-modal" class="absolute top-4 left-4 min-w-[44px] min-h-[44px] rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center font-bold transition-all" aria-label="بستن پنجره ورود">✕</button>
+
+            <!-- Modal Header -->
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl font-bold mx-auto mb-3 border-2 border-orange-300">
+                    <i class="ph-bold ph-rocket-launch text-2xl text-orange-600"></i>
+                </div>
+                <h3 class="text-xl font-black text-[var(--color-text)] mb-1">ورود یا ثبت‌نام در روزنه</h3>
+                <p class="text-xs font-bold text-[var(--color-text-muted)]">جهت دسترسی به پنل و کانفیگ‌ها، اطلاعات خود را وارد کنید</p>
+            </div>
+
+            <!-- Auth Mode Tabs (Phone vs Email) -->
+            <div class="flex rounded-2xl bg-gray-100 p-1 mb-6 border border-gray-200">
+                <button id="auth-tab-phone" type="button" class="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all bg-orange-500 text-white shadow-sm flex items-center justify-center gap-1.5">
+                    <i class="ph-bold ph-phone text-sm"></i>
+                    <span>شماره موبایل</span>
+                </button>
+                <button id="auth-tab-email" type="button" class="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all text-gray-600 hover:text-gray-900 flex items-center justify-center gap-1.5">
+                    <i class="ph-bold ph-envelope-simple text-sm"></i>
+                    <span>ایمیل</span>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form id="auth-form" class="space-y-4">
+                <!-- Phone Field -->
+                <div id="auth-group-phone">
+                    <label class="block text-xs font-black text-[var(--color-text)] mb-1.5">شماره موبایل (ایران)</label>
+                    <input type="tel" id="auth-input-phone" placeholder="09123456789" class="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-orange-500 font-mono text-sm outline-none transition-all dir-ltr text-left" dir="ltr" required />
+                </div>
+
+                <!-- Email Field (Hidden initially) -->
+                <div id="auth-group-email" class="hidden">
+                    <label class="block text-xs font-black text-[var(--color-text)] mb-1.5">آدرس ایمیل معتبر</label>
+                    <input type="email" id="auth-input-email" placeholder="name@example.com" class="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-orange-500 font-mono text-sm outline-none transition-all dir-ltr text-left" dir="ltr" />
+                </div>
+
+                <!-- Optional Telegram Sync Field -->
+                <div class="pt-2 border-t border-gray-100">
+                    <label class="block text-xs font-bold text-gray-700 mb-1 flex items-center gap-1">
+                        <i class="ph-bold ph-telegram-logo text-sky-500"></i>
+                        <span>آیدی عددی تلگرام (اختیاری جهت همگام‌سازی)</span>
+                    </label>
+                    <input type="text" id="auth-input-telegram-id" placeholder="مثال: 58492019 (اختیاری)" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-sky-500 text-xs font-mono outline-none dir-ltr text-left" dir="ltr" />
+                </div>
+
+                <div class="text-[11px] font-bold text-gray-500 leading-relaxed bg-orange-50/60 p-3 rounded-xl border border-orange-100">
+                    🔒 ورود و ثبت‌نام سریع با یک کلیک انجام شده و اطلاعات شما کاملاً محرمانه باقی می‌ماند.
+                </div>
+
+                <button type="submit" id="btn-send-otp" class="w-full py-3.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+                    <span>ورود به حساب / ثبت‌نام</span>
+                    <i class="ph-bold ph-arrow-left text-sm"></i>
+                </button>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- User Live Subscription Dashboard Modal -->
+    <dialog id="user-dashboard-modal" class="p-0 rounded-3xl border-3 border-[var(--color-border)] bg-white shadow-2xl backdrop:bg-gray-900/60 max-w-lg w-full mx-auto my-auto transition-all">
+        <div class="p-6 sm:p-8 relative">
+            <button id="btn-close-user-dashboard" class="absolute top-4 left-4 min-w-[44px] min-h-[44px] rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center font-bold transition-all" aria-label="بستن پنجره">✕</button>
+
+            <!-- Dashboard Header -->
+            <div class="flex items-center justify-between border-b border-[var(--color-border)] pb-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl" id="dash-user-flag">🇩🇪</span>
+                    <div>
+                        <h3 class="text-lg font-black text-[var(--color-text)]" id="dash-user-title">داشبورد و پروفایل مشترک روزنه</h3>
+                        <span class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> اشتراک فعال و متصل
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Info Bar -->
+            <div class="p-3.5 rounded-2xl bg-orange-50/70 border border-orange-200 mb-6 flex items-center justify-between text-xs">
+                <div>
+                    <span class="block text-[10px] text-[var(--color-text-muted)] font-medium">نام حساب</span>
+                    <strong class="block text-sm font-bold text-[var(--color-text)]" id="dash-user-name">کاربر روزنه</strong>
+                </div>
+                <div class="text-left">
+                    <span class="block text-[10px] text-[var(--color-text-muted)] font-medium">شناسه ورود</span>
+                    <span class="font-mono text-xs text-gray-700 font-bold" id="dash-user-identifier">09120000000</span>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-2 gap-3 mb-6 text-xs">
+                <div class="p-3.5 rounded-2xl bg-[var(--color-bg-alt)] border border-[var(--color-border)]">
+                    <span class="block text-[10px] text-[var(--color-text-muted)] font-medium mb-1">حجم باقی‌مانده</span>
+                    <strong class="block text-base font-black text-[var(--color-primary)]" id="dash-user-vol-text">۴۲.۵ GB / ۵۰ GB</strong>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-[var(--color-bg-alt)] border border-[var(--color-border)]">
+                    <span class="block text-[10px] text-[var(--color-text-muted)] font-medium mb-1">زمان باقی‌مانده</span>
+                    <strong class="block text-base font-black text-emerald-600" id="dash-user-days-text">۲۴ روز باقی‌مانده</strong>
+                </div>
+            </div>
+
+            <!-- Config Box -->
+            <div class="mb-6 space-y-2">
+                <label class="block text-xs font-bold text-[var(--color-text)]">لینک کانفیگ اختصاصی شما (V2Ray):</label>
+                <div class="p-3 rounded-2xl bg-gray-50 border border-gray-200 text-[10px] font-en dir-ltr overflow-x-auto text-gray-700 select-all" id="dash-user-config-url">
+                    vless://8f4c2e11-9a2b-4c3d-8e5f-1a2b3c4d5e6f@185.24.8.10:443?type=tcp&security=reality&sni=google.com#Rozaneh-User
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-copy-user-config" class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="ph-bold ph-copy"></i>
+                        <span>کپی لینک کانفیگ</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- QR Code Section -->
+            <div class="text-center p-4 rounded-2xl bg-[var(--color-bg-alt)] border border-[var(--color-border)] flex flex-col items-center justify-center">
+                <img id="dash-user-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=vless://8f4c2e11-9a2b-4c3d-8e5f-1a2b3c4d5e6f@185.24.8.10:443?type=tcp&security=reality&sni=google.com%23Rozaneh-User" alt="QR Code" class="w-32 h-32 rounded-xl border border-gray-200 bg-white p-2 shadow-xs mb-2">
+                <span class="text-[10px] font-bold text-gray-500">کد QR اختصاصی جهت اسکن با دوربین V2RayNG / Streisand / V2Box</span>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="auth-script.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Map database plans to pricingData
+            const plans = @json($plans);
+            
+            // Helper to format price to Toman with commas
+            const formatPrice = (num) => {
+                return new Intl.NumberFormat('fa-IR').format(num);
+            };
+            
+            // Default structures
+            const customPricing = {
+                monthly: {
+                    core: { price: '۶۵,۰۰۰', period: 'تومان / ماهانه', rawPrice: '۶۵,۰۰۰ تومان ماهانه', id: null },
+                    pro: { price: '۹۵,۰۰۰', period: 'تومان / ماهانه', rawPrice: '۹۵,۰۰۰ تومان ماهانه', id: null },
+                    enterprise: { price: '۱۸۰,۰۰۰', period: 'تومان / ماهانه', rawPrice: '۱۸۰,۰۰۰ تومان ماهانه', id: null }
+                },
+                quarterly: {
+                    core: { price: '۱۷۵,۰۰۰', period: 'تومان / ۳ ماهه', rawPrice: '۱۷۵,۰۰۰ تومان ۳ ماهه', id: null },
+                    pro: { price: '۱۶۵,۰۰۰', period: 'تومان / ۳ ماهه', rawPrice: '۱۶۵,۰۰۰ تومان ۳ ماهه', id: null },
+                    enterprise: { price: '۴۵۰,۰۰۰', period: 'تومان / ۳ ماهه', rawPrice: '۴۵۰,۰۰۰ تومان ۳ ماهه', id: null }
+                },
+                yearly: {
+                    core: { price: '۵۹۰,۰۰۰', period: 'تومان / سالانه', rawPrice: '۵۹۰,۰۰۰ تومان سالانه', id: null },
+                    pro: { price: '۶۹۰,۰۰۰', period: 'تومان / سالانه', rawPrice: '۶۹۰,۰۰۰ تومان سالانه', id: null },
+                    enterprise: { price: '۴۹۰,۰۰۰', period: 'تومان / سالانه', rawPrice: '۴۹۰,۰۰۰ تومان سالانه', id: null }
+                }
+            };
+
+            plans.forEach(plan => {
+                let type = 'core';
+                const nameLower = plan.name.toLowerCase();
+                if (nameLower.includes('افق') || nameLower.includes('pro') || plan.is_popular) {
+                    type = 'pro';
+                } else if (nameLower.includes('بینهایت') || nameLower.includes('enterprise') || nameLower.includes('بینایت')) {
+                    type = 'enterprise';
+                }
+                
+                let period = 'monthly';
+                let periodText = 'تومان / ماهانه';
+                if (plan.duration_days >= 365) {
+                    period = 'yearly';
+                    periodText = 'تومان / سالانه';
+                } else if (plan.duration_days >= 90) {
+                    period = 'quarterly';
+                    periodText = 'تومان / ۳ ماهه';
+                }
+                
+                customPricing[period][type] = {
+                    price: formatPrice(plan.price),
+                    period: periodText,
+                    rawPrice: formatPrice(plan.price) + ' ' + periodText,
+                    id: plan.id
+                };
+            });
+
+            // Set global variable so script.js uses it
+            window.pricingData = customPricing;
+            
+            // Trigger UI update with selected period values
+            const activeBtn = document.querySelector('.pricing-period-btn.active');
+            if (activeBtn) {
+                activeBtn.click();
+            }
+
+            // Update button attributes and action handlers
+            const updateButtonActions = () => {
+                const activePeriod = document.querySelector('.pricing-period-btn.active')?.getAttribute('data-period') || 'quarterly';
+                
+                ['core', 'pro', 'enterprise'].forEach(type => {
+                    const btn = document.getElementById('btn-' + type);
+                    if (btn) {
+                        const planId = customPricing[activePeriod][type].id;
+                        if (planId) {
+                            btn.setAttribute('data-plan-id', planId);
+                        }
+                    }
+                });
+            };
+            
+            updateButtonActions();
+            
+            // Hook price switcher buttons to update data-plan-ids as well
+            document.querySelectorAll('.pricing-period-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setTimeout(updateButtonActions, 50);
+                });
+            });
+            
+            // Handle checkout form submission to Laravel's order store!
+            const buyButtons = document.querySelectorAll('.buy-btn');
+            const checkoutForm = document.getElementById('checkout-web-form');
+            
+            buyButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const planId = e.target.getAttribute('data-plan-id');
+                    if (planId && checkoutForm) {
+                        checkoutForm.action = `/order/${planId}`;
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- Mobile Menu Drawer Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileToggleBtn = document.getElementById('mobile-menu-toggle');
+            const mobileCloseBtn = document.getElementById('mobile-menu-close');
+            const mobileOverlay = document.getElementById('mobile-menu-overlay');
+            const mobileDrawer = document.getElementById('mobile-menu-drawer');
+            const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+
+            function openMobileMenu() {
+                if (mobileOverlay) mobileOverlay.classList.add('active');
+                if (mobileDrawer) mobileDrawer.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMobileMenu() {
+                if (mobileOverlay) mobileOverlay.classList.remove('active');
+                if (mobileDrawer) mobileDrawer.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            mobileNavLinks.forEach(link => link.addEventListener('click', closeMobileMenu));
+        });
+    </script>
+    <script src="script.js"></script>
+    <script src="mobile-script.js"></script>
+    <!-- Modular Rozaneh Scripts -->
+    <script src="js/navbar.js"></script>
+    <script src="js/hero.js"></script>
+</body>
+</html>
+

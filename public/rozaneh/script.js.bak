@@ -1,0 +1,258 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Smooth scrolling for anchors
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+            const targetEl = document.querySelector(targetId);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+
+    // 2. Pricing Buttons click handler
+    const buyButtons = document.querySelectorAll('.buy-btn');
+    const checkoutSection = document.getElementById('checkout-section');
+    const selectedPackageText = document.getElementById('selected-package-text');
+    const checkoutTelegramCta = document.getElementById('checkout-telegram-cta');
+
+    buyButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const packageName = e.target.getAttribute('data-package');
+            const packagePrice = e.target.getAttribute('data-price');
+
+            // Reset buy buttons text
+            buyButtons.forEach(b => {
+                b.textContent = 'خرید پلن';
+            });
+
+            // Highlight selected button
+            e.target.textContent = 'انتخاب شد ✓';
+
+            // Populate checkout text
+            selectedPackageText.textContent = `${packageName} (${packagePrice})`;
+
+            // Generate specific Telegram start parameter for this package
+            let startParam = 'buy_core';
+            if (packageName.includes('Professional')) {
+                startParam = 'buy_pro';
+            } else if (packageName.includes('Enterprise')) {
+                startParam = 'buy_enterprise';
+            }
+            checkoutTelegramCta.href = `https://t.me/RozanehVpnBot?start=${startParam}`;
+
+            // Show checkout section (if hidden)
+            checkoutSection.classList.remove('hidden');
+
+            // Scroll to checkout
+            setTimeout(() => {
+                checkoutSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        });
+    });
+
+    // 3. Referral Range Slider Calculator
+    const referralSlider = document.getElementById('referral-slider');
+    const friendsCountSpan = document.getElementById('friends-count');
+    const totalGiftDataSpan = document.getElementById('total-gift-data');
+
+    if (referralSlider && friendsCountSpan && totalGiftDataSpan) {
+        referralSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            friendsCountSpan.textContent = val;
+            
+            // 2GB base + 0.5GB per friend
+            const totalData = 2 + (val * 0.5);
+            totalGiftDataSpan.textContent = totalData % 1 === 0 ? totalData : totalData.toFixed(1);
+        });
+    }
+
+    // 4. Interactive Package Suggestion Wizard
+    const runWizardBtn = document.getElementById('run-wizard-btn');
+    const wizardUsage = document.getElementById('wizard-usage');
+    const wizardDevices = document.getElementById('wizard-devices');
+    const wizardResult = document.getElementById('wizard-result');
+    const recommendedPlanTitle = document.getElementById('recommended-plan-title');
+    const recommendedPlanReason = document.getElementById('recommended-plan-reason');
+    const wizardResultCta = document.getElementById('wizard-result-cta');
+
+    if (runWizardBtn && wizardUsage && wizardDevices && wizardResult) {
+        runWizardBtn.addEventListener('click', () => {
+            const usage = wizardUsage.value;
+            const devices = wizardDevices.value;
+            
+            let planName = 'روزنه Professional';
+            let reasonText = '';
+            let startParam = 'buy_pro';
+
+            if (usage === 'gaming') {
+                planName = 'روزنه Professional';
+                reasonText = 'با توجه به نیاز شما به پینگ پایین برای بازی‌های آنلاین و مسیرهای مستقیم، پکیج حرفه‌ای به همراه مسیریابی هوشمند اولویت‌دار به شما پیشنهاد می‌شود.';
+                startParam = 'buy_pro';
+            } else if (usage === 'pro') {
+                planName = 'روزنه Professional';
+                reasonText = 'برای توسعه‌دهندگان و طراحانی که نیاز به دسترسی مداوم به ابزارهای فنی دارند، این پلن با پهنای باند عریض و اولویت اتصال در ساعات اوج ترافیک عالی است.';
+                startParam = 'buy_pro';
+            } else if (usage === 'general') {
+                if (devices === 'low') {
+                    planName = 'روزنه Core';
+                    reasonText = 'برای وب‌گردی روزمره، مطالعه مقالات و استفاده روی حداکثر ۲ دستگاه همزمان، پکیج اقتصادی Core مقرون‌به‌صرفه‌ترین و مناسب‌ترین گزینه برای شماست.';
+                    startParam = 'buy_core';
+                } else {
+                    planName = 'روزنه Professional';
+                    reasonText = 'با اینکه کاربری شما معمولی است، اما اتصال ۳ دستگاه یا بیشتر نیاز به پهنای باند و منابع بیشتری دارد که پلن Professional آن را تأمین می‌کند.';
+                    startParam = 'buy_pro';
+                }
+            } else if (usage === 'stream') {
+                if (devices === 'high') {
+                    planName = 'روزنه Enterprise';
+                    reasonText = 'برای استریم ویدیو با کیفیت بالا روی بیش از ۳ دستگاه همزمان، پلن سازمانی/Enterprise با سرورهای اختصاصی و پهنای باند تضمین‌شده بدون افت پینگ پیشنهاد می‌شود.';
+                    startParam = 'buy_enterprise';
+                } else {
+                    planName = 'روزنه Professional';
+                    reasonText = 'تماشای ویدیو و استریم نیاز به پهنای باند بالایی دارد. پلن Professional سرعت دانلود کافی و پایداری مناسب برای ویدیوهای باکیفیت را ارائه می‌دهد.';
+                    startParam = 'buy_pro';
+                }
+            }
+
+            // Update DOM
+            recommendedPlanTitle.textContent = planName;
+            recommendedPlanReason.textContent = reasonText;
+            if (wizardResultCta) {
+                wizardResultCta.href = `https://t.me/RozanehVpnBot?start=${startParam}`;
+            }
+
+            // Reveal result
+            wizardResult.classList.remove('hidden');
+            wizardResult.style.opacity = '0';
+            wizardResult.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                wizardResult.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                wizardResult.style.opacity = '1';
+                wizardResult.style.transform = 'scale(1)';
+            }, 50);
+        });
+    }
+
+    // 5. User Login / Dashboard System Simulation
+    const loginTriggerBtn = document.getElementById('login-trigger-btn');
+    const closeLoginBtn = document.getElementById('close-login');
+    const loginModal = document.getElementById('login-modal');
+    const loginForm = document.getElementById('login-form');
+    const loginUserCode = document.getElementById('login-user-code');
+    
+    const userProfileMenu = document.getElementById('user-profile-menu');
+    const navTrialBtn = document.getElementById('nav-trial-btn');
+    const navbarUsername = document.getElementById('navbar-username');
+    const dropdownUserId = document.getElementById('dropdown-userid');
+    const userMenuBtn = document.getElementById('user-menu-btn');
+    const userDropdown = document.getElementById('user-dropdown');
+    const logoutBtn = document.getElementById('logout-btn');
+    
+    // User dashboard detail items
+    const dashboardPlan = document.getElementById('dashboard-plan');
+    const dashboardTraffic = document.getElementById('dashboard-traffic');
+    const dashboardExpiry = document.getElementById('dashboard-expiry');
+
+    // Toggle Modal
+    if (loginTriggerBtn && loginModal) {
+        loginTriggerBtn.addEventListener('click', () => {
+            loginModal.classList.add('active');
+        });
+    }
+
+    if (closeLoginBtn && loginModal) {
+        closeLoginBtn.addEventListener('click', () => {
+            loginModal.classList.remove('active');
+        });
+    }
+
+    // Submit Login Form
+    if (loginForm && loginUserCode) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const code = loginUserCode.value.trim();
+            if (code) {
+                localStorage.setItem('rozaneh_user', code);
+                loginModal.classList.remove('active');
+                loginForm.reset();
+                updateAuthUI();
+            }
+        });
+    }
+
+    // Toggle Dropdown
+    if (userMenuBtn && userDropdown) {
+        userMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('hidden');
+        });
+
+        // Close dropdown on click outside
+        document.addEventListener('click', () => {
+            userDropdown.classList.add('hidden');
+        });
+    }
+
+    // Logout
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('rozaneh_user');
+            if (userDropdown) userDropdown.classList.add('hidden');
+            updateAuthUI();
+        });
+    }
+
+    // Update Auth UI elements based on state
+    function updateAuthUI() {
+        const storedUser = localStorage.getItem('rozaneh_user');
+
+        if (storedUser) {
+            // User is logged in
+            if (loginTriggerBtn) loginTriggerBtn.classList.add('hidden');
+            if (navTrialBtn) navTrialBtn.classList.add('hidden');
+            if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+
+            if (navbarUsername) navbarUsername.textContent = storedUser;
+            if (dropdownUserId) dropdownUserId.textContent = storedUser;
+
+            // Simulate realistic subscription details based on code digits
+            let planType = 'تست رایگان ۲ گیگابایت';
+            let trafficText = '۰.۴ از ۲.۰ گیگابایت';
+            let expiryText = '۲۸ روز باقی‌مانده';
+
+            // Pick details based on last digit of the code
+            const lastChar = storedUser.charAt(storedUser.length - 1);
+            if (!isNaN(lastChar)) {
+                const digit = parseInt(lastChar, 10);
+                if (digit === 1 || digit === 4) {
+                    planType = 'روزنه Professional';
+                    trafficText = '۴۲.۸ از ۷۵.۰ گیگابایت';
+                    expiryText = '۵۴ روز باقی‌مانده';
+                } else if (digit === 2 || digit === 5) {
+                    planType = 'روزنه Core';
+                    trafficText = '۱۱.۲ از ۳۰.۰ گیگابایت';
+                    expiryText = '۱۲ روز باقی‌مانده';
+                } else if (digit === 3 || digit === 6) {
+                    planType = 'روزنه Enterprise';
+                    trafficText = '۱۲۴.۵ از ۲۵۰.۰ گیگابایت';
+                    expiryText = '۳۱۰ روز باقی‌مانده';
+                }
+            }
+
+            if (dashboardPlan) dashboardPlan.textContent = planType;
+            if (dashboardTraffic) dashboardTraffic.textContent = trafficText;
+            if (dashboardExpiry) dashboardExpiry.textContent = expiryText;
+        } else {
+            // User is logged out
+            if (loginTriggerBtn) loginTriggerBtn.classList.remove('hidden');
+            if (navTrialBtn) navTrialBtn.classList.remove('hidden');
+            if (userProfileMenu) userProfileMenu.classList.add('hidden');
+        }
+    }
+
+    // Run once on load
+    updateAuthUI();
+});

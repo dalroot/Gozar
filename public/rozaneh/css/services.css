@@ -1,0 +1,103 @@
+/* ==========================================================================
+   ROZANEH TWIN-GROUP GAPLESS INFINITE MARQUEE COMPONENT
+   ========================================================================== */
+
+.services-marquee-section {
+    padding: 56px 0 !important;
+    background: #FFFBF7 !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.marquee-wrapper {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
+}
+
+.marquee-container {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    position: relative !important;
+    padding: 6px 0 !important;
+    direction: ltr !important;
+    gap: 16px !important;
+    mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+}
+
+.marquee-group {
+    display: flex !important;
+    flex-shrink: 0 !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    gap: 16px !important;
+    min-width: 100% !important;
+    will-change: transform;
+}
+
+.marquee-group.track-left {
+    animation: marqueeGroupLeft 28s linear infinite !important;
+}
+
+.marquee-group.track-right {
+    animation: marqueeGroupRight 28s linear infinite !important;
+}
+
+.marquee-container:hover .marquee-group {
+    animation-play-state: paused !important;
+}
+
+/* Individual Brand Card Pill */
+.marquee-card {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 20px !important;
+    border-radius: 9999px !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid #FFE4CB !important;
+    box-shadow: 0 4px 15px rgba(67, 20, 7, 0.05) !important;
+    color: #38140B !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    cursor: pointer !important;
+}
+
+.marquee-card:hover {
+    transform: translateY(-2px) !important;
+    border-color: #FF7A3C !important;
+    box-shadow: 0 8px 20px rgba(255, 122, 60, 0.18) !important;
+}
+
+/* Keyframes for Twin-Group Gapless Infinite Loop */
+@keyframes marqueeGroupLeft {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-100% - 16px)); }
+}
+
+@keyframes marqueeGroupRight {
+    0% { transform: translateX(calc(-100% - 16px)); }
+    100% { transform: translateX(0); }
+}
+
+/* Bento Grid Cards */
+.bento-card {
+    background: var(--color-bg-card);
+    border: 2px solid var(--color-border);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: var(--shadow-clay-md);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bento-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-clay-lg);
+}

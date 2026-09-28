@@ -1,0 +1,149 @@
+/* ==========================================================================
+   ROZANEH SERVERS & COUNTRIES SECTION (Single Active Card + Sleek Radar Pills)
+   ========================================================================== */
+
+#gallery {
+    padding-top: 60px;
+    padding-bottom: 60px;
+    background-color: var(--color-bg);
+}
+
+/* Radar Bar (Horizontal Smooth Pill Tabs) */
+.country-radar-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important; /* Center on desktop */
+    gap: 8px !important;
+    padding: 8px 12px !important;
+    background: #FFFFFF !important;
+    border: 2px solid #FFE4CB !important;
+    border-radius: 24px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    max-width: 640px !important;
+    margin: 0 auto 28px auto !important;
+    box-shadow: 0 4px 15px rgba(67, 20, 7, 0.04) !important;
+}
+
+.country-radar-bar::-webkit-scrollbar {
+    display: none !important;
+}
+
+.radar-node-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 8px 16px !important;
+    border-radius: var(--radius-sm) !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid var(--color-border-subtle) !important;
+    color: var(--color-text) !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+}
+
+.radar-node-btn:hover {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+.radar-node-btn span {
+    color: inherit !important;
+}
+
+.radar-node-btn.active {
+    background: linear-gradient(135deg, #FF7A3C 0%, #FF661A 100%) !important;
+    border-color: #FF7A3C !important;
+    color: #FFFFFF !important;
+}
+.radar-node-btn.active span {
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(255, 122, 60, 0.3) !important;
+}
+
+.radar-ping-dot {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    background: #10B981 !important;
+    flex-shrink: 0 !important;
+}
+
+.radar-connector-line {
+    display: none !important;
+}
+
+/* Country Slider Track & Single Active Card Display */
+.country-slider-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 580px;
+    margin: 0 auto;
+}
+
+.country-cards-track {
+    position: relative;
+    width: 100%;
+    min-height: 440px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Country Card Styling */
+.country-3d-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0 auto !important; /* Centered alignment */
+    background: #FFFFFF !important;
+    border: 2px solid #FFE4CB !important;
+    border-radius: 28px !important;
+    padding: 24px !important;
+    box-shadow: 0 16px 40px -10px rgba(67, 20, 7, 0.08) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: scale(0.95) translateY(15px) !important;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    z-index: 1 !important;
+}
+
+/* ONLY ACTIVE CARD IS VISIBLE */
+.country-3d-card.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: scale(1) translateY(0) !important;
+    z-index: 20 !important;
+    box-shadow: 0 20px 50px -10px rgba(255, 122, 60, 0.16) !important;
+}
+
+.country-3d-card.prev,
+.country-3d-card.next {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+@media (max-width: 640px) {
+    .country-cards-track {
+        min-height: 420px;
+    }
+    
+    .country-3d-card {
+        padding: 18px 16px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .country-radar-bar {
+        justify-content: flex-start !important; /* horizontal scrolling on mobile */
+    }
+}
