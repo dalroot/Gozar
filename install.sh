@@ -129,7 +129,9 @@ sed -i "s|QUEUE_CONNECTION=.*|QUEUE_CONNECTION=redis|" .env
 
 # --- Step 6: Dependencies & Migrations ---
 echo -e "${YELLOW}[6/7] 🧰 Installing dependencies and preparing database...${NC}"
-sudo -u www-data composer install --no-dev --optimize-autoloader
+mkdir -p /var/www/.cache/composer
+chown -R www-data:www-data /var/www/.cache
+sudo -u www-data COMPOSER_HOME="/var/www/.cache/composer" composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 sudo -u www-data php artisan key:generate
 sudo -u www-data php artisan migrate --seed --force
 sudo -u www-data php artisan storage:link
