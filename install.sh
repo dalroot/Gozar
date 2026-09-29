@@ -1,178 +1,148 @@
 #!/bin/bash
 
 # ==================================================================================
-# ===         Gozar Automated Installer for Ubuntu 22.04 / 24.04 LTS          ===
-# ===         https://github.com/dalroot/Gozar                                ===
+# ===            Gozar Web Setup Installer for Ubuntu 22.04 / 24.04 / 26.04      ===
+# ===            https://github.com/dalroot/Gozar                                ===
 # ==================================================================================
 
 set -e
 
 # ANSI Color Codes
-GREEN='[0;32m'
-YELLOW='[1;33m'
-CYAN='[0;36m'
-BLUE='[0;34m'
-RED='[0;31m'
-BOLD='[1m'
-NC='[0m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+BOLD='\033[1m'
+NC='\033[0m'
 
 PROJECT_PATH="/var/www/gozar"
 GITHUB_REPO="https://github.com/dalroot/Gozar.git"
-PHP_VERSION="8.3"
+DB_NAME="gozar_db"
+DB_USER="gozar_user"
+DB_PASS=$(openssl rand -hex 12)
+SETUP_TOKEN=$(openssl rand -hex 16)
+SETUP_PORT=8000
 
 clear
 echo -e "${CYAN}=====================================================================${NC}"
-echo -e "${BOLD}${CYAN}            ⚡️ Gozar - Automated Installation Script ⚡️         ${NC}"
+echo -e "${BOLD}${CYAN}               ⚡️ Gozar Engine - Fast Setup Installer ⚡️            ${NC}"
 echo -e "${CYAN}=====================================================================${NC}"
 echo
 
-# --- User Inputs ---
-read -p "🌐 Enter your Domain or Subdomain (e.g. panel.example.com): " DOMAIN
-DOMAIN=$(echo $DOMAIN | sed 's|http[s]*://||g' | sed 's|/.*||g')
+# Detect Public Server IP
+SERVER_IP=$(curl -4 -s https://api.ipify.org || hostname -I | awk '{print $1}')
 
-if [ -z "$DOMAIN" ]; then
-    echo -e "${RED}❌ Error: Domain cannot be empty!${NC}"
-    exit 1
+# --- Step 1: System Packages & Swap ---
+echo -e "${YELLOW}[1/7] 📦 Preparing system packages...${NC}"
+export DEBIAN_FRONTEND=noninteractive
+
+# Add 2GB Swap if not present
+if [ $(free -m | awk '/^Swap:/ {print $2}') -eq 0 ]; then
+    echo -e "${YELLOW}   Configuring 2GB Swap Memory for optimal stability...${NC}"
+    fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048
+    chmod 600 /swapfile
+    mkswap /swapfile > /dev/null
+    swapon /swapfile > /dev/null
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
 
-read -p "🗃 Enter Database Name [default: gozarnet]: " DB_NAME
-DB_NAME=${DB_NAME:-gozarnet}
-
-read -p "👤 Enter Database Username [default: gozarnet]: " DB_USER
-DB_USER=${DB_USER:-gozarnet}
-
-while true; do
-    read -s -p "🔑 Enter Database Password: " DB_PASS
-    echo
-    [ ! -z "$DB_PASS" ] && break
-    echo -e "${RED}❌ Error: Database password cannot be empty.${NC}"
-done
-
-read -p "🤖 Enter Telegram Bot Token (optional, can be set later in Admin Panel): " BOT_TOKEN
-read -p "✉️ Enter Admin Email (for Let's Encrypt SSL certificate): " ADMIN_EMAIL
-echo
-
-# --- Step 1: System Packages ---
-echo -e "${YELLOW}[1/11] 📦 Installing essential system packages...${NC}"
-export DEBIAN_FRONTEND=noninteractive
-sudo apt-get update -y
-sudo apt-get install -y git curl unzip software-properties-common gpg nginx mysql-server redis-server supervisor ufw certbot python3-certbot-nginx
+# Clean up broken / unneeded PPAs for Ubuntu 26.04+ compatibility
+rm -f /etc/apt/sources.list.d/*ondrej* 2>/dev/null || true
+apt-get update -y
+apt-get install -y git curl unzip software-properties-common gpg nginx mysql-server redis-server supervisor ufw certbot python3-certbot-nginx
 
 # --- Step 2: Node.js LTS ---
-echo -e "${YELLOW}[2/11] 📦 Setting up Node.js LTS...${NC}"
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs build-essential
+echo -e "${YELLOW}[2/7] 📦 Installing Node.js LTS...${NC}"
+if ! command -v node &> /dev/null; then
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+    apt-get install -y nodejs build-essential
+fi
 
-# --- Step 3: PHP 8.3 & Extensions ---
-echo -e "${YELLOW}[3/11] ☕ Installing PHP ${PHP_VERSION} and required extensions...${NC}"
-sudo add-apt-repository -y ppa:ondrej/php
-sudo apt-get update -y
-sudo apt-get install -y     php${PHP_VERSION} php${PHP_VERSION}-fpm php${PHP_VERSION}-cli     php${PHP_VERSION}-mysql php${PHP_VERSION}-mbstring php${PHP_VERSION}-xml     php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-bcmath     php${PHP_VERSION}-intl php${PHP_VERSION}-gd php${PHP_VERSION}-dom     php${PHP_VERSION}-redis
+# --- Step 3: PHP Installation (Auto-detecting available repo or native) ---
+echo -e "${YELLOW}[3/7] ☕ Installing PHP and required extensions...${NC}"
+UBUNTU_CODENAME=$(lsb_release -cs 2>/dev/null || echo "noble")
 
-PHP_INI_PATH="/etc/php/${PHP_VERSION}/fpm/php.ini"
-sudo sed -i 's/upload_max_filesize = .*/upload_max_filesize = 25M/' $PHP_INI_PATH
-sudo sed -i 's/post_max_size = .*/post_max_size = 30M/' $PHP_INI_PATH
-sudo sed -i 's/memory_limit = .*/memory_limit = 256M/' $PHP_INI_PATH
+if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "noble" ]; then
+    add-apt-repository -y ppa:ondrej/php 2>/dev/null || true
+    apt-get update -y
+fi
+
+# Try installing PHP 8.3, fallback to default php
+if apt-cache show php8.3 > /dev/null 2>&1; then
+    PHP_VERSION="8.3"
+else
+    PHP_VERSION=$(apt-cache show php | grep -m1 "Version:" | awk '{print $2}' | cut -d'.' -f1,2)
+    [ -z "$PHP_VERSION" ] && PHP_VERSION="8.3"
+fi
+
+apt-get install -y \
+    php${PHP_VERSION} php${PHP_VERSION}-fpm php${PHP_VERSION}-cli \
+    php${PHP_VERSION}-mysql php${PHP_VERSION}-mbstring php${PHP_VERSION}-xml \
+    php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-bcmath \
+    php${PHP_VERSION}-intl php${PHP_VERSION}-gd php${PHP_VERSION}-dom \
+    php${PHP_VERSION}-redis || apt-get install -y php php-fpm php-cli php-mysql php-mbstring php-xml php-curl php-zip php-bcmath php-intl php-gd php-redis
+
+PHP_FPM_SERVICE=$(systemctl list-unit-files | grep -oE "php[0-9.]*-fpm" | head -n 1)
+[ -z "$PHP_FPM_SERVICE" ] && PHP_FPM_SERVICE="php8.3-fpm"
 
 # Composer
 if ! command -v composer &> /dev/null; then
-    echo -e "${YELLOW}   Installing Composer...${NC}"
-    php${PHP_VERSION} -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-    php${PHP_VERSION} composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer
     rm composer-setup.php
 fi
 
-# Enable Services
-sudo systemctl enable --now php${PHP_VERSION}-fpm nginx mysql redis-server supervisor
+# Enable core services
+systemctl enable --now $PHP_FPM_SERVICE nginx mysql redis-server supervisor
 
 # Firewall rules
-sudo ufw allow 'OpenSSH' > /dev/null 2>&1 || true
-sudo ufw allow 'Nginx Full' > /dev/null 2>&1 || true
-echo "y" | sudo ufw enable > /dev/null 2>&1 || true
+ufw allow 'OpenSSH' > /dev/null 2>&1 || true
+ufw allow 'Nginx Full' > /dev/null 2>&1 || true
+ufw allow $SETUP_PORT/tcp > /dev/null 2>&1 || true
+echo "y" | ufw enable > /dev/null 2>&1 || true
 
-# --- Step 4: Clone Repository ---
-echo -e "${YELLOW}[4/11] ⬇️ Downloading Gozar repository...${NC}"
-sudo rm -rf "$PROJECT_PATH"
-sudo git clone $GITHUB_REPO $PROJECT_PATH
-sudo chown -R www-data:www-data $PROJECT_PATH
+# --- Step 4: Clone / Setup Codebase ---
+echo -e "${YELLOW}[4/7] ⬇️ Downloading Gozar repository...${NC}"
+rm -rf "$PROJECT_PATH"
+git clone $GITHUB_REPO $PROJECT_PATH
+chown -R www-data:www-data $PROJECT_PATH
 cd $PROJECT_PATH
 
-# --- Step 5: MySQL Database Setup ---
-echo -e "${YELLOW}[5/11] 🗄 Configuring MySQL Database...${NC}"
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-sudo mysql -e "CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';"
-sudo mysql -e "GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';"
-sudo mysql -e "FLUSH PRIVILEGES;"
+# --- Step 5: Database Creation ---
+echo -e "${YELLOW}[5/7] 🗄 Preparing MySQL Database...${NC}"
+mysql -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -e "CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';"
+mysql -e "GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';"
+mysql -e "FLUSH PRIVILEGES;"
 
-# --- Step 6: Configure Environment (.env) ---
-echo -e "${YELLOW}[6/11] ⚙️ Configuring .env file...${NC}"
-sudo -u www-data cp .env.example .env
-sudo sed -i "s|APP_NAME=.*|APP_NAME=Gozar|" .env
-sudo sed -i "s|DB_CONNECTION=.*|DB_CONNECTION=mysql|" .env
-sudo sed -i "s|DB_DATABASE=.*|DB_DATABASE=$DB_NAME|" .env
-sudo sed -i "s|DB_USERNAME=.*|DB_USERNAME=$DB_USER|" .env
-sudo sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS|" .env
-sudo sed -i "s|APP_URL=.*|APP_URL=https://$DOMAIN|" .env
-sudo sed -i "s|APP_ENV=.*|APP_ENV=production|" .env
-sudo sed -i "s|QUEUE_CONNECTION=.*|QUEUE_CONNECTION=redis|" .env
-if [ ! -z "$BOT_TOKEN" ]; then
-    sudo sed -i "s|TELEGRAM_BOT_TOKEN=.*|TELEGRAM_BOT_TOKEN=$BOT_TOKEN|" .env
-fi
+# Create .env
+cp .env.example .env
+sed -i "s|APP_NAME=.*|APP_NAME=Gozar|" .env
+sed -i "s|DB_CONNECTION=.*|DB_CONNECTION=mysql|" .env
+sed -i "s|DB_DATABASE=.*|DB_DATABASE=$DB_NAME|" .env
+sed -i "s|DB_USERNAME=.*|DB_USERNAME=$DB_USER|" .env
+sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS|" .env
+sed -i "s|APP_URL=.*|APP_URL=http://$SERVER_IP:$SETUP_PORT|" .env
+sed -i "s|APP_ENV=.*|APP_ENV=production|" .env
+sed -i "s|QUEUE_CONNECTION=.*|QUEUE_CONNECTION=redis|" .env
 
-# --- Step 7: Composer & NPM Build ---
-echo -e "${YELLOW}[7/11] 🧰 Installing Composer dependencies...${NC}"
+# --- Step 6: Dependencies & Migrations ---
+echo -e "${YELLOW}[6/7] 🧰 Installing dependencies and preparing database...${NC}"
 sudo -u www-data composer install --no-dev --optimize-autoloader
-
-echo -e "${YELLOW}[8/11] 📦 Building frontend assets (NPM)...${NC}"
-NPM_CACHE_DIR="/var/www/.npm"
-sudo mkdir -p $NPM_CACHE_DIR
-sudo chown -R www-data:www-data $NPM_CACHE_DIR
-sudo chown -R www-data:www-data $PROJECT_PATH
-sudo -u www-data npm install --cache $NPM_CACHE_DIR --legacy-peer-deps
-sudo -u www-data npm run build
-
-# Laravel setup
 sudo -u www-data php artisan key:generate
 sudo -u www-data php artisan migrate --seed --force
 sudo -u www-data php artisan storage:link
 
-# --- Step 8: Nginx Web Server ---
-echo -e "${YELLOW}[9/11] 🌐 Configuring Nginx web server...${NC}"
-PHP_FPM_SOCK_PATH="/run/php/php${PHP_VERSION}-fpm.sock"
+# Store setup token
+echo "$SETUP_TOKEN" > "$PROJECT_PATH/storage/setup_token"
+chown www-data:www-data "$PROJECT_PATH/storage/setup_token"
+chmod 644 "$PROJECT_PATH/storage/setup_token"
+rm -f "$PROJECT_PATH/storage/installed" 2>/dev/null || true
 
-sudo tee /etc/nginx/sites-available/gozarnet >/dev/null <<EOF_NGINX
-server {
-    listen 80;
-    server_name $DOMAIN;
-    root $PROJECT_PATH/public;
-
-    client_max_body_size 25M;
-    index index.php;
-
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
-
-    location ~ \.php\$ {
-        fastcgi_pass unix:$PHP_FPM_SOCK_PATH;
-        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    location ~ /\. {
-        deny all;
-    }
-}
-EOF_NGINX
-
-sudo ln -sf /etc/nginx/sites-available/gozarnet /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
-
-# --- Step 9: Supervisor Queue Worker ---
-echo -e "${YELLOW}[10/11] ⚙️ Configuring Background Queue Worker...${NC}"
-sudo tee /etc/supervisor/conf.d/gozarnet-worker.conf >/dev/null <<EOF_SUP
-[program:gozarnet-worker]
+# Setup Supervisor Worker
+tee /etc/supervisor/conf.d/gozar-worker.conf >/dev/null <<EOF_SUP
+[program:gozar-worker]
 process_name=%(program_name)s_%(process_num)02d
 command=php $PROJECT_PATH/artisan queue:work redis --sleep=3 --tries=3
 autostart=true
@@ -180,41 +150,31 @@ autorestart=true
 user=www-data
 numprocs=2
 redirect_stderr=true
-stdout_logfile=/var/log/supervisor/gozarnet-worker.log
+stdout_logfile=/var/log/supervisor/gozar-worker.log
 EOF_SUP
 
-sudo supervisorctl reread
-sudo supervisorctl update
-sudo supervisorctl start all
+supervisorctl reread > /dev/null 2>&1 || true
+supervisorctl update > /dev/null 2>&1 || true
+supervisorctl start all > /dev/null 2>&1 || true
 
-# Setup Crontab Schedule
+# Crontab schedule
 (crontab -l 2>/dev/null | grep -v 'schedule:run'; echo "* * * * * cd $PROJECT_PATH && php artisan schedule:run >> /dev/null 2>&1") | crontab -
 
-# Optimization
-sudo -u www-data php artisan optimize:clear
-sudo -u www-data php artisan optimize
-
-# --- Step 10: SSL Certificate ---
-if [ ! -z "$ADMIN_EMAIL" ]; then
-    echo -e "${YELLOW}[11/11] 🔒 Generating SSL Certificate (Let's Encrypt)...${NC}"
-    sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m $ADMIN_EMAIL || true
-fi
-
-# Webhook Setup
-if [ ! -z "$BOT_TOKEN" ]; then
-    echo -e "${YELLOW}🤖 Setting up Telegram Webhook...${NC}"
-    sudo -u www-data php artisan telegrambot:set-webhook || true
-fi
+# --- Step 7: Launch Setup Wizard ---
+echo -e "${YELLOW}[7/7] 🚀 Launching Web Setup Wizard...${NC}"
+killall -9 php 2>/dev/null || true
+nohup sudo -u www-data php -S 0.0.0.0:$SETUP_PORT -t "$PROJECT_PATH/public" "$PROJECT_PATH/server.php" > /tmp/gozar_wizard.log 2>&1 &
 
 echo
 echo -e "${GREEN}=====================================================================${NC}"
-echo -e "${BOLD}${GREEN}   🎉 Gozar has been successfully installed and configured! 🎉   ${NC}"
+echo -e "${BOLD}${GREEN}        🎉 Gozar Engine is Ready for Web Configuration! 🎉           ${NC}"
 echo -e "${GREEN}=====================================================================${NC}"
-echo -e "🌐 Web URL: ${CYAN}https://$DOMAIN${NC}"
-echo -e "🔑 Admin Panel: ${CYAN}https://$DOMAIN/admin${NC}"
 echo
-echo -e "   - Default Email: ${YELLOW}admin@example.com${NC}"
-echo -e "   - Default Password: ${YELLOW}password${NC}"
+echo -e "👉 Please open the following URL in your web browser to finish setup:"
 echo
-echo -e "${RED}⚠️ IMPORTANT: Please change your admin password immediately after login!${NC}"
+echo -e "   ${BOLD}${CYAN}http://$SERVER_IP:$SETUP_PORT/setup?token=$SETUP_TOKEN${NC}"
+echo
+echo -e "${YELLOW}ℹ️  All steps (Domain, SSL, Bot Token, Admin Password) will be${NC}"
+echo -e "${YELLOW}    configured easily and verified through the Web Wizard!${NC}"
 echo -e "${GREEN}=====================================================================${NC}"
+echo

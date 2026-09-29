@@ -173,3 +173,9 @@ Route::prefix('rozaneh-admin')->middleware(['auth', 'admin'])->group(function ()
     Route::get('/settings', fn() => view('rozaneh.admin.settings'))->name('admin.settings');
     Route::get('/configs', fn() => view('rozaneh.admin.configs'))->name('admin.configs');
 });
+/* WEB INSTALL SETUP WIZARD */
+use App\Http\Controllers\InstallWizardController;
+Route::get('/setup', [InstallWizardController::class, 'show'])->name('setup.show');
+Route::get('/setup/check-dns', [InstallWizardController::class, 'checkDns'])->name('setup.check-dns');
+Route::get('/setup/check-bot', [InstallWizardController::class, 'checkBot'])->name('setup.check-bot');
+Route::post('/setup/process', [InstallWizardController::class, 'process'])->name('setup.process');

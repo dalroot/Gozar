@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias(['admin' => \App\Http\Middleware\AdminMiddleware::class]);
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',  // تلگرام از CSRF معاف
+            'setup/*',     // ویزارد ستاپ اولیه با توکن امنیتی
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
