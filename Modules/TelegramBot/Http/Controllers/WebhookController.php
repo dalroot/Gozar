@@ -6343,14 +6343,13 @@ I am here to build the most secure and stable connection path for you.
         if (!$order || empty($order->config_details)) {
             Telegram::sendMessage([
                 'chat_id' => $user->telegram_chat_id,
-                'text' => $this->escape("❌ کانفیگ یافت نشد."),
-                'parse_mode' => 'MarkdownV2'
+                'text'    => "❌ اطلاعات یا لینک این سفارش یافت نشد.",
             ]);
             return;
         }
 
         $configs = $this->fetchDirectConfigsFromSubUrl($order->config_details);
-        $this->sendDirectConfigsToUser($user, $configs);
+        $this->sendDirectConfigsToUser($user, $configs, $order->config_details);
     }
 
     protected function sendDirectConfigsForTrial($user)
@@ -6359,27 +6358,46 @@ I am here to build the most secure and stable connection path for you.
         $subUrl = $order ? $order->config_details : \Illuminate\Support\Facades\Cache::get("trial_link_{$user->id}");
 
         if (empty($subUrl)) {
+            $order = $user->orders()->whereIn('status', ['paid', 'active', 'completed'])->latest()->first();
+            $subUrl = $order ? $order->config_details : null;
+        }
+
+        if (empty($subUrl)) {
             Telegram::sendMessage([
                 'chat_id' => $user->telegram_chat_id,
-                'text' => $this->escape("❌ لینک اکانت تست یافت نشد."),
-                'parse_mode' => 'MarkdownV2'
+                'text'    => "❌ اکانت تستی برای شما یافت نشد. لطفاً از منوی اصلی دکمه «🎁 تست رایگان» را لمس کنید.",
             ]);
             return;
         }
 
         $configs = $this->fetchDirectConfigsFromSubUrl($subUrl);
-        $this->sendDirectConfigsToUser($user, $configs);
+        $this->sendDirectConfigsToUser($user, $configs, $subUrl);
     }
 
     protected function fetchDirectConfigsFromSubUrl($subUrl)
     {
-        $subUrlStr = trim($subUrl);
+        $subUrlStr = trim((string) $subUrl);
+        if (empty($subUrlStr)) {
+            return [];
+        }
+
         if (preg_match('/^(vless|vmess|trojan|ss|tuic|hysteria2|hy2):\/\//i', $subUrlStr)) {
             return [$subUrlStr];
         }
 
-        $pureUrl = trim(preg_replace('/^.*?(http|vless|vmess|trojan|ss)(:\/\/[^\s]+).*$/is', '$1$2', $subUrlStr));
-        if (empty($pureUrl)) {
+        // اگر ساب‌آدرس دارای آدرس قدیمی یا نامعتبر بود ولی subId مشخص داشت، به آدرس جدید مپ کن
+        if (preg_match('/\/([a-zA-Z0-9_\-]{8,64})$/', $subUrlStr, $subMatches)) {
+            $subId = $subMatches[1];
+            $subBaseUrl = trim($this->settings->get('xui_subscription_url_base') ?? '');
+            if (!empty($subBaseUrl) && (!str_contains($subUrlStr, 'sub.cinemapluss.ir') || str_contains($subUrlStr, 'irn.one'))) {
+                $subUrlStr = rtrim($subBaseUrl, '/') . '/' . $subId;
+            }
+        }
+
+        // استخراج آدرس تمیز از داخل متن
+        if (preg_match('/(https?:\/\/[^\s"\'<>]+)/i', $subUrlStr, $urlMatches)) {
+            $pureUrl = $urlMatches[1];
+        } else {
             $pureUrl = $subUrlStr;
         }
 
@@ -6390,24 +6408,29 @@ I am here to build the most secure and stable connection path for you.
         try {
             $ch = curl_init();
             curl_setopt_array($ch, [
-                CURLOPT_URL => $pureUrl,
+                CURLOPT_URL            => $pureUrl,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_TIMEOUT => 8,
-                CURLOPT_USERAGENT => 'v2rayNG/1.8.5'
+                CURLOPT_TIMEOUT        => 12,
+                CURLOPT_CONNECTTIMEOUT => 6,
+                CURLOPT_USERAGENT      => 'v2rayNG/1.8.5',
             ]);
 
             $rawResponse = curl_exec($ch);
+            $curlError = curl_error($ch);
             curl_close($ch);
 
             if (empty($rawResponse)) {
+                if ($curlError) {
+                    Log::warning("Fetch direct configs curl error: {$curlError} for {$pureUrl}");
+                }
                 return [];
             }
 
             $decoded = @base64_decode(trim($rawResponse), true);
-            $content = ($decoded !== false && preg_match('/(vless|vmess|trojan|ss):\/\//i', $decoded)) ? $decoded : $rawResponse;
+            $content = ($decoded !== false && preg_match('/(vless|vmess|trojan|ss|tuic|hy2|hysteria2):\/\//i', $decoded)) ? $decoded : $rawResponse;
 
             $lines = preg_split('/\r\n|\r|\n/', $content);
             $configs = [];
@@ -6417,41 +6440,88 @@ I am here to build the most secure and stable connection path for you.
                     $configs[] = $line;
                 }
             }
-            return $configs;
+            return array_values(array_unique($configs));
         } catch (\Exception $e) {
             Log::warning('Fetch direct configs failed: ' . $e->getMessage());
             return [];
         }
     }
 
-    protected function sendDirectConfigsToUser($user, array $configs)
+    protected function sendDirectConfigsToUser($user, array $configs, $fallbackSubUrl = null)
     {
         $chatId = $user->telegram_chat_id;
 
         if (empty($configs)) {
+            $text = "⚠️ <b>کانفیگ مستقیم استخراج نشد</b>\n\n";
+            $text .= "لطفاً از لینک سابسکریپشن هوشمند زیر استفاده فرمایید که به صورت خودکار کانفیگ‌ها را در نرم‌افزار ایمپورت می‌کند:";
+            if ($fallbackSubUrl) {
+                $text .= "\n\n🎯 <b>لینک سابسکریپشن شما:</b>\n<code>" . htmlspecialchars($fallbackSubUrl) . "</code>";
+            }
+
+            $keyboard = Keyboard::make()->inline()->row([
+                $this->makeInlineButton(['text' => '🏠 بازگشت به خانه', 'callback_data' => '/start', 'style' => 'primary'])
+            ]);
+
             Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => $this->escape("⚠️ متأسفانه کانفیگ مستقیمی استخراج نشد. لطفاً از لینک سابسکریپشن استفاده فرمایید."),
-                'parse_mode' => 'MarkdownV2'
+                'chat_id'      => $chatId,
+                'text'         => $text,
+                'parse_mode'   => 'HTML',
+                'reply_markup' => $keyboard,
             ]);
             return;
         }
 
-        $text = "⚡️ *" . $this->escape("کانفیگ‌های مستقیم اختصاصی شما (کپی با یک لمس):") . "*\n\n";
-        $text .= "👇 *" . $this->escape("روی هر کانفیگ کلیک کنید تا کپی و متصل شود:") . "*\n\n";
+        $count = count($configs);
+        $text = "⚡️ <b>کانفیگ‌های مستقیم اختصاصی شما ({$count} کانفیگ)</b>\n";
+        $text .= "━━━━━━━━━━━━━━━━━━━━\n";
+        $text .= "<i>👇 روی کادر هر کانفیگ لمس کنید تا بلافاصله کپی شود:</i>\n\n";
 
         foreach ($configs as $idx => $cfg) {
             $num = $idx + 1;
-            $text .= "🔹 *" . $this->escape("کانفیگ شماره {$num}:") . "*\n";
-            $text .= "`" . $this->escapeCode($cfg) . "`\n\n";
+            $remark = '';
+            if (str_contains($cfg, '#')) {
+                $rawRemark = substr($cfg, strpos($cfg, '#') + 1);
+                $decodedRemark = trim(rawurldecode($rawRemark));
+                if (!empty($decodedRemark)) {
+                    $remark = ' (' . htmlspecialchars($decodedRemark) . ')';
+                }
+            }
+
+            $protocol = strtoupper(strtok($cfg, ':'));
+            $text .= "🔹 <b>کانفیگ {$num} [{$protocol}]{$remark}:</b>\n";
+            $text .= "<code>" . htmlspecialchars($cfg) . "</code>\n\n";
         }
 
-        $text .= "💡 *" . $this->escape("راهنما:") . "* " . $this->escape("این متون کانفیگ مستقیم هستند و نیازی به سابسکریپشن ندارند. کپی کرده و در برنامه V2Box (آیفون) یا v2rayNG (اندروید) اضافه فرمایید.");
+        $text .= "━━━━━━━━━━━━━━━━━━━━\n";
+        $text .= "💡 <b>راهنمای اتصال سریع:</b>\n";
+        $text .= "۱. کانفیگ موردنظر را با لمس روی کادر آن کپی کنید.\n";
+        $text .= "۲. برنامه <b>v2rayNG</b> (اندروید) یا <b>V2Box / Streisand</b> (آیفون) را باز کنید.\n";
+        $text .= "۳. روی علامت <b>+</b> زده و گزینه <b>Import config from clipboard</b> را انتخاب فرمایید.";
 
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => $text,
-            'parse_mode' => 'MarkdownV2',
+        $keyboard = Keyboard::make()->inline()->row([
+            $this->makeInlineButton(['text' => '📖 آموزش اتصال', 'callback_data' => '/tutorials', 'style' => 'primary']),
+            $this->makeInlineButton(['text' => '🏠 منوی اصلی', 'callback_data' => '/start', 'style' => 'danger']),
         ]);
+
+        try {
+            Telegram::sendMessage([
+                'chat_id'      => $chatId,
+                'text'         => $text,
+                'parse_mode'   => 'HTML',
+                'reply_markup' => $keyboard,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Failed to send direct configs: " . $e->getMessage());
+            if (str_contains($e->getMessage(), 'message is too long')) {
+                foreach ($configs as $idx => $cfg) {
+                    $num = $idx + 1;
+                    Telegram::sendMessage([
+                        'chat_id'    => $chatId,
+                        'text'       => "🔹 <b>کانفیگ {$num}:</b>\n<code>" . htmlspecialchars($cfg) . "</code>",
+                        'parse_mode' => 'HTML',
+                    ]);
+                }
+            }
+        }
     }
 }
