@@ -3275,10 +3275,13 @@ class WebhookController extends Controller
                                 $protocolScheme = $isHttps ? 'https' : 'http';
 
                                 $configLink = "{$protocolScheme}://{$baseUrl}" . rtrim($subPath, '/') . '/' . $subId;
-                            } else {
                                 $subBaseUrl = trim($settings->get('xui_subscription_url_base') ?? '');
                                 if (empty($subBaseUrl)) {
-                                    $subBaseUrl = 'https://xui.irn.one:2096';
+                                    $parsedHost = parse_url($settings->get('xui_host') ?? '');
+                                    $subScheme = $parsedHost['scheme'] ?? 'https';
+                                    $subHostName = $parsedHost['host'] ?? 'panel.cinemapluss.ir';
+                                    $subPortNum = isset($parsedHost['port']) ? ':' . $parsedHost['port'] : '';
+                                    $subBaseUrl = "{$subScheme}://{$subHostName}{$subPortNum}";
                                 }
                                 $configLink = rtrim($subBaseUrl, '/') . '/sub/' . $subId;
                             }
@@ -4825,7 +4828,11 @@ class WebhookController extends Controller
                         } else {
                             $subBaseUrl = trim($settings->get('xui_subscription_url_base') ?? '');
                             if (empty($subBaseUrl)) {
-                                $subBaseUrl = 'https://xui.irn.one:2096';
+                                $parsedHost = parse_url($settings->get('xui_host') ?? '');
+                                $subScheme = $parsedHost['scheme'] ?? 'https';
+                                $subHostName = $parsedHost['host'] ?? 'panel.cinemapluss.ir';
+                                $subPortNum = isset($parsedHost['port']) ? ':' . $parsedHost['port'] : '';
+                                $subBaseUrl = "{$subScheme}://{$subHostName}{$subPortNum}";
                             }
                             $configLink = rtrim($subBaseUrl, '/') . '/sub/' . $subId;
                         }
