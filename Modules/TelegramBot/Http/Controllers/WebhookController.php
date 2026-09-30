@@ -140,6 +140,21 @@ class WebhookController extends Controller
 
             Telegram::setAccessToken(trim($botToken, '"\' '));
 
+            // اگر شناسه کاربر در متن موجود باشد، دکمه ورود به پی‌وی را اضافه می‌کنیم
+            if (preg_match('/tg:\/\/user\?id=(\d+)/', $message, $matches) || preg_match('/(?:آیدی تلگرام|شناسه|کاربر|chat_id)[^0-9]*([0-9]{6,12})/u', $message, $matches)) {
+                $extractedChatId = $matches[1];
+                $pvButton = $this->makeInlineButton([
+                    'text' => '💬 ورود به پی‌وی کاربر',
+                    'url' => "tg://user?id={$extractedChatId}"
+                ]);
+
+                if (!$replyMarkup) {
+                    $replyMarkup = Keyboard::make()->inline()->row([$pvButton]);
+                } elseif ($replyMarkup instanceof \Telegram\Bot\Keyboard\Keyboard) {
+                    $replyMarkup->row([$pvButton]);
+                }
+            }
+
             $params = [
                 'chat_id' => $logChannelId,
                 'text' => $message,
@@ -1083,6 +1098,9 @@ class WebhookController extends Controller
                         ->row([
                             $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
                             $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
+                        ])
+                        ->row([
+                            $this->makeInlineButton(['text' => '💬 ورود به پی‌وی کاربر', 'url' => "tg://user?id={$user->telegram_chat_id}"])
                         ]);
 
                     $photoPath = Storage::disk('public')->path($fileName);
@@ -1183,6 +1201,9 @@ class WebhookController extends Controller
                     ->row([
                         $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
                         $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
+                    ])
+                    ->row([
+                        $this->makeInlineButton(['text' => '💬 ورود به پی‌وی کاربر', 'url' => "tg://user?id={$user->telegram_chat_id}"])
                     ]);
 
                 foreach ($destinations as $targetChatId) {
