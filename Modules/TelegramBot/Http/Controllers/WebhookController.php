@@ -1051,7 +1051,7 @@ class WebhookController extends Controller
                     $order->update(['card_payment_receipt' => $fileName]);
                     $user->update(['bot_state' => null]);
 
-                    $this->sendUserReceiptConfirmation($chatId);
+                    $this->sendUserReceiptConfirmation($chatId, $orderId);
 
                     $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " ({$user->telegram_chat_id})</a>";
                     $this->sendToLogChannel(
@@ -1112,16 +1112,22 @@ class WebhookController extends Controller
         }
     }
 
-    protected function sendUserReceiptConfirmation($chatId)
+    protected function sendUserReceiptConfirmation($chatId, $orderId = null)
     {
+        $notice = \App\Services\ShiftScheduleService::getReceiptNotice();
+        $orderInfo = $orderId ? "🔹 <b>شماره سفارش:</b> #{$orderId}\n" : "";
+
         $text = "✅ <b>رسید شما با موفقیت ثبت شد</b>\n\n" .
-                "⏳ سفارش شما در صف بررسی مدیریت قرار گرفت.\n" .
-                "به محض تایید پرداخت توسط پشتیبانی، سرویس شما فعال شده و مشخصات اتصال در همین چت برای شما ارسال خواهد شد.\n\n" .
+                $orderInfo .
+                "⏳ سفارش شما در صف بررسی واحد مالی قرار گرفت.\n" .
+                "به محض تایید پرداخت، سرویس شما فعال شده و مشخصات اتصال در همین چت برای شما ارسال خواهد شد.\n\n" .
+                $notice . "\n\n" .
                 "<i>از همراهی و شکیبایی شما سپاسگزاریم.</i> 🌸";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
-                $this->makeInlineButton(['text' => '🏠 بازگشت به خانه', 'callback_data' => '/start', 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '👨‍💻 ارتباط با پشتیبانی', 'url' => 'https://t.me/RoozanehHelp']),
+                $this->makeInlineButton(['text' => '🏠 منوی اصلی', 'callback_data' => '/start', 'style' => 'primary']),
             ]);
 
         try {
@@ -1145,7 +1151,7 @@ class WebhookController extends Controller
                 $order->update(['card_payment_receipt' => 'text_receipt:' . $text]);
                 $user->update(['bot_state' => null]);
 
-                $this->sendUserReceiptConfirmation($chatId);
+                $this->sendUserReceiptConfirmation($chatId, $orderId);
 
                 $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " ({$user->telegram_chat_id})</a>";
                 $this->sendToLogChannel(
@@ -1895,8 +1901,10 @@ class WebhookController extends Controller
         $message .= "👤 *" . $this->escape("به نام:") . "* " . $this->escape($cardHolder) . "\n";
         $message .= "💳 *" . $this->escape("شماره کارت (برای کپی لمس کنید):") . "*\n`" . $this->escape($cardNumber) . "`\n\n";
         $message .= "───────────────────\n";
+        $cardNotice = \App\Services\ShiftScheduleService::getCardNotice();
         $message .= "🔔 *" . $this->escape("راهنمای ارسال رسید:") . "*\n";
-        $message .= "👉 _" . $this->escape("پس از انجام تراکنش، لطفاً تصویر فیش واریزی (اسکرین‌شات) یا اطلاعات متنی رسید خود (مانند شماره پیگیری، تاریخ و نام واریزکننده) را در همین چت ارسال نمایید تا سفارش شما به صورت آنی فعال گردد.") . "_";
+        $message .= "👉 _" . $this->escape("پس از انجام تراکنش، لطفاً تصویر فیش واریزی (اسکرین‌شات) یا اطلاعات متنی رسید خود (مانند شماره پیگیری، تاریخ و نام واریزکننده) را در همین چت ارسال نمایید تا سفارش شما بررسی و فعال گردد.") . "_\n\n";
+        $message .= "⏱ _" . $this->escape($cardNotice) . "_";
 
         $keyboard = Keyboard::make()->inline()
             ->row([$this->makeInlineButton(['text' => '⬅️ تغییر درگاه پرداخت', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary'])])

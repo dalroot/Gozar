@@ -49,6 +49,9 @@ class ThemeSettings extends Page implements HasForms
                 $decoded = is_string($value) ? json_decode($value, true) : $value;
                 $settings[$key] = is_array($decoded) ? array_map('strval', $decoded) : [];
             }
+            if ($key === 'shift_rest_enabled' && $value !== null) {
+                $settings[$key] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+            }
         }
 
         $this->form->fill(array_merge([
@@ -66,6 +69,9 @@ class ThemeSettings extends Page implements HasForms
             'remnawave_api_token' => null,
             'remnawave_squad_uuid' => null,
             'remnawave_node_hostname' => null,
+            'shift_rest_enabled' => true,
+            'shift_rest_start' => '05:00',
+            'shift_rest_end' => '14:00',
         ], $settings));
     }
 
@@ -491,8 +497,23 @@ class ThemeSettings extends Page implements HasForms
                                 ->numeric(false)
                                 ->validationAttribute('شماره کارت'),
                             TextInput::make('payment_card_holder_name')->label('نام صاحب حساب'),
-                            Textarea::make('payment_card_instructions')->label('توضیحات اضافی')->rows(3),
-                        ]),
+                            Textarea::make('payment_card_instructions')->label('توضیحات اضافی')->rows(2)->columnSpanFull(),
+                            Toggle::make('shift_rest_enabled')
+                                ->label('فعالسازی پیام شیفت استراحت تایید فیش')
+                                ->helperText('در صورت فعال بودن، در بازه زمانی تعیین‌شده پیام شیفت استراحت به کاربر نمایش داده می‌شود.')
+                                ->default(true)
+                                ->columnSpanFull(),
+                            TextInput::make('shift_rest_start')
+                                ->label('شروع شیفت استراحت (ساعت ایران)')
+                                ->placeholder('05:00')
+                                ->default('05:00')
+                                ->helperText('فرمت HH:MM مثلاً 05:00'),
+                            TextInput::make('shift_rest_end')
+                                ->label('پایان شیفت استراحت (ساعت ایران)')
+                                ->placeholder('14:00')
+                                ->default('14:00')
+                                ->helperText('فرمت HH:MM مثلاً 14:00'),
+                        ])->columns(2),
                         Section::make('رمزارز')->schema([
                             TextInput::make('crypto_usdt_trc20')->label('USDT TRC20')->placeholder('T...'),
                             TextInput::make('crypto_usdt_bep20')->label('USDT BEP20')->placeholder('0x...'),

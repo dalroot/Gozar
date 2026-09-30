@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\PaymentAvailabilityService;
 use App\Services\PaymentService;
+use App\Services\ShiftScheduleService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -313,12 +314,14 @@ final class SecretaryCommerceService
         $order->payment_method = 'card';
         $order->save();
         Cache::put($this->inputKey($chatId), ['type' => 'receipt', 'order_id' => $order->id], now()->addHours(6));
+        $cardNotice = ShiftScheduleService::getCardNotice();
         return [
             'text' => "💳 <b>پرداخت کارت‌به‌کارت</b>\n\n" .
                 "مبلغ دقیق: <code>" . number_format((float) $order->amount) . " تومان</code>\n" .
                 "به نام: <b>" . $this->e((string) $settings->get('payment_card_holder_name', '')) . "</b>\n" .
                 "شماره کارت: <code>" . $this->e((string) $settings->get('payment_card_number', '')) . "</code>\n\n" .
-                "پس از واریز، تصویر فیش یا شماره پیگیری را همین‌جا ارسال کنید. رسید مستقیماً به سفارش #{$order->id} متصل می‌شود.",
+                "پس از واریز، تصویر فیش یا شماره پیگیری را همین‌جا ارسال کنید. رسید مستقیماً به سفارش #{$order->id} متصل می‌شود.\n\n" .
+                "⏱ <i>" . $this->e($cardNotice) . "</i>",
             'buttons' => [[['text' => '⬅️ تغییر روش پرداخت', 'callback_data' => 'sec_invoice_' . $order->id]], [['text' => '❌ لغو سفارش', 'callback_data' => 'sec_cancel_order_' . $order->id]]],
         ];
     }
@@ -477,17 +480,19 @@ final class SecretaryCommerceService
         $title = $justSubmitted
             ? "✅ <b>رسید سفارش #{$order->id} با موفقیت ثبت شد</b>"
             : "🧾 <b>وضعیت سفارش #{$order->id}</b>";
+        $shiftNotice = ShiftScheduleService::getReceiptNotice();
         $text = $title . "\n\n" .
             "نوع سفارش: <b>{$kind}</b>\n" .
             "مبلغ: <code>" . number_format((float) $order->amount) . " تومان</code>\n" .
             "وضعیت: <b>در انتظار بررسی واحد مالی</b>\n\n" .
             "رسید به همین سفارش متصل شده و نیازی نیست آن را دوباره ارسال کنید. نتیجهٔ تأیید یا رد پرداخت در همین گفتگو به شما اعلام می‌شود. پس از تأیید، ساخت سرویس انجام می‌شود و QR و لینک اتصال به‌صورت خودکار همین‌جا برایتان ارسال خواهد شد.\n\n" .
-            "اگر دربارهٔ واریز یا سفارش نیاز به پیگیری دارید، هر زمان می‌توانید با دکمهٔ زیر درخواست پشتیبان انسانی ثبت کنید.";
+            $shiftNotice . "\n\n" .
+            "اگر دربارهٔ واریز یا سفارش نیاز به پیگیری دارید، می‌توانید از دکمه‌های زیر استفاده کنید.";
         return [
             'text' => $text,
             'buttons' => [
                 [['text' => '🔄 مشاهده وضعیت سفارش', 'callback_data' => 'sec_invoice_' . $order->id]],
-                [['text' => '👨🏻‍💻 ارتباط با پشتیبان انسانی', 'callback_data' => 'sec_human', 'style' => 'success']],
+                [['text' => '👨🏻‍💻 ارتباط با پشتیبانی', 'url' => 'https://t.me/RoozanehHelp']],
             ],
         ];
     }
