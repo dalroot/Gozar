@@ -31,6 +31,8 @@ use App\Models\DiscountCode;
 use App\Models\DiscountCodeUsage;
 use Carbon\Carbon;
 use Telegram\Bot\FileUpload\InputFile;
+use Modules\TelegramBot\Services\RozanehExperience;
+use Modules\TelegramBot\Services\PlanCatalogService;
 
 class WebhookController extends Controller
 {
@@ -366,8 +368,8 @@ class WebhookController extends Controller
                 return;
             }
 
-            // اگر کاربر /start فرستاد، وضعیت را ریست کن تا از بن‌بست خارج شود
-            if ($text === '/start') {
+            // هر deep-link معتبر /start باید وضعیت نیمه‌کاره قبلی را پاک کند.
+            if (Str::startsWith($text, '/start')) {
                 Log::info("HTM_RESETTING_STATE_BY_START");
                 $user->update(['bot_state' => null]);
             } 
@@ -404,7 +406,11 @@ class WebhookController extends Controller
 
         Log::info("HTM_SWITCH_START", ['normalized' => $normalizedText]);
 
-        if (str_contains($normalizedText, 'تهیهاشتراک') || str_contains($normalizedText, 'خریدسرویس') || $text === '/plans' || $text === '/shop') {
+        $normalizedCommand = Str::lower($text);
+
+        if (in_array($normalizedCommand, ['status', '/status'], true) || $normalizedText === 'وضعیت') {
+            $this->sendMyServices($user);
+        } elseif (str_contains($normalizedText, 'تهیهاشتراک') || str_contains($normalizedText, 'خریدسرویس') || $text === '/plans' || $text === '/shop') {
             $this->sendPlans($chatId);
         } elseif (str_contains($normalizedText, 'سرویسهایمن') || str_contains($normalizedText, 'سرویس‌هایمن') || $text === '/myservices') {
             $this->sendMyServices($user);
@@ -425,6 +431,30 @@ class WebhookController extends Controller
             $this->sendProfile($user);
         } elseif ($text === '/about') {
             $this->sendAbout($chatId);
+        } elseif ($text === '/start trial') {
+            $telegramUsername = $message->getFrom()->getUsername();
+            $this->handleTrialRequest($user, $telegramUsername);
+        } elseif (preg_match('/^\/start\s+plan_(\d+)$/', $text, $matches)) {
+            $plan = Plan::whereKey((int) $matches[1])->where('is_active', true)->first();
+            if (!$plan) {
+                $this->sendPlans($chatId);
+                return;
+            }
+
+            $isMultiLocationEnabled = filter_var(
+                $this->settings->get('enable_multilocation', false),
+                FILTER_VALIDATE_BOOLEAN
+            );
+            if ($isMultiLocationEnabled && class_exists('Modules\MultiServer\Models\Location')) {
+                $this->promptForLocation($user, $plan->id, null);
+                return;
+            }
+
+            $autoUsername = 'u' . $user->id . 'o' . Str::random(5);
+            $this->startPurchaseProcess($user, $plan->id, $autoUsername);
+            return;
+        } elseif ($text === '/start shop') {
+            $this->sendPlans($chatId);
         } elseif (Str::startsWith($text, '/start')) {
             Log::info("HTM_HANDLING_START_COMMAND");
             $this->sendToLogChannel(
@@ -514,10 +544,10 @@ class WebhookController extends Controller
 
         $user->update(['bot_state' => $newState]);
 
-        $keyboard = Keyboard::make()->inline()->row([Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
+        $keyboard = Keyboard::make()->inline()->row([$this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
         
         $message = "👤 *شناسه اختصاصی شما*\n\n";
-        $message .= $this->escape("برای ساخت سرویس LookaNet، یک نام کاربری (شناسه) منحصربه‌فرد انتخاب کنید. این نام هویت شما در شبکه است.") . "\n\n";
+        $message .= $this->escape("برای ساخت سرویس روزنه، یک نام کاربری (شناسه) منحصربه‌فرد انتخاب کنید. این نام هویت شما در شبکه است.") . "\n\n";
         $message .= "⚖️ *" . $this->escape("قوانین ثبت شناسه:") . "*\n";
         $message .= "▫️ " . $this->escape("مجاز به استفاده از حروف انگلیسی و اعداد.") . "\n";
         $message .= "▫️ " . $this->escape("حداقل شامل ۳ کاراکتر باشد.") . "\n\n";
@@ -541,7 +571,7 @@ class WebhookController extends Controller
                     'text' => $this->escape("❌ لینک اکانت تست منقضی شده یا یافت نشد.\nلطفاً اکانت تست جدیدی دریافت کنید."),
                     'parse_mode' => 'MarkdownV2',
                     'reply_markup' => Keyboard::make()->inline()->row([
-                        Keyboard::inlineButton(['text' => '🧪 دریافت اکانت تست', 'callback_data' => 'trial_request'])
+                        $this->makeInlineButton(['text' => '🧪 دریافت اکانت تست', 'callback_data' => 'trial_request'])
                     ])
                 ]);
                 return;
@@ -552,7 +582,7 @@ class WebhookController extends Controller
                 'text' => "📋 *لینک اکانت تست شما:*\n\n`{$link}`\n\n" . $this->escape("روی لینک بالا کلیک کنید تا کپی شود."),
                 'parse_mode' => 'MarkdownV2',
                 'reply_markup' => Keyboard::make()->inline()->row([
-                    Keyboard::inlineButton(['text' => '⬅️ بازگشت به منو', 'callback_data' => '/start'])
+                    $this->makeInlineButton(['text' => '⬅️ بازگشت به منو', 'callback_data' => '/start'])
                 ])
             ]);
 
@@ -870,6 +900,9 @@ class WebhookController extends Controller
                 case '/profile':
                     $this->sendProfile($user, $messageId);
                     break;
+                case '/more':
+                    $this->sendMoreMenu($chatId, $messageId);
+                    break;
                 case '/plans': $this->sendPlans($chatId, $messageId); break;
                 case '/my_services': $this->sendMyServices($user, $messageId); break;
                 case '/wallet': $this->sendWalletMenu($user, $messageId); break;
@@ -958,7 +991,7 @@ class WebhookController extends Controller
             }
 
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => $btnText,
                     'callback_data' => "select_loc_{$loc->id}_plan_{$planId}"
                 ])
@@ -974,7 +1007,7 @@ class WebhookController extends Controller
             return;
         }
 
-        $keyboard->row([Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
+        $keyboard->row([$this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
 
         $this->sendOrEditMessage($user->telegram_chat_id, "🌍 *انتخاب لوکیشن*\n\nلطفاً کشور مورد نظر خود را انتخاب کنید:", $keyboard, $messageId);
     }
@@ -1042,8 +1075,8 @@ class WebhookController extends Controller
 
                         $keyboard = Keyboard::make()->inline()
                             ->row([
-                                Keyboard::inlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
-                                Keyboard::inlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
+                                $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
+                                $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
                             ]);
 
                         try {
@@ -1121,8 +1154,8 @@ class WebhookController extends Controller
 
                     $keyboard = Keyboard::make()->inline()
                         ->row([
-                            Keyboard::inlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
-                            Keyboard::inlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
+                            $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
+                            $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
                         ]);
 
                     try {
@@ -1153,9 +1186,9 @@ class WebhookController extends Controller
 
     protected function startPurchaseProcess($user, $planId, $username, $messageId = null)
     {
-        $plan = Plan::find($planId);
+        $plan = Plan::whereKey($planId)->where('is_active', true)->first();
         if (!$plan) {
-            $this->sendOrEditMainMenu($user->telegram_chat_id, "❌ پلن مورد نظر یافت نشد.", $messageId);
+            $this->sendPlans($user->telegram_chat_id, $messageId);
             return;
         }
 
@@ -1195,27 +1228,52 @@ class WebhookController extends Controller
             }
         }
 
-        $order = $user->orders()->create([
+        // A double click or a temporary Telegram rendering failure must not create
+        // multiple payable orders for the same plan. Re-open the most recent safe
+        // pending order instead.
+        $order = $user->orders()
+            ->where('plan_id', $plan->id)
+            ->where('status', 'pending')
+            ->where('source', 'telegram')
+            ->whereNull('card_payment_receipt')
+            ->where('created_at', '>=', now()->subMinutes(30))
+            ->latest()
+            ->first();
+
+        if (!$order) {
+            $order = $user->orders()->create([
+                'plan_id' => $plan->id,
+                'server_id' => $serverId,
+                'status' => 'pending',
+                'source' => 'telegram',
+                'amount' => $plan->price,
+                'discount_amount' => 0,
+                'discount_code_id' => null,
+                'panel_username' => $username
+            ]);
+        }
+
+        app(\App\Services\BotEventLogger::class)->record($order->wasRecentlyCreated ? 'order_created' : 'order_reopened', 'sales_bot', [
+            'chat_id' => $user->telegram_chat_id,
+            'user_id' => $user->id,
+            'order_id' => $order->id,
             'plan_id' => $plan->id,
-            'server_id' => $serverId,
-            'status' => 'pending',
-            'source' => 'telegram',
-            'amount' => $plan->price,
-            'discount_amount' => 0,
-            'discount_code_id' => null,
-            'panel_username' => $username
+            'status' => $order->status,
+            'source' => $order->source,
         ]);
 
-        $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name) . "</a>";
-        $this->sendToLogChannel(
-            "🛒 <b>سفارش خرید جدید ایجاد شد</b>\n\n" .
-            "🔹 <b>سفارش:</b> #{$order->id}\n" .
-            "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
-            "🔹 <b>پلن:</b> " . htmlspecialchars($plan->name) . "\n" .
-            "🔹 <b>مبلغ:</b> " . number_format($plan->price) . " تومان\n" .
-            "🔹 <b>نام کاربری انتخابی:</b> <code>{$username}</code>\n" .
-            "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
-        );
+        if ($order->wasRecentlyCreated) {
+            $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name) . "</a>";
+            $this->sendToLogChannel(
+                "🛒 <b>سفارش خرید جدید ایجاد شد</b>\n\n" .
+                "🔹 <b>سفارش:</b> #{$order->id}\n" .
+                "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
+                "🔹 <b>پلن:</b> " . htmlspecialchars($plan->name) . "\n" .
+                "🔹 <b>مبلغ:</b> " . number_format($plan->price) . " تومان\n" .
+                "🔹 <b>نام کاربری انتخابی:</b> <code>{$username}</code>\n" .
+                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+            );
+        }
 
         $user->update(['bot_state' => null]);
         $this->showInvoice($user, $order, $messageId);
@@ -1227,20 +1285,8 @@ class WebhookController extends Controller
      */
     protected function isPayMethodEnabled(string $method): bool
     {
-        $map = [
-            'wallet'       => 'pay_enable_wallet',
-            'card'         => 'pay_enable_card',
-            'bank_gateway' => 'pay_enable_bank_gateway',
-            'crypto'       => 'pay_enable_crypto',
-            'paypal'       => 'pay_enable_paypal',
-            'intl'         => 'pay_enable_intl', // ویزا/مستر / درگاه بین‌المللی
-        ];
-        $key = $map[$method] ?? null;
-        if (!$key) return false;
-        // پیش‌فرض: wallet و card روشن، بقیه خاموش تا ادمین ست کند
-        $default = in_array($method, ['wallet', 'card'], true) ? '1' : '0';
-        $val = $this->settings->get($key, $default);
-        return filter_var($val, FILTER_VALIDATE_BOOLEAN) || $val === '1' || $val === 1 || $val === true;
+        return app(\App\Services\PaymentAvailabilityService::class)
+            ->isEnabled($method, $this->settings);
     }
 
     /**
@@ -1255,17 +1301,17 @@ class WebhookController extends Controller
         // تخفیف
         if (!$order->discount_code_id && $order->plan_id) {
             $keyboard->row([
-                Keyboard::inlineButton(['text' => '🎫 کد تخفیف', 'callback_data' => "enter_discount_{$oid}", 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '🎫 کد تخفیف', 'callback_data' => "enter_discount_{$oid}", 'style' => 'primary']),
             ]);
         } elseif ($order->discount_code_id) {
             $keyboard->row([
-                Keyboard::inlineButton(['text' => '❌ حذف تخفیف', 'callback_data' => "remove_discount_{$oid}", 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '❌ حذف تخفیف', 'callback_data' => "remove_discount_{$oid}", 'style' => 'danger']),
             ]);
         }
 
         if ($this->isPayMethodEnabled('wallet') && $balance >= (float) $order->amount) {
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => '👛 پرداخت با موجودی کیف‌پول',
                     'callback_data' => "pay_wallet_order_{$oid}",
                     'style' => 'success',
@@ -1273,7 +1319,7 @@ class WebhookController extends Controller
             ]);
         } elseif ($this->isPayMethodEnabled('wallet')) {
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => '👛 موجودی ناکافی — شارژ کیف‌پول',
                     'callback_data' => '/deposit',
                     'style' => 'primary',
@@ -1283,7 +1329,7 @@ class WebhookController extends Controller
 
         if ($this->isPayMethodEnabled('card')) {
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => '💳 کارت‌به‌کارت ریالی',
                     'callback_data' => "pay_card_{$oid}",
                     'style' => 'primary',
@@ -1293,7 +1339,7 @@ class WebhookController extends Controller
 
         if ($this->isPayMethodEnabled('bank_gateway')) {
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => '🏦 درگاه بانکی آنلاین',
                     'callback_data' => "pay_bank_{$oid}",
                     'style' => 'primary',
@@ -1303,7 +1349,7 @@ class WebhookController extends Controller
 
         if ($this->isPayMethodEnabled('crypto')) {
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => '🪙 ارز دیجیتال (Crypto)',
                     'callback_data' => "pay_crypto_{$oid}",
                     'style' => 'success',
@@ -1313,7 +1359,7 @@ class WebhookController extends Controller
 
         if ($this->isPayMethodEnabled('paypal')) {
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => '🅿️ PayPal',
                     'callback_data' => "pay_paypal_{$oid}",
                     'style' => 'primary',
@@ -1323,7 +1369,7 @@ class WebhookController extends Controller
 
         if ($this->isPayMethodEnabled('intl')) {
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => '💎 Visa / MasterCard',
                     'callback_data' => "pay_intl_{$oid}",
                     'style' => 'primary',
@@ -1332,8 +1378,8 @@ class WebhookController extends Controller
         }
 
         $keyboard->row([
-            Keyboard::inlineButton(['text' => '🛍 بازگشت فروشگاه', 'callback_data' => '/plans', 'style' => 'danger']),
-            Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
+            $this->makeInlineButton(['text' => '🛍 بازگشت فروشگاه', 'callback_data' => '/plans', 'style' => 'danger']),
+            $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
         ]);
 
         return $keyboard;
@@ -1345,17 +1391,17 @@ class WebhookController extends Controller
         $balance = $user->balance ?? 0;
         $r = "\u{200F}";
 
-        $message = "🧾 *" . $this->escape("فاکتور رسمی پرداخت سفارش") . "*\n\n";
+        $message = "🧾 *" . $this->escape("خلاصه سفارش #{$order->id}") . "*\n\n";
         
         if ($plan) {
-            $message .= "🛍 *" . $this->escape("نام محصول:") . "* `" . $this->escape($plan->name) . "`\n";
-            $message .= "⏱ *" . $this->escape("مدت زمان اشتراک:") . "* `" . $this->escape($plan->duration_label) . "`\n";
-            $message .= "💾 *" . $this->escape("حجم کل مجاز:") . "* `" . $this->escape($plan->volume_gb . ' GB') . "`\n";
+            $message .= "📦 *" . $this->escape("بسته:") . "* `" . $this->escape($plan->name) . "`\n";
+            $message .= "🗓 *" . $this->escape("مدت:") . "* `" . $this->escape($plan->duration_label) . "`\n";
+            $message .= "💾 *" . $this->escape("حجم:") . "* `" . $this->escape($plan->volume_gb . ' گیگابایت') . "`\n";
         } else {
-            $message .= "💰 *" . $this->escape("نوع تراکنش:") . "* `" . $this->escape("شارژ مستقیم کیف‌پول") . "`\n";
+            $message .= "💰 *" . $this->escape("نوع سفارش:") . "* `" . $this->escape("شارژ کیف پول") . "`\n";
         }
         if ($order->panel_username) {
-            $message .= "👤 *" . $this->escape("شناسه اشتراک شما:") . "* `" . $this->escape($order->panel_username) . "`\n";
+            $message .= "👤 *" . $this->escape("شناسه سرویس:") . "* `" . $this->escape($order->panel_username) . "`\n";
         }
         $message .= "───────────────────\n";
 
@@ -1367,10 +1413,10 @@ class WebhookController extends Controller
             $message .= "💵 *" . $this->escape("مبلغ قابل پرداخت:") . "* `" . $this->escape(number_format($order->amount) . " تومان") . "`\n";
         }
 
-        $message .= "👛 *" . $this->escape("موجودی کیف پول شما:") . "* " . $this->escape(number_format($balance) . " تومان") . "\n";
+        $message .= "👛 *" . $this->escape("موجودی کیف پول:") . "* " . $this->escape(number_format($balance) . " تومان") . "\n";
         $message .= "───────────────────\n\n";
-        $message .= "💡 _" . $this->escape("شما می‌توانید این سفارش را مستقیماً از موجودی کیف پول خود پرداخت کنید یا از طریق یکی از روش‌های زیر اقدام به پرداخت نمایید:") . "_\n\n";
-        $message .= "👇 *" . $this->escape("لطفاً روش پرداخت مورد نظر خود را انتخاب کنید:") . "*";
+        $message .= $this->escape("قیمت و مشخصات را بررسی کنید؛ سپس روش پرداخت را انتخاب کنید. پس از پرداخت موفق، سرویس و لینک اتصال به‌صورت خودکار برایتان ارسال می‌شود.") . "\n\n";
+        $message .= "👇 *" . $this->escape("انتخاب روش پرداخت") . "*";
 
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $this->buildPaymentMethodsKeyboard($order, $user), $messageId);
     }
@@ -1419,9 +1465,9 @@ class WebhookController extends Controller
             $message .= $r . "📸 " . $this->escape($extra);
 
             $keyboard->row([
-                Keyboard::inlineButton(['text' => '⬅️ تغییر درگاه', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '⬅️ تغییر درگاه', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary']),
             ])->row([
-                Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger']),
             ]);
             $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
             return;
@@ -1442,14 +1488,14 @@ class WebhookController extends Controller
 
             if ($link && str_starts_with($link, 'http')) {
                 $keyboard->row([
-                    Keyboard::inlineButton(['text' => '🌐 پرداخت در PayPal', 'url' => $link, 'style' => 'success']),
+                    $this->makeInlineButton(['text' => '🌐 پرداخت در PayPal', 'url' => $link, 'style' => 'success']),
                 ]);
             }
             $user->update(['bot_state' => 'waiting_receipt_' . $orderId]);
             $keyboard->row([
-                Keyboard::inlineButton(['text' => '⬅️ تغییر درگاه', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '⬅️ تغییر درگاه', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary']),
             ])->row([
-                Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger']),
             ]);
             $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
             return;
@@ -1466,16 +1512,16 @@ class WebhookController extends Controller
 
             if ($link && str_starts_with($link, 'http')) {
                 $keyboard->row([
-                    Keyboard::inlineButton(['text' => '🌐 ورود به درگاه امن', 'url' => $link, 'style' => 'success']),
+                    $this->makeInlineButton(['text' => '🌐 ورود به درگاه امن', 'url' => $link, 'style' => 'success']),
                 ]);
             } else {
                 $message .= "\n" . $r . $this->escape("⚠️ لینک درگاه توسط ادمین تنظیم نشده.");
             }
             $user->update(['bot_state' => 'waiting_receipt_' . $orderId]);
             $keyboard->row([
-                Keyboard::inlineButton(['text' => '⬅️ تغییر درگاه', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '⬅️ تغییر درگاه', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary']),
             ])->row([
-                Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger']),
             ]);
             $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
             return;
@@ -1504,8 +1550,8 @@ class WebhookController extends Controller
         $message .= $r . $this->escape("در حال حاضر لطفاً از روش کارت‌به‌کارت استفاده کنید.");
 
         $keyboard = Keyboard::make()->inline()
-            ->row([Keyboard::inlineButton(['text' => '💳 پرداخت با کارت‌به‌کارت', 'callback_data' => "pay_card_{$orderId}", 'style' => 'primary'])])
-            ->row([Keyboard::inlineButton(['text' => '⬅️ تغییر درگاه', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'danger'])]);
+            ->row([$this->makeInlineButton(['text' => '💳 پرداخت با کارت‌به‌کارت', 'callback_data' => "pay_card_{$orderId}", 'style' => 'primary'])])
+            ->row([$this->makeInlineButton(['text' => '⬅️ تغییر درگاه', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'danger'])]);
 
         $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
     }
@@ -1513,7 +1559,7 @@ class WebhookController extends Controller
     protected function promptForDiscount($user, $orderId, $messageId)
     {
         $user->update(['bot_state' => 'awaiting_discount_code|' . $orderId]);
-        $keyboard = Keyboard::make()->inline()->row([Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
+        $keyboard = Keyboard::make()->inline()->row([$this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
         $this->sendOrEditMessage($user->telegram_chat_id, "🎫 لطفاً کد تخفیف خود را ارسال کنید:", $keyboard, $messageId);
     }
 
@@ -1727,20 +1773,15 @@ class WebhookController extends Controller
             // کیبورد با دکمه کپی لینک
             $keyboard = Keyboard::make()->inline()
                 ->row([
-                    Keyboard::inlineButton(['text' => '📋 کپی لینک اشتراک', 'callback_data' => "copy_link_{$order->id}"]),
-                    Keyboard::inlineButton(['text' => '📱 QR Code', 'callback_data' => "qrcode_order_{$order->id}"])
+                    $this->makeInlineButton(['text' => '📋 کپی لینک اشتراک', 'callback_data' => "copy_link_{$order->id}"]),
+                    $this->makeInlineButton(['text' => '🔗 دریافت لینک‌های اتصال', 'callback_data' => "direct_configs_order_{$order->id}"])
                 ])
                 ->row([
-                    Keyboard::inlineButton(['text' => '🛠 سرویس‌های من', 'callback_data' => '/my_services']),
-                    Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
+                    $this->makeInlineButton(['text' => '🛠 سرویس‌های من', 'callback_data' => '/my_services']),
+                    $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
                 ]);
 
-            $this->sendOrEditMessage(
-                $user->telegram_chat_id,
-                $message,
-                $keyboard,
-                $messageId
-            );
+            $this->sendPaidActivationPhoto($user, $order, $keyboard);
 
         } catch (\Exception $e) {
             Log::error('Wallet Payment Failed: ' . $e->getMessage(), [
@@ -1755,29 +1796,29 @@ class WebhookController extends Controller
             // تشخیص نوع خطا و نمایش پیام مناسب
             if ($errorMsg === 'موجودی کافی نیست') {
                 $keyboard->row([
-                    Keyboard::inlineButton(['text' => '💳 شارژ کیف پول', 'callback_data' => '/deposit']),
-                    Keyboard::inlineButton(['text' => '⬅️ بازگشت فروشگاه', 'callback_data' => '/plans', 'style' => 'danger'])
+                    $this->makeInlineButton(['text' => '💳 شارژ کیف پول', 'callback_data' => '/deposit']),
+                    $this->makeInlineButton(['text' => '⬅️ بازگشت فروشگاه', 'callback_data' => '/plans', 'style' => 'danger'])
                 ]);
                 $this->sendOrEditMessage(
                     $user->telegram_chat_id,
-                    "❌ موجودی کیف پول شما کافی نیست.\n\n💡 لطفاً ابتدا کیف پول خود را شارژ کنید.",
+                    $this->escape("❌ موجودی کیف پول شما کافی نیست.\n\n💡 لطفاً ابتدا کیف پول خود را شارژ کنید."),
                     $keyboard,
                     $messageId
                 );
             } elseif ($errorMsg === 'سفارش نامعتبر است یا منقضی شده.') {
-                $keyboard->row([Keyboard::inlineButton(['text' => '🛒 مشاهده پلن‌ها', 'callback_data' => '/plans'])]);
+                $keyboard->row([$this->makeInlineButton(['text' => '🛒 مشاهده پلن‌ها', 'callback_data' => '/plans'])]);
                 $this->sendOrEditMessage(
                     $user->telegram_chat_id,
-                    "❌ " . $errorMsg,
+                    $this->escape("❌ " . $errorMsg),
                     $keyboard,
                     $messageId
                 );
             } else {
                 // خطای عمومی یا خطای پر کردن اکانت
-                $keyboard->row([Keyboard::inlineButton(['text' => '💬 تماس با پشتیبانی', 'callback_data' => '/support_menu'])]);
+                $keyboard->row([$this->makeInlineButton(['text' => '💬 تماس با پشتیبانی', 'callback_data' => '/support_menu'])]);
                 $this->sendOrEditMessage(
                     $user->telegram_chat_id,
-                    "⚠️ خطایی در پردازش خرید رخ داد: " . $this->escape($errorMsg) . "\n\nلطفاً با پشتیبانی تماس بگیرید.",
+                    $this->escape("⚠️ خطایی در پردازش خرید رخ داد: {$errorMsg}\n\nلطفاً با پشتیبانی تماس بگیرید."),
                     $keyboard,
                     $messageId
                 );
@@ -1831,8 +1872,8 @@ class WebhookController extends Controller
         $message .= "👉 _" . $this->escape("پس از انجام تراکنش، لطفاً تصویر فیش واریزی (اسکرین‌شات) یا اطلاعات متنی رسید خود (مانند شماره پیگیری، تاریخ و نام واریزکننده) را در همین چت ارسال نمایید تا سفارش شما به صورت آنی فعال گردد.") . "_";
 
         $keyboard = Keyboard::make()->inline()
-            ->row([Keyboard::inlineButton(['text' => '⬅️ تغییر درگاه پرداخت', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary'])])
-            ->row([Keyboard::inlineButton(['text' => '❌ انصراف از سفارش', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
+            ->row([$this->makeInlineButton(['text' => '⬅️ تغییر درگاه پرداخت', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary'])])
+            ->row([$this->makeInlineButton(['text' => '❌ انصراف از سفارش', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
 
         $this->sendRawMarkdownMessage($chatId, $message, $keyboard, $messageId);
     }
@@ -1844,29 +1885,33 @@ class WebhookController extends Controller
     protected function sendPlans($chatId, $messageId = null)
     {
         try {
-            $activePlans = Plan::where('is_active', true)
-                ->orderBy('duration_days', 'asc')
-                ->get();
+            $catalog = app(PlanCatalogService::class);
+            $activePlans = $catalog->activePlans();
+
+            app(\App\Services\BotEventLogger::class)->record('plans_viewed', 'sales_bot', [
+                'chat_id' => $chatId,
+                'status' => $activePlans->isEmpty() ? 'empty' : 'available',
+            ]);
 
             if ($activePlans->isEmpty()) {
                 $keyboard = Keyboard::make()->inline()
-                    ->row([Keyboard::inlineButton(['text' => '⬅️ بازگشت', 'callback_data' => '/start'])]);
+                    ->row([$this->makeInlineButton(['text' => '⬅️ بازگشت', 'callback_data' => '/start'])]);
                 $this->sendOrEditMessage($chatId, $this->escape("⚠️ هیچ پلن فعالی در دسترس نیست."), $keyboard, $messageId);
                 return;
             }
 
-            $durations = $activePlans->pluck('duration_days')->unique()->sort();
+            $durations = $catalog->durations();
 
-            $message = "🛍 *" . $this->escape("فروشگاه اشتراک لوکانت") . "*\n\n";
-            $message .= "🚀 *" . $this->escape("سرویس‌های ما فوق‌العاده پایدار، بدون قطعی و با تحویل آنی هستند.") . "*\n\n";
-            $message .= "👉 _" . $this->escape("لطفاً ابتدا مدت زمان اشتراک خود را انتخاب کنید:") . "_\n";
+            $message = "🛍 *" . $this->escape("فروشگاه اشتراک روزنه") . "*\n\n";
+            $message .= $this->escape("مسیرهای اتصال پایدار، IP ثابت اشتراکی و پشتیبانی هوشمند در تمام بسته‌ها ارائه می‌شود.") . "\n\n";
+            $message .= "👉 _" . $this->escape("ابتدا مدت سرویس را انتخاب کنید:") . "_\n";
 
             $keyboard = Keyboard::make()->inline();
 
             foreach ($durations as $durationDays) {
-                $buttonText = $this->generateDurationLabel($durationDays);
+                $buttonText = $catalog->durationLabel((int) $durationDays);
                 $keyboard->row([
-                    Keyboard::inlineButton([
+                    $this->makeInlineButton([
                         'text' => $buttonText,
                         'callback_data' => "show_duration_{$durationDays}",
                         'style' => 'primary',
@@ -1875,9 +1920,9 @@ class WebhookController extends Controller
             }
 
             $keyboard->row([
-                Keyboard::inlineButton(['text' => '⚡️ تست رایگان', 'callback_data' => 'trial_request', 'style' => 'success']),
+                $this->makeInlineButton(['text' => '⚡️ تست رایگان', 'callback_data' => 'trial_request', 'style' => 'success']),
             ]);
-            $keyboard->row([Keyboard::inlineButton(['text' => '🏠 بازگشت به خانه', 'callback_data' => '/start', 'style' => 'danger'])]);
+            $keyboard->row([$this->makeInlineButton(['text' => '🏠 بازگشت به خانه', 'callback_data' => '/start', 'style' => 'danger'])]);
 
             $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
 
@@ -1888,7 +1933,7 @@ class WebhookController extends Controller
             ]);
 
             $keyboard = Keyboard::make()->inline()
-                ->row([Keyboard::inlineButton(['text' => '🏠 بازگشت به منوی اصلی', 'callback_data' => '/start'])]);
+                ->row([$this->makeInlineButton(['text' => '🏠 بازگشت به منوی اصلی', 'callback_data' => '/start'])]);
 
             $this->sendOrEditMessage($chatId, "❌ خطایی در بارگذاری پلن‌ها رخ داد.", $keyboard, $messageId);
         }
@@ -1896,48 +1941,33 @@ class WebhookController extends Controller
 
     protected function generateDurationLabel(int $days): string
     {
-        if ($days % 30 === 0) {
-            $months = (int) ($days / 30);
-            return match ($months) {
-                1 => '🗓 ۱ ماهه (۳۰ روزه)',
-                2 => '🗓 ۲ ماهه (۶۰ روزه)',
-                3 => '🔥 ۳ ماهه (۹۰ روزه) — ویژه',
-                6 => '💎 ۶ ماهه (۱۸۰ روزه) — اقتصادی',
-                12 => '👑 ۱۲ ماهه (سالانه)',
-                default => "🗓 {$months} ماهه",
-            };
-        }
-        if ($days <= 7) return "⚡️ {$days} روزه — کوتاه مدت";
-        return "🗓 {$days} روزه";
+        return app(PlanCatalogService::class)->durationLabel($days);
     }
 
     protected function sendPlansByDuration($chatId, $durationDays, $messageId = null)
     {
         try {
-            $plans = Plan::where('is_active', true)
-                ->where('duration_days', $durationDays)
-                ->orderBy('volume_gb', 'asc')
-                ->get();
+            $catalog = app(PlanCatalogService::class);
+            $plans = $catalog->plansForDuration((int) $durationDays);
 
             if ($plans->isEmpty()) {
                 $keyboard = Keyboard::make()->inline()
-                    ->row([Keyboard::inlineButton(['text' => '⬅️ بازگشت فروشگاه', 'callback_data' => '/plans', 'style' => 'danger'])]);
+                    ->row([$this->makeInlineButton(['text' => '⬅️ بازگشت فروشگاه', 'callback_data' => '/plans', 'style' => 'danger'])]);
                 $this->sendOrEditMessage($chatId, $this->escape("⚠️ پلنی با این مدت‌زمان یافت نشد."), $keyboard, $messageId);
                 return;
             }
 
-            $durationLabel = $plans->first()->duration_label ?? "{$durationDays} روزه";
+            $durationLabel = $catalog->durationLabel((int) $durationDays);
             
-            $message = "💎 *" . $this->escape("بسته‌های اشتراک " . $durationLabel) . "*\n\n";
-            $message .= "👉 _" . $this->escape("حجم مصرفی مورد نیاز خود را انتخاب کنید:") . "_\n\n";
-            $message .= "ℹ️ _" . $this->escape("ترافیک مصرفی تمام پلن‌ها بر روی پروتکل‌های مدرن فعال می‌گردد.") . "_\n";
+            $message = "*" . $this->escape("بسته‌های " . $durationLabel) . "*\n\n";
+            $message .= "👉 _" . $this->escape("حجم موردنیازتان را انتخاب کنید. مبلغ نهایی پیش از پرداخت دوباره نمایش داده می‌شود.") . "_\n";
 
             $keyboard = Keyboard::make()->inline();
 
             foreach ($plans as $plan) {
-                $buttonText = "📦 " . $plan->volume_gb . " گیگابایت  |  " . number_format($plan->price) . " تومان";
+                $buttonText = $catalog->planButtonLabel($plan);
                 $keyboard->row([
-                    Keyboard::inlineButton([
+                    $this->makeInlineButton([
                         'text' => $buttonText,
                         'callback_data' => "buy_plan_{$plan->id}",
                         'style' => 'success',
@@ -1946,8 +1976,8 @@ class WebhookController extends Controller
             }
 
             $keyboard->row([
-                Keyboard::inlineButton(['text' => '⬅️ تغییر مدت زمان', 'callback_data' => '/plans', 'style' => 'primary']),
-                Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
+                $this->makeInlineButton(['text' => '⬅️ تغییر مدت زمان', 'callback_data' => '/plans', 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
             ]);
 
             $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
@@ -1960,12 +1990,17 @@ class WebhookController extends Controller
             ]);
 
             $keyboard = Keyboard::make()->inline()
-                ->row([Keyboard::inlineButton(['text' => '🏠 بازگشت به منوی اصلی', 'callback_data' => '/start'])]);
+                ->row([$this->makeInlineButton(['text' => '🏠 بازگشت به منوی اصلی', 'callback_data' => '/start'])]);
 
             $this->sendOrEditMessage($chatId, "❌ خطایی در بارگذاری پلن‌ها رخ داد.", $keyboard, $messageId);
         }
     }
 
+
+    protected function sendPaidActivationPhoto($user, Order $order, $keyboard = null): void
+    {
+        app(\App\Services\TelegramServiceDeliveryService::class)->send($user, $order, $keyboard);
+    }
 
     protected function sendQRCodeForOrder($user, $orderId)
     {
@@ -2000,6 +2035,9 @@ class WebhookController extends Controller
             ]);
             return;
         }
+
+        $this->sendPaidActivationPhoto($user, $order);
+        return;
 
         $tempFile = null;
 
@@ -2054,11 +2092,11 @@ class WebhookController extends Controller
             // ✅ ساخت کیبورد
             $keyboard = Keyboard::make()->inline()
                 ->row([
-                    Keyboard::inlineButton(['text' => '🔄 تمدید سرویس', 'callback_data' => "renew_order_{$order->id}"]),
-                    Keyboard::inlineButton(['text' => '⬅️ بازگشت به جزئیات', 'callback_data' => "show_service_{$order->id}"])
+                    $this->makeInlineButton(['text' => '🔄 تمدید سرویس', 'callback_data' => "renew_order_{$order->id}"]),
+                    $this->makeInlineButton(['text' => '⬅️ بازگشت به جزئیات', 'callback_data' => "show_service_{$order->id}"])
                 ])
                 ->row([
-                    Keyboard::inlineButton(['text' => '⬅️ بازگشت به لیست سرویس‌ها', 'callback_data' => '/my_services'])
+                    $this->makeInlineButton(['text' => '⬅️ بازگشت به لیست سرویس‌ها', 'callback_data' => '/my_services'])
                 ]);
 
             // ✅ ارسال عکس با InputFile (Premium Look)
@@ -2089,8 +2127,8 @@ class WebhookController extends Controller
 
             $keyboard = Keyboard::make()->inline()
                 ->row([
-                    Keyboard::inlineButton(['text' => '🔄 تمدید سرویس', 'callback_data' => "renew_order_{$order->id}"]),
-                    Keyboard::inlineButton(['text' => '⬅️ بازگشت', 'callback_data' => "show_service_{$order->id}"])
+                    $this->makeInlineButton(['text' => '🔄 تمدید سرویس', 'callback_data' => "renew_order_{$order->id}"]),
+                    $this->makeInlineButton(['text' => '⬅️ بازگشت', 'callback_data' => "show_service_{$order->id}"])
                 ]);
 
             Telegram::sendMessage([
@@ -2148,8 +2186,8 @@ class WebhookController extends Controller
 
         if ($orders->isEmpty()) {
             $keyboard = Keyboard::make()->inline()->row([
-                Keyboard::inlineButton(['text' => '🛒 خرید سرویس جدید', 'callback_data' => '/plans']),
-                Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '🛒 خرید سرویس جدید', 'callback_data' => '/plans']),
+                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
             $this->sendOrEditMessage($user->telegram_chat_id, $this->escape("⚠️ شما هیچ سرویس فعالی ندارید."), $keyboard, $messageId);
             return;
@@ -2187,7 +2225,7 @@ class WebhookController extends Controller
         $buttonText = "{$statusIcon} {$username} (ID: #{$order->id})";
 
         $keyboard->row([
-            Keyboard::inlineButton([
+            $this->makeInlineButton([
                 'text' => $buttonText,
                 'callback_data' => "show_service_{$order->id}"
             ])
@@ -2200,8 +2238,8 @@ class WebhookController extends Controller
     ]);
 
     $keyboard->row([
-        Keyboard::inlineButton(['text' => '🛒 خرید سرویس جدید', 'callback_data' => '/plans']),
-        Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
+        $this->makeInlineButton(['text' => '🛒 خرید سرویس جدید', 'callback_data' => '/plans']),
+        $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
     ]);
 
     $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
@@ -2275,21 +2313,21 @@ class WebhookController extends Controller
 
         if (!empty($order->config_details)) {
             $keyboard->row([
-                Keyboard::inlineButton(['text' => "⚡️ کانفیگ مستقیم (VLESS/VMESS)", 'callback_data' => "direct_configs_order_{$order->id}"]),
+                $this->makeInlineButton(['text' => "⚡️ کانفیگ مستقیم (VLESS/VMESS)", 'callback_data' => "direct_configs_order_{$order->id}"]),
             ]);
             $keyboard->row([
-                Keyboard::inlineButton(['text' => "📱 دریافت QR Code", 'callback_data' => "qrcode_order_{$order->id}"]),
-                Keyboard::inlineButton(['text' => "📋 کپی سابسکریپشن", 'callback_data' => "copy_link_{$order->id}"])
+                $this->makeInlineButton(['text' => "📱 دریافت QR Code", 'callback_data' => "qrcode_order_{$order->id}"]),
+                $this->makeInlineButton(['text' => "📋 کپی سابسکریپشن", 'callback_data' => "copy_link_{$order->id}"])
             ]);
         }
 
         $keyboard->row([
-            Keyboard::inlineButton(['text' => "🔄 تمدید اشتراک", 'callback_data' => "renew_order_{$order->id}"])
+            $this->makeInlineButton(['text' => "🔄 تمدید اشتراک", 'callback_data' => "renew_order_{$order->id}"])
         ]);
 
         $keyboard->row([
-            Keyboard::inlineButton(['text' => '⬅️ بازگشت به لیست سرویس‌ها', 'callback_data' => '/my_services']),
-            Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
+            $this->makeInlineButton(['text' => '⬅️ بازگشت به لیست سرویس‌ها', 'callback_data' => '/my_services']),
+            $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
         ]);
 
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
@@ -2354,7 +2392,7 @@ class WebhookController extends Controller
         }
 
         // متن کپشن (مشابه showServiceDetails)
-        $caption = "☁️ <b>سرویس ابری LookaNet</b>\n\n";
+        $caption = "☁️ <b>سرویس روزنه</b>\n\n";
         $caption .= "🎫 <b>شناسه:</b> <code>" . htmlspecialchars($panelUsername, ENT_QUOTES) . "</code>\n";
         $caption .= "🌍 <b>موقعیت سرور:</b> {$locationFlag} " . htmlspecialchars($locationName, ENT_QUOTES) . "\n";
         $caption .= "🎚 <b>طرح اشتراک:</b> " . htmlspecialchars($order->plan->name, ENT_QUOTES) . "\n";
@@ -2373,20 +2411,20 @@ class WebhookController extends Controller
         $caption .= "🎯 <b>مسیر اتصالِ شما:</b>\n";
         $caption .= "<pre><code class=\"language-txt\">" . htmlspecialchars($pureUrl, ENT_QUOTES) . "</code></pre>\n\n";
         $caption .= "💡 <b>راهنما:</b> روی کادر بالا بزنید تا کپی شود و سپس در برنامه V2Box یا v2rayNG اضافه کنید.\n\n";
-        $caption .= "📢 کانال: <a href=\"https://t.me/lookanet\">LookaNet</a> | 👨🏻‍💻 پشتیبانی: <a href=\"https://t.me/lookanet_support\">LookaSupport</a>\n";
+        $caption .= "📢 کانال: <a href=\"https://t.me/lookanet\">روزنه</a> | 👨🏻‍💻 پشتیبانی: <a href=\"https://t.me/lookanet_support\">پشتیبانی روزنه</a>\n";
 
         // کیبورد
         $keyboard = Keyboard::make()->inline();
         $keyboard->row([
-            Keyboard::inlineButton(['text' => "⚡️ کانفیگ مستقیم (VLESS)", 'callback_data' => "direct_configs_order_{$order->id}"]),
+            $this->makeInlineButton(['text' => "⚡️ کانفیگ مستقیم (VLESS)", 'callback_data' => "direct_configs_order_{$order->id}"]),
         ]);
         $keyboard->row([
-            Keyboard::inlineButton(['text' => "📋 کپی سابسکریپشن", 'callback_data' => "copy_link_{$order->id}"]),
-            Keyboard::inlineButton(['text' => "🔄 تمدید اشتراک", 'callback_data' => "renew_order_{$order->id}"])
+            $this->makeInlineButton(['text' => "📋 کپی سابسکریپشن", 'callback_data' => "copy_link_{$order->id}"]),
+            $this->makeInlineButton(['text' => "🔄 تمدید اشتراک", 'callback_data' => "renew_order_{$order->id}"])
         ]);
         $keyboard->row([
-            Keyboard::inlineButton(['text' => '⬅️ بازگشت به لیست سرویس‌ها', 'callback_data' => '/my_services']),
-            Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
+            $this->makeInlineButton(['text' => '⬅️ بازگشت به لیست سرویس‌ها', 'callback_data' => '/my_services']),
+            $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
         ]);
 
         // تولید و ارسال QR
@@ -2452,7 +2490,7 @@ class WebhookController extends Controller
 
         $balance = number_format((float) ($user->balance ?? 0));
         
-        $message = "<tg-emoji emoji-id=\"5472250091332993630\">💳</tg-emoji> <b>کیف پول LookaNet</b>\n\n";
+        $message = "<tg-emoji emoji-id=\"5472250091332993630\">💳</tg-emoji> <b>کیف پول روزنه</b>\n\n";
         $message .= "<tg-emoji emoji-id=\"5382164415019768638\">🪙</tg-emoji> <b>موجودی شما:</b> <code>{$balance} تومان</code>\n\n";
         $message .= "💡 <i>یک‌بار شارژ کن؛ بعدش خرید و تمدید با یک ضربه.</i>\n";
 
@@ -2478,7 +2516,7 @@ class WebhookController extends Controller
                     'style' => 'primary',
                     'icon_custom_emoji_id' => $emojiProfile ? (int)$emojiProfile : null
                 ]),
-                Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
 
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
@@ -2500,7 +2538,7 @@ class WebhookController extends Controller
         $name = htmlspecialchars($user->name ?: 'دوستتان', ENT_QUOTES, 'UTF-8');
 
         // Highly-converting premium copy
-        $caption = "🚀 <b>فیلترشکن فوق‌سریع لوکانت | LookaNet VPN</b> 🚀\n\n";
+        $caption = "<b>روزنه | اتصال پایدار و قابل اعتماد</b>\n\n";
         $caption .= "⚡️ <b>بزرگترین هدیه اینترنت بدون سانسور:</b>\n";
         $caption .= "دوست شما <b>{$name}</b> شما را به یک اتصال امن، بدون محدودیت و با سرعت نور دعوت کرده است!\n\n";
         $caption .= "🎁 <b>هدیه ویژه عضویت:</b>\n";
@@ -2515,7 +2553,7 @@ class WebhookController extends Controller
         $photoFileId = Cache::get($photoCacheKey);
         $photoSource = $photoFileId ? $photoFileId : InputFile::create($photoUrl, 'referral_banner.jpg');
 
-        $shareText = "🔥 اینترنت بدون فیلتر و پرسرعت رو با فیلترشکن LookaNet تجربه کن!\n🚀 بسیار پایدار، بدون قطعی، مناسب برای اینستاگرام، تلگرام، یوتیوب و گیمینگ 🎮\n\n🎁 همین حالا با لینک من وارد ربات شو و هدیه نقدی خوش‌آمدگویی رایگان رو دریافت کن 👇🎁\n";
+        $shareText = "اتصال پایدار روزنه را تجربه کنید.\n\nبا این لینک وارد ربات شوید و تست رایگان را دریافت کنید:\n";
         $shareUrl = "https://t.me/share/url?url=" . urlencode($referralLink) . "&text=" . urlencode($shareText);
 
         try {
@@ -2526,13 +2564,13 @@ class WebhookController extends Controller
                 'parse_mode'   => 'HTML',
                 'reply_markup' => Keyboard::make()->inline()
                     ->row([
-                        Keyboard::inlineButton([
+                        $this->makeInlineButton([
                             'text' => '🎁 دریافت هدیه ۲ گیگابایتی رایگان',
                             'url'  => $referralLink
                         ])
                     ])
                     ->row([
-                        Keyboard::inlineButton([
+                        $this->makeInlineButton([
                             'text' => '📣 اشتراک‌گذاری سریع',
                             'url'  => $shareUrl
                         ])
@@ -2555,13 +2593,13 @@ class WebhookController extends Controller
                 'parse_mode' => 'HTML',
                 'reply_markup' => Keyboard::make()->inline()
                     ->row([
-                        Keyboard::inlineButton([
+                        $this->makeInlineButton([
                             'text' => '🎁 دریافت هدیه ۲ گیگابایتی رایگان',
                             'url'  => $referralLink
                         ])
                     ])
                     ->row([
-                        Keyboard::inlineButton([
+                        $this->makeInlineButton([
                             'text' => '📣 اشتراک‌گذاری سریع',
                             'url'  => $shareUrl
                         ])
@@ -2603,8 +2641,8 @@ class WebhookController extends Controller
             ? "❌ مسدود شده (فعالیت غیرمجاز)" 
             : "✅ نرمال (فعال)";
 
-        $message = "📦 <b>صندوقچه ترافیک رایگان LookaNet</b>\n\n";
-        $message .= "با دعوت از دوستانتان به لوکانت، ترافیک رایگان ماهیانه استخراج کنید! ⚡️\n\n";
+        $message = "📦 <b>هدایای معرفی روزنه</b>\n\n";
+        $message .= "با دعوت از دوستانتان به روزنه، حجم هدیه دریافت کنید.\n\n";
         
         $message .= "⚖️ <b>فرمول پاداش‌دهی ۳ سطحی صندوقچه:</b>\n";
         $message .= "├ 👤 سطح ۱ (دعوت مستقیم): <code>۱.۵ گیگابایت</code> (آنی)\n";
@@ -2623,7 +2661,7 @@ class WebhookController extends Controller
         $message .= "<code>{$referralLink}</code>\n\n";
         $message .= "💡 <i>مهم: حجم آماده انتقال را می‌توانید در هر زمان مستقیماً به اشتراک فعال خود منتقل کرده و آن را شارژ کنید.</i>";
 
-        $shareText = "🔥 اینترنت بدون فیلتر و پرسرعت رو با فیلترشکن LookaNet تجربه کن!\n🚀 بسیار پایدار، بدون قطعی، مناسب برای اینستاگرام، تلگرام، یوتیوب و گیمینگ 🎮\n\n🎁 همین حالا با لینک من وارد ربات شو و هدیه نقدی خوش‌آمدگویی رایگان رو دریافت کن 👇🎁\n";
+        $shareText = "اتصال پایدار روزنه را تجربه کنید.\n\nبا این لینک وارد ربات شوید و تست رایگان را دریافت کنید:\n";
         $shareUrl = "https://t.me/share/url?url=" . urlencode($referralLink) . "&text=" . urlencode($shareText);
 
         $botSettings = TelegramBotSetting::pluck('value', 'key');
@@ -2640,13 +2678,13 @@ class WebhookController extends Controller
                 ]),
             ])
             ->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => "📥 انتقال ترافیک هدیه ({$balanceGB} GB)",
                     'callback_data' => 'transfer_ref_traffic',
                 ]),
             ])
             ->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => '🖼 دریافت بنر تبلیغاتی',
                     'callback_data' => 'get_referral_banner',
                     'style' => 'success'
@@ -2667,7 +2705,7 @@ class WebhookController extends Controller
                 ]),
             ])
             ->row([
-                Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
             
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
@@ -2718,7 +2756,7 @@ class WebhookController extends Controller
             $planName = $order->plan ? $order->plan->name : 'پلن نامشخص';
             $username = $order->panel_username ?? 'بدون نام کاربری';
             $keyboard->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => "📦 {$planName} ({$username})",
                     'callback_data' => "do_transfer_ref_{$order->id}"
                 ])
@@ -2726,7 +2764,7 @@ class WebhookController extends Controller
         }
 
         $keyboard->row([
-            Keyboard::inlineButton(['text' => '🔙 بازگشت', 'callback_data' => '/referral']),
+            $this->makeInlineButton(['text' => '🔙 بازگشت', 'callback_data' => '/referral']),
         ]);
 
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
@@ -2965,7 +3003,7 @@ class WebhookController extends Controller
         }
 
         $keyboard = Keyboard::make()->inline()->row([
-            Keyboard::inlineButton(['text' => '⬅️ کیف پول', 'callback_data' => '/wallet', 'style' => 'danger'])
+            $this->makeInlineButton(['text' => '⬅️ کیف پول', 'callback_data' => '/wallet', 'style' => 'danger'])
         ]);
 
         $this->sendRawMarkdownMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
@@ -2978,12 +3016,12 @@ class WebhookController extends Controller
         $message .= "لطفاً سیستم‌عامل خود را برای دریافت راهنما انتخاب کنید:";
         $keyboard = Keyboard::make()->inline()
             ->row([
-                Keyboard::inlineButton(['text' => '📱 اندروید', 'callback_data' => '/tutorial_android']),
-                Keyboard::inlineButton(['text' => '🍏 آیفون', 'callback_data' => '/tutorial_ios']),
+                $this->makeInlineButton(['text' => '📱 اندروید', 'callback_data' => '/tutorial_android']),
+                $this->makeInlineButton(['text' => '🍏 آیفون', 'callback_data' => '/tutorial_ios']),
             ])
             ->row([
-                Keyboard::inlineButton(['text' => '💻 ویندوز', 'callback_data' => '/tutorial_windows']),
-                Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '💻 ویندوز', 'callback_data' => '/tutorial_windows']),
+                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
         $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
     }
@@ -3011,7 +3049,7 @@ class WebhookController extends Controller
             $message = $fallbackTutorials[$platform] ?? "آموزشی برای این پلتفرم یافت نشد.";
         }
 
-        $keyboard = Keyboard::make()->inline()->row([Keyboard::inlineButton(['text' => '⬅️ بازگشت به آموزش‌ها', 'callback_data' => '/tutorials'])]);
+        $keyboard = Keyboard::make()->inline()->row([$this->makeInlineButton(['text' => '⬅️ بازگشت به آموزش‌ها', 'callback_data' => '/tutorials'])]);
 
         $payload = [
             'chat_id'      => $chatId,
@@ -3142,6 +3180,23 @@ class WebhookController extends Controller
             // پنل X-UI
             // ==========================================
             elseif ($panelType === 'xui') {
+                if ($inboundId <= 0 && !$isMultiServer) {
+                    $fallbackInbound = Inbound::all()->first(function (Inbound $candidate) {
+                        $data = is_string($candidate->inbound_data)
+                            ? json_decode($candidate->inbound_data, true)
+                            : $candidate->inbound_data;
+                        return ($data['protocol'] ?? null) === 'vless';
+                    });
+                    if ($fallbackInbound) {
+                        $fallbackData = is_string($fallbackInbound->inbound_data)
+                            ? json_decode($fallbackInbound->inbound_data, true)
+                            : $fallbackInbound->inbound_data;
+                        $inboundId = (int) ($fallbackData['id'] ?? 0);
+                        Log::warning('X-UI default inbound was not configured; using first VLESS inbound.', [
+                            'inbound_id' => $inboundId,
+                        ]);
+                    }
+                }
                 if ($inboundId <= 0) {
                     throw new \Exception("Inbound ID نامعتبر است: {$inboundId}");
                 }
@@ -3371,7 +3426,7 @@ class WebhookController extends Controller
         foreach (array_chunk($depositAmounts, 2) as $row) {
             $rowButtons = [];
             foreach ($row as $amount) {
-                $rowButtons[] = Keyboard::inlineButton([
+                $rowButtons[] = $this->makeInlineButton([
                     'text' => '💰 ' . number_format($amount) . ' ت',
                     'callback_data' => 'deposit_amount_' . $amount,
                     'style' => 'success',
@@ -3380,8 +3435,8 @@ class WebhookController extends Controller
             $keyboard->row($rowButtons);
         }
 
-        $keyboard->row([Keyboard::inlineButton(['text' => '✍️ مبلغ دلخواه', 'callback_data' => '/deposit_custom', 'style' => 'primary'])])
-            ->row([Keyboard::inlineButton(['text' => '⬅️ کیف پول', 'callback_data' => '/wallet', 'style' => 'danger'])]);
+        $keyboard->row([$this->makeInlineButton(['text' => '✍️ مبلغ دلخواه', 'callback_data' => '/deposit_custom', 'style' => 'primary'])])
+            ->row([$this->makeInlineButton(['text' => '⬅️ کیف پول', 'callback_data' => '/wallet', 'style' => 'danger'])]);
 
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
     }
@@ -3389,7 +3444,7 @@ class WebhookController extends Controller
     protected function promptForCustomDeposit($user, $messageId)
     {
         $user->update(['bot_state' => 'awaiting_deposit_amount']);
-        $keyboard = Keyboard::make()->inline()->row([Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
+        $keyboard = Keyboard::make()->inline()->row([$this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
         $this->sendOrEditMessage($user->telegram_chat_id, "💳 لطفاً مبلغ دلخواه خود را (به تومان، حداقل ۱۰,۰۰۰) در یک پیام ارسال کنید:", $keyboard, $messageId);
     }
 
@@ -3498,10 +3553,10 @@ class WebhookController extends Controller
 
         $keyboard = Keyboard::make()->inline();
         if ($balance >= $plan->price) {
-            $keyboard->row([Keyboard::inlineButton(['text' => '✅ تمدید با کیف پول (آنی)', 'callback_data' => "renew_pay_wallet_{$originalOrderId}", 'style' => 'success'])]);
+            $keyboard->row([$this->makeInlineButton(['text' => '✅ تمدید با کیف پول (آنی)', 'callback_data' => "renew_pay_wallet_{$originalOrderId}", 'style' => 'success'])]);
         }
-        $keyboard->row([Keyboard::inlineButton(['text' => '💳 تمدید با کارت به کارت', 'callback_data' => "renew_pay_card_{$originalOrderId}", 'style' => 'primary'])])
-            ->row([Keyboard::inlineButton(['text' => '⬅️ بازگشت به سرویس‌ها', 'callback_data' => '/my_services'])]);
+        $keyboard->row([$this->makeInlineButton(['text' => '💳 تمدید با کارت به کارت', 'callback_data' => "renew_pay_card_{$originalOrderId}", 'style' => 'primary'])])
+            ->row([$this->makeInlineButton(['text' => '⬅️ بازگشت به سرویس‌ها', 'callback_data' => '/my_services'])]);
 
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
     }
@@ -3527,8 +3582,8 @@ class WebhookController extends Controller
         if ($user->balance < $plan->price) {
             $keyboard = Keyboard::make()->inline()
                 ->row([
-                    Keyboard::inlineButton(['text' => '💳 شارژ کیف پول', 'callback_data' => '/deposit']),
-                    Keyboard::inlineButton(['text' => '⬅️ بازگشت', 'callback_data' => '/my_services'])
+                    $this->makeInlineButton(['text' => '💳 شارژ کیف پول', 'callback_data' => '/deposit']),
+                    $this->makeInlineButton(['text' => '⬅️ بازگشت', 'callback_data' => '/my_services'])
                 ]);
             $this->sendOrEditMessage($user->telegram_chat_id, "❌ موجودی کیف پول شما برای تمدید کافی نیست.", $keyboard, $messageId);
             return;
@@ -3616,7 +3671,7 @@ class WebhookController extends Controller
             }
 
             $errorKeyboard = Keyboard::make()->inline()->row([
-                Keyboard::inlineButton(['text' => '💬 پشتیبانی', 'callback_data' => '/support_menu'])
+                $this->makeInlineButton(['text' => '💬 پشتیبانی', 'callback_data' => '/support_menu'])
             ]);
 
             $errorMessage = $this->escape("⚠️ تمدید با خطا مواجه شد. مبلغ {$plan->price} تومان به کیف پول شما بازگردانده شد.");
@@ -3655,7 +3710,7 @@ class WebhookController extends Controller
                 'chat_id' => $user->telegram_chat_id,
                 'text' => $order->config_details, // فقط لینک خالی بدون هیچ فرمتی
                 'reply_markup' => Keyboard::make()->inline()->row([
-                    Keyboard::inlineButton(['text' => '⬅️ بازگشت به جزئیات سرویس', 'callback_data' => "show_service_{$orderId}"])
+                    $this->makeInlineButton(['text' => '⬅️ بازگشت به جزئیات سرویس', 'callback_data' => "show_service_{$orderId}"])
                 ])
             ]);
 
@@ -3900,7 +3955,7 @@ class WebhookController extends Controller
     protected function showSupportMenu($user, $messageId = null)
     {
         $tickets = $user->tickets()->latest()->take(5)->get();
-        $message = "🎧 *" . $this->escape("پشتیبانی LookaNet") . "*\n\n";
+        $message = "🎧 *" . $this->escape("پشتیبانی روزنه") . "*\n\n";
         $message .= $this->escape("مشکلی هست؟ تیکت بزن، سریع پیگیری می‌کنیم.") . "\n\n";
         if ($tickets->isEmpty()) {
             $message .= "🍃 " . $this->escape("در حال حاضر هیچ مکاتبه‌ای (تیکت) از سوی شما در سیستم ثبت نشده است.");
@@ -3921,25 +3976,25 @@ class WebhookController extends Controller
         }
 
         $keyboard = Keyboard::make()->inline()->row([
-            Keyboard::inlineButton(['text' => '📝 تیکت جدید', 'callback_data' => '/support_new', 'style' => 'success']),
-            Keyboard::inlineButton(['text' => '📖 راهنما و آموزش‌ها', 'callback_data' => '/tutorials', 'style' => 'primary'])
+            $this->makeInlineButton(['text' => '📝 تیکت جدید', 'callback_data' => '/support_new', 'style' => 'success']),
+            $this->makeInlineButton(['text' => '📖 راهنما و آموزش‌ها', 'callback_data' => '/tutorials', 'style' => 'primary'])
         ]);
         foreach ($tickets as $ticket) {
             if ($ticket->status !== 'closed') {
                 $keyboard->row([
-                    Keyboard::inlineButton(['text' => "✏️ پاسخ/مشاهده تیکت #{$ticket->id}", 'callback_data' => "reply_ticket_{$ticket->id}"]),
-                    Keyboard::inlineButton(['text' => "❌ بستن تیکت #{$ticket->id}", 'callback_data' => "close_ticket_{$ticket->id}"]),
+                    $this->makeInlineButton(['text' => "✏️ پاسخ/مشاهده تیکت #{$ticket->id}", 'callback_data' => "reply_ticket_{$ticket->id}"]),
+                    $this->makeInlineButton(['text' => "❌ بستن تیکت #{$ticket->id}", 'callback_data' => "close_ticket_{$ticket->id}"]),
                 ]);
             }
         }
-        $keyboard->row([Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])]);
+        $keyboard->row([$this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])]);
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
     }
 
     protected function promptForNewTicket($user, $messageId)
     {
         $user->update(['bot_state' => 'awaiting_new_ticket_subject']);
-        $keyboard = Keyboard::make()->inline()->row([Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
+        $keyboard = Keyboard::make()->inline()->row([$this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
         $this->sendOrEditMessage($user->telegram_chat_id, "📝 *" . $this->escape("لطفاً در یک پیام کوتاه، موضوع درخواست یا مشکل خود را مطرح کنید (مثال: تنظیمات آیفون):") . "*", $keyboard, $messageId);
     }
 
@@ -3947,7 +4002,7 @@ class WebhookController extends Controller
     {
         $ticketIdEscaped = $this->escape($ticketId);
         $user->update(['bot_state' => 'awaiting_ticket_reply|' . $ticketId]);
-        $keyboard = Keyboard::make()->inline()->row([Keyboard::inlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
+        $keyboard = Keyboard::make()->inline()->row([$this->makeInlineButton(['text' => '❌ انصراف', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
         $this->sendOrEditMessage($user->telegram_chat_id, "✏️ *" . $this->escape("کارشناس ما منتظر پاسخ است. لطفاً ادامه پیام خود را برای این تیکت بنویسید (ارسال اسکرین‌شات از مشکل هم مجاز است):") . "*", $keyboard, $messageId);
     }
 
@@ -4139,10 +4194,10 @@ class WebhookController extends Controller
         $keyboard = Keyboard::make()->inline();
 
         if (!empty($channelLink)) {
-            $keyboard->row([Keyboard::inlineButton(['text' => '📲 عضویت در کانال', 'url' => $channelLink])]);
+            $keyboard->row([$this->makeInlineButton(['text' => '📲 عضویت در کانال', 'url' => $channelLink])]);
         }
 
-        $keyboard->row([Keyboard::inlineButton(['text' => '✅ بررسی عضویت', 'callback_data' => '/check_membership'])]);
+        $keyboard->row([$this->makeInlineButton(['text' => '✅ بررسی عضویت', 'callback_data' => '/check_membership'])]);
 
         $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
     }
@@ -4191,12 +4246,12 @@ class WebhookController extends Controller
         // کیبورد با دکمه‌های کاربردی
         $keyboard = Keyboard::make()->inline()
             ->row([
-                Keyboard::inlineButton(['text' => '📋 کپی لینک کانفیگ', 'callback_data' => "copy_link_{$order->id}"]),
-                Keyboard::inlineButton(['text' => '📱 QR Code', 'callback_data' => "qrcode_order_{$order->id}"])
+                $this->makeInlineButton(['text' => '📋 کپی لینک کانفیگ', 'callback_data' => "copy_link_{$order->id}"]),
+                $this->makeInlineButton(['text' => '📱 QR Code', 'callback_data' => "qrcode_order_{$order->id}"])
             ])
             ->row([
-                Keyboard::inlineButton(['text' => '🛠 سرویس‌های من', 'callback_data' => '/my_services']),
-                Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
+                $this->makeInlineButton(['text' => '🛠 سرویس‌های من', 'callback_data' => '/my_services']),
+                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
             ]);
 
         try {
@@ -4370,8 +4425,8 @@ class WebhookController extends Controller
                     'text' => $this->escape("❗️ *سهمیه اکانت تست شما به پایان رسیده است.*\n\nبرای استفاده از سرویس‌های پرسرعت روزنه می‌توانید از بخش زیر سرویس اختصاصی تهیه فرمایید:"),
                     'parse_mode' => 'MarkdownV2',
                     'reply_markup' => Keyboard::make()->inline()->row([
-                        Keyboard::inlineButton(['text' => '🛒 خرید سرویس اختصاصی', 'callback_data' => '/plans']),
-                        Keyboard::inlineButton(['text' => '🏠 منوی اصلی', 'callback_data' => '/start'])
+                        $this->makeInlineButton(['text' => '🛒 خرید سرویس اختصاصی', 'callback_data' => '/plans']),
+                        $this->makeInlineButton(['text' => '🏠 منوی اصلی', 'callback_data' => '/start'])
                     ])
                 ]);
             } catch (\Exception $e) {}
@@ -4402,8 +4457,8 @@ class WebhookController extends Controller
         } catch (\Exception $ex) {}
 
         try {
-            $volumeMB = (int) $settings->get('trial_volume_mb', 500);
-            $durationHours = (int) $settings->get('trial_duration_hours', 24);
+            $volumeMB = (int) $settings->get('trial_volume_mb', 1024);
+            $durationHours = 0; // تست حجمی است و محدودیت زمانی ندارد.
 
             // ایجاد یوزرنیم: اولویت با یوزرنیم تلگرام، وگرنه آیدی عددی
             $usernameBase = !empty($extraUsername) ? $extraUsername : $user->telegram_chat_id;
@@ -4418,7 +4473,7 @@ class WebhookController extends Controller
                 $uniqueUsername .= "_" . rand(100, 999);
             }
 
-            $expiresAt = now()->addHours($durationHours);
+            $expiresAt = null;
             $dataLimitBytes = $volumeMB * 1024 * 1024;
 
             $configLink = null;
@@ -4439,7 +4494,7 @@ class WebhookController extends Controller
                     "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
                     "🔹 <b>نام کاربری کانفیگ:</b> <code>{$uniqueUsername}</code>\n" .
                     "🔹 <b>حجم:</b> {$volumeMB} مگابایت\n" .
-                    "🔹 <b>اعتبار:</b> {$durationHours} ساعت\n" .
+                    "🔹 <b>اعتبار زمانی:</b> بدون محدودیت\n" .
                     "🔹 <b>سرور:</b> {$locationFlag} {$locationName}\n" .
                     "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                 );
@@ -4451,7 +4506,7 @@ class WebhookController extends Controller
                         [
                             'price' => 0,
                             'volume_gb' => (int) ceil($volumeMB / 1024),
-                            'duration_days' => max(1, (int) ceil($durationHours / 24)),
+                            'duration_days' => 0,
                             'features' => 'اکانت هدیه روزنه',
                             'is_active' => false,
                         ]
@@ -4483,7 +4538,7 @@ class WebhookController extends Controller
                     $message .= "👤 *نام کاربری:* `" . $this->escapeCode($uniqueUsername) . "`\n";
                     $message .= "🌍 *موقعیت سرور:* {$locationFlag} " . $this->escape($locationName) . "\n";
                     $message .= "📦 *حجم مجاز:* `" . $this->escape($volumeMB) . "` " . $this->escape("مگابایت") . "\n";
-                    $message .= "⏳ *زمان اعتبار:* `" . $this->escape($durationHours) . "` " . $this->escape("ساعت") . "\n";
+                    $message .= "⏳ *زمان اعتبار:* " . $this->escape("بدون محدودیت زمانی") . "\n";
                     $message .= "\n\n";
                     $message .= "🎯 *لینک اتصال یک‌بار مصرف \\(کپی با یک لمس\\):*\n";
                     $message .= "`" . $this->escapeCode($pureUrl) . "`\n\n";
@@ -4493,15 +4548,15 @@ class WebhookController extends Controller
                     // کیبورد با دکمه کپی، QR و کانفیگ مستقیم
                     $keyboard = Keyboard::make()->inline()
                         ->row([
-                            Keyboard::inlineButton(['text' => '⚡️ کانفیگ مستقیم (VLESS)', 'callback_data' => "direct_configs_trial_{$user->id}"]),
-                            Keyboard::inlineButton(['text' => '📱 QR Code مجدد', 'callback_data' => "qr_trial_{$user->id}"])
+                            $this->makeInlineButton(['text' => '⚡️ کانفیگ مستقیم (VLESS)', 'callback_data' => "direct_configs_trial_{$user->id}"]),
+                            $this->makeInlineButton(['text' => '📱 QR Code مجدد', 'callback_data' => "qr_trial_{$user->id}"])
                         ])
                         ->row([
-                            Keyboard::inlineButton(['text' => '📋 کپی لینک سابسکریپشن', 'callback_data' => "copy_trial_link_{$user->id}"]),
-                            Keyboard::inlineButton(['text' => '🛒 خرید سرویس دائمی', 'callback_data' => '/plans'])
+                            $this->makeInlineButton(['text' => '📋 کپی لینک سابسکریپشن', 'callback_data' => "copy_trial_link_{$user->id}"]),
+                            $this->makeInlineButton(['text' => '🛒 خرید سرویس دائمی', 'callback_data' => '/plans'])
                         ])
                         ->row([
-                            Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
+                            $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])
                         ]);
 
                     $this->updateProgressMessage($chatId, $loadingMsgId, 80, 'تولید پوستر اختصاصی ۹:۱۶ روزنه...');
@@ -4607,7 +4662,7 @@ class WebhookController extends Controller
     protected function createVpnAccount($uniqueUsername, $volumeMB, $durationHours, &$locationName, &$locationFlag)
     {
         $settings = $this->settings;
-        $expiresAt = now()->addHours($durationHours);
+        $expiresAt = $durationHours > 0 ? now()->addHours($durationHours) : null;
         $dataLimitBytes = $volumeMB * 1024 * 1024;
         $configLink = null;
         $panelType = $settings->get('panel_type') ?? 'marzban';
@@ -4663,7 +4718,7 @@ class WebhookController extends Controller
             );
             $response = $marzbanService->createUser([
                 'username' => $uniqueUsername,
-                'expire' => $expiresAt->timestamp,
+                'expire' => $expiresAt?->timestamp ?? 0,
                 'data_limit' => $dataLimitBytes,
             ]);
             if ($response && !empty($response['subscription_url'])) {
@@ -4679,7 +4734,7 @@ class WebhookController extends Controller
             );
             $response = $remnawaveService->createUser([
                 'username' => $uniqueUsername,
-                'expire' => $expiresAt->timestamp,
+                'expire' => $expiresAt?->timestamp ?? 0,
                 'data_limit' => $dataLimitBytes,
                 'squad_uuid' => $settings->get('remnawave_squad_uuid'),
             ]);
@@ -4740,7 +4795,7 @@ class WebhookController extends Controller
             $clientData = [
                 'email' => $uniqueUsername,
                 'total' => $dataLimitBytes,
-                'expiryTime' => $expiresAt->timestamp * 1000,
+                'expiryTime' => $expiresAt ? $expiresAt->timestamp * 1000 : 0,
             ];
             if ($linkType === 'subscription') $clientData['subId'] = Str::random(16);
             $response = $xuiService->addClient($inboundData['id'], $clientData);
@@ -4819,7 +4874,7 @@ class WebhookController extends Controller
             );
             $response = $pasargad->createUser([
                 'username' => $uniqueUsername,
-                'expire' => $expiresAt->timestamp,
+                'expire' => $expiresAt?->timestamp ?? 0,
                 'data_limit' => $dataLimitBytes,
                 'group_ids' => $settings->get('pasargad_trial_group_id') ? [(int)$settings->get('pasargad_trial_group_id')] : [1],
             ]);
@@ -5032,9 +5087,103 @@ class WebhookController extends Controller
         return str_replace(['\\', '`'], ['\\\\', '\\`'], $text);
     }
 
+    /**
+     * یک نقطه مرکزی برای ظاهر تمام دکمه‌های شیشه‌ای ربات فروش.
+     * رنگ و آیکن بر اساس مفهوم عملیات انتخاب می‌شوند تا منوها یکدست بمانند.
+     */
     protected function makeInlineButton(array $params): array
     {
+        $callback = mb_strtolower((string) ($params['callback_data'] ?? ''), 'UTF-8');
+        $label = mb_strtolower((string) ($params['text'] ?? ''), 'UTF-8');
+        $signal = $callback . ' ' . $label;
+
+        if (empty($params['style'])) {
+            if ($this->buttonSignalContains($signal, [
+                'reject', 'cancel', 'close', 'delete', 'remove', 'revoke',
+                'لغو', 'انصراف', 'حذف', 'رد فیش', 'بستن',
+            ])) {
+                $params['style'] = 'danger';
+            } elseif ($this->buttonSignalContains($signal, [
+                'approve', 'confirm', 'pay_', 'buy_plan', 'renew_', 'trial_request',
+                'support_new', 'deposit_amount', 'ثبت', 'تأیید', 'پرداخت', 'خرید',
+                'تمدید', 'دریافت', 'تیکت جدید',
+            ])) {
+                $params['style'] = 'success';
+            } else {
+                $params['style'] = 'primary';
+            }
+        }
+
+        if (empty($params['icon_custom_emoji_id'])) {
+            $icon = $this->resolveButtonIcon($signal);
+            $iconId = app(RozanehExperience::class)->icon($icon);
+            if ($iconId) {
+                $params['icon_custom_emoji_id'] = $iconId;
+
+                // برای لوکیشن، زبان، کپچا و وضعیت سرویس، ایموجی ابتدای متن خودش اطلاعات دارد.
+                if (!$this->buttonSignalContains($callback, ['select_loc_', 'captcha_', 'show_service_'])) {
+                    $cleanLabel = preg_replace(
+                        '/^[\p{So}\p{Sk}\x{FE0F}\x{200D}\x{20E3}\s]+/u',
+                        '',
+                        (string) ($params['text'] ?? '')
+                    );
+                    if (is_string($cleanLabel) && trim($cleanLabel) !== '') {
+                        $params['text'] = trim($cleanLabel);
+                    }
+                }
+            }
+        }
+
         return array_filter($params, fn($val) => $val !== null);
+    }
+
+    protected function buttonSignalContains(string $signal, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            if ($needle !== '' && str_contains($signal, $needle)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected function resolveButtonIcon(string $signal): string
+    {
+        if ($this->buttonSignalContains($signal, ['cancel', 'reject', 'close', 'delete', 'remove', 'revoke', 'لغو', 'انصراف', 'حذف', 'بستن'])) {
+            return 'secure';
+        }
+        if ($this->buttonSignalContains($signal, ['/start', 'خانه', 'بازگشت'])) {
+            return 'home';
+        }
+        if ($this->buttonSignalContains($signal, ['trial', 'تست'])) {
+            return 'trial';
+        }
+        if ($this->buttonSignalContains($signal, ['support', 'ticket', 'پشتیبان', 'پشتیبانی', 'تیکت'])) {
+            return 'support';
+        }
+        if ($this->buttonSignalContains($signal, ['wallet', 'deposit', 'transaction', 'pay_', 'invoice', 'receipt', 'card', 'bank', 'crypto', 'discount', 'کیف پول', 'شارژ', 'تراکنش', 'پرداخت', 'فیش', 'تخفیف'])) {
+            return 'wallet';
+        }
+        if ($this->buttonSignalContains($signal, ['referral', 'gift', 'transfer_ref', 'دعوت', 'هدیه', 'معرفی'])) {
+            return 'gift';
+        }
+        if ($this->buttonSignalContains($signal, ['profile', 'account', 'حساب'])) {
+            return 'profile';
+        }
+        if ($this->buttonSignalContains($signal, ['service', 'order', 'link', 'config', 'qrcode', 'qr_', 'subscription', 'سرویس', 'سفارش', 'لینک', 'کانفیگ'])) {
+            return 'link';
+        }
+        if ($this->buttonSignalContains($signal, ['plans', 'plan_', 'duration', 'renew', 'buy_', 'فروشگاه', 'بسته', 'خرید', 'تمدید'])) {
+            return 'plans';
+        }
+        if ($this->buttonSignalContains($signal, ['status', 'check_', 'membership', 'وضعیت', 'بررسی'])) {
+            return 'status';
+        }
+        if ($this->buttonSignalContains($signal, ['secure', 'captcha', 'location', 'loc_', 'امنیت', 'احراز'])) {
+            return 'secure';
+        }
+
+        return 'brand';
     }
 
     protected function getEmojiCaptchaChallenge()
@@ -5058,8 +5207,8 @@ class WebhookController extends Controller
     {
         $keyboard = Keyboard::make()->inline()
             ->row([
-                Keyboard::inlineButton(['text' => '🇮🇷 فارسی', 'callback_data' => 'captcha_set_lang|fa|' . $referrerId]),
-                Keyboard::inlineButton(['text' => '🇬🇧 English', 'callback_data' => 'captcha_set_lang|en|' . $referrerId])
+                $this->makeInlineButton(['text' => '🇮🇷 فارسی', 'callback_data' => 'captcha_set_lang|fa|' . $referrerId]),
+                $this->makeInlineButton(['text' => '🇬🇧 English', 'callback_data' => 'captcha_set_lang|en|' . $referrerId])
             ]);
 
         $message = "🌍 <b>Select Language / انتخاب زبان</b>\n\n" .
@@ -5100,7 +5249,7 @@ class WebhookController extends Controller
 
         $buttons = [];
         foreach ($challenge['options'] as $index => $option) {
-            $buttons[] = Keyboard::inlineButton([
+            $buttons[] = $this->makeInlineButton([
                 'text' => $option,
                 'callback_data' => "captcha_verify|{$index}|{$token}"
             ]);
@@ -5109,7 +5258,7 @@ class WebhookController extends Controller
         $keyboard = Keyboard::make()->inline()
             ->row($buttons)
             ->row([
-                Keyboard::inlineButton([
+                $this->makeInlineButton([
                     'text' => $lang === 'en' ? '🔄 Change Language' : '🔄 تغییر زبان',
                     'callback_data' => "captcha_change_lang|" . $referrerId
                 ])
@@ -5251,14 +5400,14 @@ class WebhookController extends Controller
         $telegramSettings = TelegramBotSetting::pluck('value', 'key');
         
         if ($lang === 'en') {
-            $defaultWelcome = "✨ Welcome to LookaNet {userFirstName}!
+            $defaultWelcome = "Welcome to Rozaneh {userFirstName}!
             
 Free, fast and borderless internet.
 I am here to build the most secure and stable connection path for you.
 
 👇 Start from the inline menu below:";
         } else {
-            $defaultWelcome = "✨ به LookaNet خوش اومدی {userFirstName}!
+            $defaultWelcome = "به روزنه خوش آمدی {userFirstName}!
 
 اینترنت آزاد، سریع و بدون مرز.
 من اینجام تا امن‌ترین و پایدارترین مسیر اتصال رو برات بسازم.
@@ -5346,111 +5495,135 @@ I am here to build the most secure and stable connection path for you.
 
     protected function getMainMenuKeyboard(): Keyboard
     {
-        $botSettings = TelegramBotSetting::pluck('value', 'key');
+        $experience = app(RozanehExperience::class);
 
-        $emojiPlans = $botSettings->get('emoji_plans');
-        $emojiDeposit = $botSettings->get('emoji_deposit');
-        $emojiOrders = $botSettings->get('emoji_orders');
-        $emojiProfile = $botSettings->get('emoji_profile');
-        $emojiReferral = $botSettings->get('emoji_referral');
-        $emojiSupport = $botSettings->get('emoji_support');
-        $emojiAbout = $botSettings->get('emoji_about');
-        $emojiTrial = $botSettings->get('emoji_trial');
+        return Keyboard::make()->inline()
+            ->row([
+                $this->makeInlineButton([
+                    'text' => 'خرید یا تمدید',
+                    'callback_data' => '/plans',
+                    'style' => 'primary',
+                    'icon_custom_emoji_id' => $experience->icon('plans'),
+                ]),
+            ])
+            ->row([
+                $this->makeInlineButton([
+                    'text' => 'تست رایگان',
+                    'callback_data' => 'trial_request',
+                    'style' => 'success',
+                    'icon_custom_emoji_id' => $experience->icon('trial'),
+                ]),
+                $this->makeInlineButton([
+                    'text' => 'سرویس‌های من',
+                    'callback_data' => '/my_services',
+                    'style' => 'primary',
+                    'icon_custom_emoji_id' => $experience->icon('link'),
+                ]),
+            ])
+            ->row([
+                $this->makeInlineButton([
+                    'text' => 'پشتیبانی فرایدی',
+                    'callback_data' => '/support_menu',
+                    'style' => 'success',
+                    'icon_custom_emoji_id' => $experience->icon('support'),
+                ]),
+                $this->makeInlineButton([
+                    'text' => 'آموزش اتصال',
+                    'callback_data' => '/tutorials',
+                    'style' => 'primary',
+                    'icon_custom_emoji_id' => $experience->icon('brand'),
+                ]),
+            ])
+            ->row([
+                $this->makeInlineButton([
+                    'text' => 'کیف پول و پرداخت',
+                    'callback_data' => '/wallet',
+                    'style' => 'primary',
+                    'icon_custom_emoji_id' => $experience->icon('wallet'),
+                ]),
+                $this->makeInlineButton([
+                    'text' => 'امکانات بیشتر',
+                    'callback_data' => '/more',
+                    'style' => 'primary',
+                    'icon_custom_emoji_id' => $experience->icon('profile'),
+                ]),
+            ]);
+    }
+
+    protected function sendMoreMenu($chatId, $messageId = null): void
+    {
+        $experience = app(RozanehExperience::class);
+        $keyboard = Keyboard::make()->inline()
+            ->row([
+                $this->makeInlineButton([
+                    'text' => 'هدایای معرفی',
+                    'callback_data' => '/referral',
+                    'style' => 'success',
+                    'icon_custom_emoji_id' => $experience->icon('gift'),
+                ]),
+                $this->makeInlineButton([
+                    'text' => 'درباره روزنه',
+                    'callback_data' => '/about',
+                    'style' => 'primary',
+                    'icon_custom_emoji_id' => $experience->icon('brand'),
+                ]),
+            ]);
 
         try {
-            $webAppUrl = route('webapp.index');
-            $webAppUrl = trim($webAppUrl);
+            $webAppUrl = trim((string) route('webapp.index'));
             if (str_starts_with($webAppUrl, 'http://')) {
                 $webAppUrl = str_replace('http://', 'https://', $webAppUrl);
             }
-        } catch (\Exception $e) {
-            $webAppUrl = null;
+            if ($webAppUrl !== '') {
+                $keyboard->row([
+                    $this->makeInlineButton([
+                        'text' => 'پنل وب روزنه',
+                        'web_app' => ['url' => $webAppUrl],
+                        'style' => 'primary',
+                        'icon_custom_emoji_id' => $experience->icon('profile'),
+                    ]),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('WebApp route is unavailable in more menu', ['error' => $e->getMessage()]);
         }
 
-        // ساختار حرفه‌ای فروشگاهی با توزیع رنگ متعادل و بدون تکرار مجاور
-        $keyboard = Keyboard::make()->inline();
-
-        if ($webAppUrl) {
-            $keyboard->row([
-                $this->makeInlineButton([
-                    'text' => '📱 داشبورد حرفه‌ای (Mini App)', 
-                    'web_app' => ['url' => $webAppUrl]
-                ])
-            ]);
-        }
-
-        $keyboard->row([
-                $this->makeInlineButton([
-                    'text' => $emojiPlans ? 'فروشگاه' : '🛍️ فروشگاه', 
-                    'callback_data' => '/plans', 
-                    'style' => 'primary', // آبی تیره
-                    'icon_custom_emoji_id' => $emojiPlans ? (int)$emojiPlans : null
-                ]),
-            ])
-            ->row([
-                $this->makeInlineButton([
-                    'text' => $emojiTrial ? 'تست رایگان' : '⚡️ تست رایگان', 
-                    'callback_data' => 'trial_request', 
-                    'style' => 'primary',
-                    'icon_custom_emoji_id' => $emojiTrial ? (int)$emojiTrial : null
-                ]),
-                $this->makeInlineButton([
-                    'text' => $emojiOrders ? 'سرویس‌های من' : '📦 سرویس‌های من', 
-                    'callback_data' => '/my_services', 
-                    'style' => null,
-                    'icon_custom_emoji_id' => $emojiOrders ? (int)$emojiOrders : null
-                ]),
-            ])
-            ->row([
-                $this->makeInlineButton([
-                    'text' => $emojiDeposit ? 'کیف پول و حساب' : '💳 کیف پول و حساب', 
-                    'callback_data' => '/deposit', 
-                    'style' => 'success', // سبز
-                    'icon_custom_emoji_id' => $emojiDeposit ? (int)$emojiDeposit : null
-                ]),
-                $this->makeInlineButton([
-                    'text' => $emojiReferral ? 'کسب درآمد' : '🎁 کسب درآمد', 
-                    'callback_data' => '/referral', 
-                    'style' => 'success', // سبز
-                    'icon_custom_emoji_id' => $emojiReferral ? (int)$emojiReferral : null
-                ]),
-            ])
-            ->row([
-                $this->makeInlineButton([
-                    'text' => $emojiSupport ? 'پشتیبانی آنلاین' : '🎧 پشتیبانی آنلاین', 
-                    'callback_data' => '/support_menu', 
-                    'style' => 'danger', // قرمز
-                    'icon_custom_emoji_id' => $emojiSupport ? (int)$emojiSupport : null
-                ]),
-            ]);
-
-        // دکمه کانال (تمام‌عرض) اگر تنظیم شده باشد
-        $channel = null;
         try {
             $channel = $this->settings->get('telegram_channel_url')
                 ?: $this->settings->get('required_channel_link')
                 ?: $this->settings->get('telegram_channel');
-        } catch (\Throwable $e) {}
-
-        if ($channel && is_string($channel)) {
-            $channel = trim($channel);
+            $channel = trim((string) $channel);
             if ($channel !== '' && !str_starts_with($channel, 'http')) {
                 $channel = 'https://t.me/' . ltrim($channel, '@');
             }
             if (str_starts_with($channel, 'http')) {
                 $keyboard->row([
-                    Keyboard::inlineButton([
-                        'text' => '📢  عضویت در کانال',
+                    $this->makeInlineButton([
+                        'text' => 'عضویت در کانال',
                         'url' => $channel,
                         'style' => 'success',
+                        'icon_custom_emoji_id' => $experience->icon('brand'),
                     ]),
                 ]);
             }
+        } catch (\Throwable $e) {
+            Log::warning('Channel link is unavailable in more menu', ['error' => $e->getMessage()]);
         }
 
-        return $keyboard;
-    }
+        $keyboard->row([
+            $this->makeInlineButton([
+                'text' => 'بازگشت به خانه',
+                'callback_data' => '/start',
+                'style' => 'primary',
+                'icon_custom_emoji_id' => $experience->icon('home'),
+            ]),
+        ]);
 
+        $text = $experience->customEmoji('brand', '✈️') . "  <b>امکانات بیشتر روزنه</b>\n";
+        $text .= "━━━━━━━━━━━━━━━━━━━━\n";
+        $text .= "هدایای معرفی، پنل وب، کانال رسمی و اطلاعات روزنه از این بخش در دسترس شماست.";
+        $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
+    }
     protected function handleAdminRejectOrder($adminChatId, $orderId, $callbackQueryId, $messageId)
     {
         $adminConfigId = $this->settings->get('telegram_admin_chat_id');
@@ -5478,12 +5651,12 @@ I am here to build the most secure and stable connection path for you.
             // Show rejection reason choices instead of rejecting immediately
             $keyboard = Keyboard::make()->inline()
                 ->row([
-                    Keyboard::inlineButton(['text' => '❌ فیش نامعتبر', 'callback_data' => "admin_reason_{$orderId}_invalid"]),
-                    Keyboard::inlineButton(['text' => '❌ مبلغ مغایر', 'callback_data' => "admin_reason_{$orderId}_amount"])
+                    $this->makeInlineButton(['text' => '❌ فیش نامعتبر', 'callback_data' => "admin_reason_{$orderId}_invalid"]),
+                    $this->makeInlineButton(['text' => '❌ مبلغ مغایر', 'callback_data' => "admin_reason_{$orderId}_amount"])
                 ])
                 ->row([
-                    Keyboard::inlineButton(['text' => '❌ فیش تکراری', 'callback_data' => "admin_reason_{$orderId}_duplicate"]),
-                    Keyboard::inlineButton(['text' => '🔙 انصراف', 'callback_data' => "admin_reason_{$orderId}_cancel"])
+                    $this->makeInlineButton(['text' => '❌ فیش تکراری', 'callback_data' => "admin_reason_{$orderId}_duplicate"]),
+                    $this->makeInlineButton(['text' => '🔙 انصراف', 'callback_data' => "admin_reason_{$orderId}_cancel"])
                 ]);
 
             $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
@@ -5586,8 +5759,8 @@ I am here to build the most secure and stable connection path for you.
 
             $keyboard = Keyboard::make()->inline()
                 ->row([
-                    Keyboard::inlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
-                    Keyboard::inlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
+                    $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
+                    $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
                 ]);
 
             if ($order->card_payment_receipt && !str_starts_with($order->card_payment_receipt, 'text_receipt:')) {
@@ -5707,25 +5880,13 @@ I am here to build the most secure and stable connection path for you.
     protected function sendHome($user, $chatId, $messageId = null, ?string $note = null): void
     {
         $name = htmlspecialchars($user->name ?: 'کاربر', ENT_QUOTES, 'UTF-8');
-        $uid = htmlspecialchars((string)($user->telegram_chat_id ?: $chatId), ENT_QUOTES, 'UTF-8');
         $balance = number_format((float) ($user->balance ?? 0));
-        
-        $refEarn = 0;
-        try {
-            $refEarn = (float) $user->transactions()
-                ->where('description', 'like', 'پاداش دعوت از کاربر%')
-                ->where('status', 'completed')
-                ->sum('amount');
-        } catch (\Throwable $e) {
-            $refEarn = 0;
-        }
-        $refEarnFmt = number_format(abs($refEarn));
 
-        // ساخت کارت داشبورد مدرن با اموجی‌های متحرک پرمیوم و استایل HTML
-        $text = "<tg-emoji emoji-id=\"5188481279963715781\">🚀</tg-emoji> <b>داشبورد کاربری لوکانت | LookaNet</b> <tg-emoji emoji-id=\"5188481279963715781\">🚀</tg-emoji>\n";
+        $experience = app(RozanehExperience::class);
+        $text = $experience->customEmoji('brand', '✈️') . "  <b>روزنه</b>\n";
         $text .= "━━━━━━━━━━━━━━━━━━━━\n";
-        $text .= "👋 سلام <b>{$name}</b> عزیز، به لوکانت خوش آمدید!\n";
-        $text .= "🚀 <i>سریع‌ترین و پایدارترین اینترنت بدون مرز</i>\n";
+        $text .= "سلام <b>{$name}</b> عزیز، خوش آمدید.\n";
+        $text .= "<i>" . RozanehExperience::TAGLINE . "</i>\n";
         $text .= "━━━━━━━━━━━━━━━━━━━━\n\n";
 
         if ($note) {
@@ -5733,13 +5894,9 @@ I am here to build the most secure and stable connection path for you.
             $text .= "━━━━━━━━━━━━━━━━━━━━\n\n";
         }
 
-        $text .= "💼 <b>اطلاعات حساب شما:</b>\n";
-        $text .= "┌ 👤 <b>نام کاربری:</b> {$name} <tg-emoji emoji-id=\"6053202116707622090\">✅</tg-emoji>\n";
-        $text .= "├ <tg-emoji emoji-id=\"5307843983102204243\">🔑</tg-emoji> <b>شناسه عددی:</b> <code>{$uid}</code>\n";
-        $text .= "├ <tg-emoji emoji-id=\"5382164415019768638\">🪙</tg-emoji> <b>موجودی کیف پول:</b> <code>{$balance} تومان</code>\n";
-        $text .= "└ <tg-emoji emoji-id=\"5417924076503062111\">💰</tg-emoji> <b>درآمد زیرمجموعه‌گیری:</b> <code>{$refEarnFmt} تومان</code>\n\n";
-        $text .= "━━━━━━━━━━━━━━━━━━━━\n";
-        $text .= "👇 <b>جهت خرید اشتراک یا مدیریت حساب از منوی زیر استفاده کنید:</b>";
+        $text .= $experience->customEmoji('wallet', '🪙') . " <b>موجودی کیف پول:</b> <code>{$balance} تومان</code>\n\n";
+        $text .= "از اینجا می‌توانید سرویس بخرید یا تمدید کنید، تست رایگان بگیرید و سرویس‌هایتان را مدیریت کنید. برای بررسی هوشمند مشکل یا ارتباط با پشتیبان انسانی هم «پشتیبانی فرایدی» در دسترس شماست.\n\n";
+        $text .= "👇 <b>چه کاری می‌خواهید انجام دهید؟</b>";
 
         // ── استراتژی هوشمند: فقط یک‌بار عکس بنر ارسال می‌شود ──────────────────────────
         // کلید کش برای ذخیره message_id پیام عکس هر کاربر
@@ -5801,7 +5958,6 @@ I am here to build the most secure and stable connection path for you.
                 'caption'      => $text,
                 'parse_mode'   => 'HTML',
                 'reply_markup' => $keyboard,
-                'message_effect_id' => '5044134455711629726' // Fireworks effect
             ]);
 
             // ذخیره file_id (برای کاربران بعدی که اولین باری ارسال می‌شود)
@@ -5827,10 +5983,10 @@ I am here to build the most secure and stable connection path for you.
 
     protected function sendAbout($chatId, $messageId = null): void
     {
-        $text = "<tg-emoji emoji-id=\"5235794253149394263\">🌐</tg-emoji> <b>درباره لوکانت | LookaNet</b>\n";
+        $text = "<tg-emoji emoji-id=\"6028346797368283073\">✈️</tg-emoji> <b>درباره روزنه</b>\n";
         $text .= "━━━━━━━━━━━━━━━━━━━━\n";
         $text .= "<blockquote expandable>";
-        $text .= "<tg-emoji emoji-id=\"5188481279963715781\">🚀</tg-emoji> <b>لوکانت، ارائه‌دهنده سرویس‌های اینترنت آزاد و پایدار</b>\n\n";
+        $text .= "<b>روزنه، ارائه‌دهنده مسیرهای اتصال پایدار و پشتیبانی هوشمند</b>\n\n";
         $text .= "✅ خرید آسان و تحویل آنی کانفیگ\n";
         $text .= "✅ پشتیبانی هوشمند و آنلاین ادمین‌ها\n";
         $text .= "✅ دسترسی به مستندات و آموزش اتصال در تمام سیستم‌عامل‌ها\n\n";
@@ -5859,7 +6015,7 @@ I am here to build the most secure and stable connection path for you.
                 ]),
             ])
             ->row([
-                Keyboard::inlineButton(['text' => '🏠  بازگشت به خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '🏠  بازگشت به خانه', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -5893,15 +6049,15 @@ I am here to build the most secure and stable connection path for you.
 
         $keyboard = Keyboard::make()->inline()
             ->row([
-                Keyboard::inlineButton(['text' => '👛 کیف پول', 'callback_data' => '/wallet', 'style' => 'success']),
-                Keyboard::inlineButton(['text' => '📡 سرویس‌ها', 'callback_data' => '/my_services', 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '👛 کیف پول', 'callback_data' => '/wallet', 'style' => 'success']),
+                $this->makeInlineButton(['text' => '📡 سرویس‌ها', 'callback_data' => '/my_services', 'style' => 'primary']),
             ])
             ->row([
-                Keyboard::inlineButton(['text' => '🧾 تراکنش‌ها', 'callback_data' => '/transactions', 'style' => 'primary']),
-                Keyboard::inlineButton(['text' => '🎁 دعوت', 'callback_data' => '/referral', 'style' => 'success']),
+                $this->makeInlineButton(['text' => '🧾 تراکنش‌ها', 'callback_data' => '/transactions', 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '🎁 دعوت', 'callback_data' => '/referral', 'style' => 'success']),
             ])
             ->row([
-                Keyboard::inlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
 
         $this->sendOrEditMessage($user->telegram_chat_id, $text, $keyboard, $messageId);

@@ -117,7 +117,7 @@ nginx -t && systemctl reload nginx
 
 # Set Telegram Webhook
 cd $PROJECT_PATH
-sudo -u www-data php artisan telegrambot:set-webhook || true
+sudo -u www-data php artisan telegram:set-webhook || true
 sudo -u www-data php artisan optimize:clear
 sudo -u www-data php artisan optimize
 

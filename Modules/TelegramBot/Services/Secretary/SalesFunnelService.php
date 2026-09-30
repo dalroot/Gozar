@@ -5,24 +5,23 @@ namespace Modules\TelegramBot\Services\Secretary;
 use App\Models\Plan;
 use App\Models\Setting;
 use Illuminate\Support\Collection;
+use Modules\TelegramBot\Services\BotEntryPointService;
+use Modules\TelegramBot\Services\PlanCatalogService;
 
 class SalesFunnelService
 {
+    public function __construct(
+        private PlanCatalogService $catalog,
+        private BotEntryPointService $entryPoint
+    ) {
+    }
+
     /**
      * دریافت لیست پلن‌های فعال
      */
     public function getActivePlans(): Collection
     {
-        $plans = Plan::where('is_active', true)
-            ->orderBy('duration_days', 'asc')
-            ->orderBy('volume_gb', 'asc')
-            ->get();
-
-        if ($plans->isEmpty()) {
-            $plans = Plan::orderBy('duration_days', 'asc')->get();
-        }
-
-        return $plans;
+        return $this->catalog->activePlans();
     }
 
     /**
@@ -30,19 +29,7 @@ class SalesFunnelService
      */
     public function generateDurationLabel(int $days): string
     {
-        if ($days % 30 === 0) {
-            $months = (int) ($days / 30);
-            return match ($months) {
-                1 => '🗓 ۱ ماهه (۳۰ روزه)',
-                2 => '🗓 ۲ ماهه (۶۰ روزه)',
-                3 => '🔥 ۳ ماهه (۹۰ روزه) — ویژه',
-                6 => '💎 ۶ ماهه (۱۸۰ روزه) — اقتصادی',
-                12 => '👑 ۱۲ ماهه (سالانه)',
-                default => "🗓 {$months} ماهه",
-            };
-        }
-        if ($days <= 7) return "⚡️ {$days} روزه — موقت";
-        return "🗓 {$days} روزه";
+        return $this->catalog->durationLabel($days);
     }
 
     /**
@@ -57,13 +44,16 @@ class SalesFunnelService
         foreach ($durations as $d) {
             $label = $this->generateDurationLabel((int)$d);
             $keyboard[] = [
-                ['text' => $label, 'callback_data' => "sec_duration_{$d}"]
+                ['text' => $label, 'callback_data' => "sec_duration_{$d}", 'style' => 'primary']
             ];
         }
 
         $keyboard[] = [
-            ['text' => '⚡️ دریافت تست رایگان', 'callback_data' => 'sec_get_trial'],
-            ['text' => '❌ بستن منو', 'callback_data' => 'sec_dismiss']
+            ['text' => '⚡️ دریافت تست رایگان', 'callback_data' => 'sec_get_trial', 'style' => 'success'],
+            ['text' => '❌ بستن منو', 'callback_data' => 'sec_dismiss', 'style' => 'danger']
+        ];
+        $keyboard[] = [
+            ['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']
         ];
 
         return $keyboard;
@@ -74,27 +64,21 @@ class SalesFunnelService
      */
     public function getPlansByDurationKeyboard(int $durationDays): array
     {
-        $plans = Plan::where('is_active', true)
-            ->where('duration_days', $durationDays)
-            ->orderBy('volume_gb', 'asc')
-            ->get();
-
-        if ($plans->isEmpty()) {
-            $plans = Plan::where('duration_days', $durationDays)->get();
-        }
+        $plans = $this->catalog->plansForDuration($durationDays);
 
         $keyboard = [];
         foreach ($plans as $plan) {
-            $vol = $plan->volume_gb ? "{$plan->volume_gb} گیگ" : "سفارشی";
-            $price = number_format($plan->price ?? 0);
             $keyboard[] = [
-                ['text' => "📦 {$vol}  |  {$price} تومان", 'callback_data' => "sec_buy_plan_{$plan->id}"]
+                ['text' => $this->catalog->planButtonLabel($plan), 'callback_data' => "sec_buy_plan_{$plan->id}", 'style' => 'success']
             ];
         }
 
         $keyboard[] = [
-            ['text' => '⬅️ بازگشت به لیست دوره‌ها', 'callback_data' => 'sec_view_durations'],
-            ['text' => '❌ بستن', 'callback_data' => 'sec_dismiss']
+            ['text' => '⬅️ بازگشت به لیست دوره‌ها', 'callback_data' => 'sec_view_durations', 'style' => 'primary'],
+            ['text' => '❌ بستن', 'callback_data' => 'sec_dismiss', 'style' => 'danger']
+        ];
+        $keyboard[] = [
+            ['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']
         ];
 
         return $keyboard;
@@ -110,8 +94,8 @@ class SalesFunnelService
             'cardNumber' => $settings->get('payment_card_number', 'در حال به‌روزرسانی'),
             'cardHolder' => $settings->get('payment_card_holder_name', 'مدیریت'),
             'brandName' => $settings->get('auth_brand_name', 'روزنه'),
-            'trialHours' => $settings->get('trial_duration_hours', '24'),
-            'trialMb' => $settings->get('trial_volume_mb', '500'),
+            'trialHours' => null,
+            'trialMb' => $settings->get('trial_volume_mb', '1024'),
         ];
     }
 
@@ -123,19 +107,30 @@ class SalesFunnelService
         $plan = Plan::find($planId);
         $pName = $plan ? $plan->name : 'پلن انتخابی';
         $price = $plan ? number_format($plan->price ?? 0) : '0';
-        $payment = $this->getPaymentDetails();
+        if (!$plan || !$plan->is_active) {
+            return ['text' => 'این پلن دیگر فعال نیست؛ لطفاً دوباره از فهرست انتخاب کنید.', 'buttons' => $this->getDurationKeyboard()];
+        }
 
-        $text = "🛍 <b>سفارش شما: {$pName}</b>\n" .
-                "💰 مبلغ قابل پرداخت: <b>{$price} تومان</b>\n\n" .
-                "💳 <b>اطلاعات کارت جهت واریز:</b>\n" .
-                "شماره کارت: <code>{$payment['cardNumber']}</code>\n" .
-                "به نام: <b>{$payment['cardHolder']}</b>\n\n" .
-                "📸 <i>لطفاً پس از واریز، عکس یا متن فیش پرداختی را همین‌جا بفرستید تا بررسی و فعال شود.</i>";
+        $duration = $this->generateDurationLabel((int) $plan->duration_days);
+        $volume = $plan->volume_gb ? "{$plan->volume_gb} گیگابایت" : 'حجم سفارشی';
+        $deepLink = $this->entryPoint->url("plan_{$plan->id}");
+        $text = "🧾 <b>خلاصه انتخاب شما</b>\n\n" .
+                "پلن: <b>" . htmlspecialchars(trim($pName), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</b>\n" .
+                "مدت: {$duration}\n" .
+                "حجم: <b>{$volume}</b>\n" .
+                "مبلغ: <code>{$price} تومان</code>\n\n" .
+                "اگر انتخابتان نهایی است، روی دکمهٔ زیر بزنید تا همین پلن برای شما باز شود و مراحل ثبت سفارش و پرداخت را ادامه دهید.";
 
         $buttons = [
             [
-                ['text' => '⬅️ انتخاب پلن دیگر', 'callback_data' => 'sec_view_durations'],
-                ['text' => '❌ بستن', 'callback_data' => 'sec_dismiss']
+                ['text' => '✅ ادامه خرید همین پلن', 'url' => $deepLink, 'style' => 'success']
+            ],
+            [
+                ['text' => '⬅️ انتخاب پلن دیگر', 'callback_data' => 'sec_view_durations', 'style' => 'primary'],
+                ['text' => '❌ بستن', 'callback_data' => 'sec_dismiss', 'style' => 'danger']
+            ],
+            [
+                ['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']
             ]
         ];
 

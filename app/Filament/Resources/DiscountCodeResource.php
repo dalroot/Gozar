@@ -17,7 +17,7 @@ class DiscountCodeResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-tag';
     protected static ?string $navigationLabel = 'کدهای تخفیف';
     protected static ?string $pluralLabel = 'کدهای تخفیف';
-    protected static ?string $navigationGroup = '???? ? ????';
+    protected static ?string $navigationGroup = 'فروش و درآمد';
 
     public static function form(Form $form): Form
     {

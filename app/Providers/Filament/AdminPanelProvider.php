@@ -39,24 +39,34 @@ class AdminPanelProvider extends PanelProvider
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
             ])
-            ->sidebarCollapsibleOnDesktop() // نوار کناری جمع‌شونده مدرن
+            ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('17rem')
+            ->collapsedSidebarWidth('4.5rem')
             ->navigationGroups([
                 \Filament\Navigation\NavigationGroup::make()
-                    ->label('فروش و مالی')
-                    ->icon('heroicon-o-shopping-cart')
-                    ->collapsed(),
+                    ->label('فروش و درآمد')
+                    ->icon('heroicon-o-banknotes')
+                    ->collapsed(false),
                 \Filament\Navigation\NavigationGroup::make()
-                    ->label('مدیریت کاربران')
-                    ->icon('heroicon-o-users')
-                    ->collapsed(),
+                    ->label('فرایدی و ارتباطات')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->collapsed(false),
                 \Filament\Navigation\NavigationGroup::make()
-                    ->label('محتوا و ربات')
+                    ->label('گزارش‌ها')
+                    ->icon('heroicon-o-chart-bar')
+                    ->collapsed(false),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('محتوا')
                     ->icon('heroicon-o-document-text')
-                    ->collapsed(),
+                    ->collapsed(false),
                 \Filament\Navigation\NavigationGroup::make()
-                    ->label('سیستم و سرورها')
+                    ->label('زیرساخت')
                     ->icon('heroicon-o-server')
-                    ->collapsed(),
+                    ->collapsed(false),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('تنظیمات')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->collapsed(false),
             ])
             ->font(
                 'Vaz',
@@ -65,16 +75,14 @@ class AdminPanelProvider extends PanelProvider
             )
             ->assets([
                 \Filament\Support\Assets\Css::make('custom-admin-css', asset('css/custom-admin.css?v=3.0')),
+                \Filament\Support\Assets\Css::make('rozaneh-admin-css', asset('css/rozaneh-admin.css?v=4.0')),
             ])
 
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
-            ->pages([
-                Pages\Dashboard::class,
-            ])
+            ->pages([])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                VpnMarketInfoWidget::class,
                 \App\Filament\Widgets\QuickActionsWidget::class,
                 \App\Filament\Widgets\ServerStatusWidget::class,
                 \App\Filament\Widgets\StatsOverview::class,

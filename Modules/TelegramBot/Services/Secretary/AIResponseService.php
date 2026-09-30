@@ -2,7 +2,6 @@
 
 namespace Modules\TelegramBot\Services\Secretary;
 
-use App\Models\Plan;
 use App\Models\Order;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
@@ -22,12 +21,12 @@ class AIResponseService
     public function __construct()
     {
         $this->openCodeBaseUrl = env('OPENCODE_BASE_URL', 'https://opencode.ai/zen/v1');
-        $this->openCodeApiKey = env('OPENCODE_API_KEY', 'sk-Gfhnig2gO7okIj4eEu0GDgFY7o6knyWKu6BxqmaP5cZRPQ5PPU2Dc5ZcGE3Ehk8o');
+        $this->openCodeApiKey = env('OPENCODE_API_KEY', '');
         $this->openCodePrimaryModel = env('OPENCODE_MODEL', 'mimo-v2.5-free');
         $this->openCodeFallbackModel = env('OPENCODE_FALLBACK_MODEL', 'laguna-s-2.1-free');
 
         $this->openRouterBaseUrl = env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1');
-        $this->openRouterApiKey = env('OPENROUTER_API_KEY', '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');
+        $this->openRouterApiKey = env('OPENROUTER_API_KEY', '');
         $this->openRouterModel = env('OPENROUTER_MODEL', 'minimax/minimax-m2.7:free');
     }
 
@@ -36,8 +35,8 @@ class AIResponseService
      */
     public function formatForTelegram(string $text): string
     {
-        $text = trim($text);
-        // تبدیل مارک‌داون‌های رایج به فرمت خوانای تلگرام
+        // مدل اجازه تولید HTML خام ندارد؛ ابتدا خروجی را امن و سپس دو قالب ساده را تبدیل می‌کنیم.
+        $text = htmlspecialchars(strip_tags(trim($text)), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $text = preg_replace('/\*\*(.*?)\*\*/u', '<b>$1</b>', $text);
         $text = preg_replace('/`(.*?)`/u', '<code>$1</code>', $text);
         return $text;
@@ -48,69 +47,20 @@ class AIResponseService
      */
     protected function buildSystemPrompt(array $ctx): string
     {
-        $name         = $ctx['fullName'];
-        $card         = $ctx['cardNumber'] ?: 'در حال به‌روزرسانی';
-        $holder       = $ctx['cardHolder'];
-        $brand        = $ctx['brandName'] ?: 'روزنه';
-        $trialH       = $ctx['trialHours'];
-        $trialMb      = $ctx['trialMb'];
-        $plans        = $ctx['plans'];
-        $sub          = $ctx['subscription'];
-        $isIntroduced = $ctx['isIntroduced'] ?? false;
-
-        $plansText = '';
-        foreach ($plans as $p) {
-            $vol   = $p->volume_gb ? "{$p->volume_gb} گیگ" : "نامحدود";
-            $days  = $p->duration_days ? "{$p->duration_days} روزه" : "";
-            $price = number_format((int)($p->price ?? 0));
-            $plansText .= "  • {$p->name} ({$vol} - {$days}): {$price} تومان\n";
-        }
-
-        if ($sub) {
-            $subText = "اطلاعات اشتراک فعال کاربر در سیستم:\n" .
-                       "  - نام پلن: {$sub['plan']}\n" .
-                       "  - تاریخ انقضا: {$sub['expires']}\n" .
-                       "  - لینک سابسکریپشن: {$sub['link']}\n" .
-                       "  - وضعیت: {$sub['status']}";
-        } else {
-            $subText = "کاربر در حال حاضر اشتراک فعالی در دیتابیس ندارد.";
-        }
-
-        $introRule = $isIntroduced
-            ? "تو قبلاً خودت را به این کاربر معرفی کرده‌ای. به هیچ عنوان مجدداً نگو «من فرایدی هستم» و مجدداً سلام نکن."
-            : "این اولین پیام این مکالمه است. خیلی کوتاه در ابتدای پیام بگو: «من فرایدی، دستیار هوشمند {$brand} هستم.»";
+        $name = $ctx['fullName'];
 
         return <<<PROMPT
-تو «فرایدی» هستی؛ دستیار هوشمند و پشتیبان واقعی در تلگرام «{$brand}».
-شخصیت و لحن: بسیار مودب، آرام، انسانی، مسلط و صمیمی (دقیقاً مانند یک پشتیبان انسانی کاربلد، نه یک ربات خشک و اسپمر).
+تو همکار پشتیبانی روزنه در یک گفت‌وگوی تلگرامی هستی. مخاطب «{$name}» است.
 
-━━━━━━━━━━━━━━━━
-قانون معرفی:
-{$introRule}
+طبیعی، کوتاه و دقیق جواب بده؛ مثل یک پشتیبان باتجربه. نام خودت یا برند را تکرار نکن، بی‌دلیل سلام نکن و جمله‌های قالبی مثل «در خدمتم» را پشت سر هم نیاور.
+اگر مسئله مبهم است فقط یک سؤال روشن‌کننده بپرس. از تاریخچه برای ادامهٔ همان موضوع استفاده کن و حرف قبلی را تکرار نکن.
 
-━━━━━━━━━━━━━━━━
-اطلاعات مخاطب:
-نام مخاطب: {$name}
-{$subText}
-
-━━━━━━━━━━━━━━━━
-اطلاعات تعرفه‌ها (فقط در صورتی که کاربر صریحاً درباره قیمت/خرید/پلن سوال کرد ذکر کن):
-{$plansText}
-اکانت تست: {$trialH} ساعته با حجم {$trialMb} مگابایت
-
-━━━━━━━━━━━━━━━━
-اطلاعات پرداخت (فقط در صورت درخواست شماره کارت):
-شماره کارت: {$card}
-به نام: {$holder}
-
-━━━━━━━━━━━━━━━━
-قوانین حیاتی رفتار و نگارش (مهم‌ترین بخش):
-۱. ممنوعیت تبلیغ و گزینه‌سازی اجباری: در انتهای پیام‌ها به هیچ عنوان لیست گزینه‌های خرید، پلن، تست یا منوی خدمات را ردیف نکن! فقط به چیزی که کاربر پرسیده پاسخ بده.
-۲. احوال‌پرسی خالص: اگر کاربر گفت «سلام»، «حالت چطوره»، «کجایی» و چت دوستانه کرد، فقط با محبت و صمیمیت جواب احوال‌پرسی را بده. اصلاً حرفی از وی‌پی‌ان، پلن و فروش نزن.
-۳. بررسی وضعیت اشتراک: اگر کاربر از وضعیت اشتراکش پرسید، فقط اطلاعات دقیق اشتراک او را بگو و اگر لینک خواست لینک اتصال را بده.
-۴. رفع مشکل فنی/قطعی: اگر کاربر گفت خطاست یا قطعه، فقط راهنمای کوتاه بده (۱. آپدیت سابسکریپشن ۲. بررسی اتصال اینترنت).
-۵. پاسخ به پیام‌های چندبخشی: اگر کاربر همزمان ۲ یا ۳ موضوع مختلف گفت، به تمام بخش‌ها در یک پیام واحد، مرتب و با پاراگراف‌بندی تمیز پاسخ بده.
-۶. همیشه جملات را کامل به پایان برسان.
+قوانین قطعی:
+- هرگز URL، لینک تست، لینک اشتراک، کد فعال‌سازی، کانفیگ، شماره کارت، قیمت، حجم باقی‌مانده یا تاریخ انقضا تولید نکن؛ این موارد فقط توسط سرویس‌های قطعی سامانه پاسخ داده می‌شوند.
+- هیچ واقعیت مربوط به حساب مشتری را حدس نزن.
+- وعدهٔ انجام کاری که ابزارش را نداری نده.
+- اگر سؤال عملیاتی را دقیق متوجه نشدی، موضوع را با یک سؤال کوتاه مشخص کن.
+- پاسخ حداکثر سه پاراگراف کوتاه باشد.
 PROMPT;
     }
 
@@ -145,12 +95,11 @@ PROMPT;
             }
         }
 
-        $ctx = array_merge($paymentData, [
-            'fullName'     => $userData['fullName'],
-            'plans'        => Plan::where('is_active', true)->orderBy('duration_days')->get(),
-            'subscription' => $subscription,
+        // اطلاعات حساس/عملیاتی عمداً وارد مدل آزاد نمی‌شوند.
+        $ctx = [
+            'fullName' => $userData['fullName'],
             'isIntroduced' => $isIntroduced,
-        ]);
+        ];
 
         $systemPrompt = $this->buildSystemPrompt($ctx);
 
@@ -187,7 +136,7 @@ PROMPT;
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$apiKey}",
                 'Content-Type'  => 'application/json',
-            ])->timeout(15)->post("{$baseUrl}/chat/completions", [
+            ])->timeout(12)->post("{$baseUrl}/chat/completions", [
                 'model'       => $model,
                 'messages'    => $messages,
                 'temperature' => 0.4,
@@ -201,8 +150,21 @@ PROMPT;
                     $content = preg_replace('/<think>.*?<\/think>/s', '', $content);
                     $content = trim($content);
                 }
+                if (!empty($content) && !$this->isGroundedModelReply($content)) {
+                    Log::warning('Rejected ungrounded secretary AI reply', [
+                        'model' => $model,
+                        'reason' => 'contained protected operational data',
+                    ]);
+                    return null;
+                }
                 return !empty($content) ? $content : null;
             }
+            Log::warning("AI provider rejected request", [
+                'model' => $model,
+                'base_url' => $baseUrl,
+                'status' => $response->status(),
+                'error' => $response->json('error.message'),
+            ]);
         } catch (\Exception $e) {
             Log::warning("AI [{$model}] on [{$baseUrl}] error: " . $e->getMessage());
         }
@@ -243,13 +205,16 @@ PROMPT;
         return "در خدمتم {$name} جان، پیامتون رو دریافت کردم 🌿";
     }
 
-    public function responseMentionsPlans(string $aiReply): bool
+    private function isGroundedModelReply(string $reply): bool
     {
-        return (bool) preg_match('/(پلن|تعرفه|قیمت|تومان|گیگابایت|گیگ|خرید|اشتراک|بسته)/u', $aiReply);
-    }
-
-    public function responseMentionsTrial(string $aiReply): bool
-    {
-        return (bool) preg_match('/(تست رایگان|اکانت تست|ساعته)/u', $aiReply);
+        $forbidden = [
+            '~(?:https?://|tg://|t\.me/)~iu',
+            '/(کد\s*فعال.?سازی|لینک\s*(اتصال|اشتراک|تست)|شماره\s*کارت)/u',
+            '/(?:\d[\s-]*){16}/u',
+        ];
+        foreach ($forbidden as $pattern) {
+            if (preg_match($pattern, $reply)) return false;
+        }
+        return true;
     }
 }

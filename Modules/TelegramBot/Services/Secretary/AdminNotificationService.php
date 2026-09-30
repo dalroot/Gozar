@@ -4,6 +4,7 @@ namespace Modules\TelegramBot\Services\Secretary;
 
 use App\Models\Setting;
 use App\Models\User;
+use Modules\Ticketing\Models\Ticket;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -14,7 +15,7 @@ class AdminNotificationService
 
     public function __construct()
     {
-        $this->botToken = env('SECRETARY_BOT_TOKEN', '8450449696:AAGfdyIZg4FnLlpKeuDo6D8imdi1bFKo7eQ');
+        $this->botToken = (string) env('SECRETARY_BOT_TOKEN', '');
         
         // شناسه ادمین اصلی
         $settings = Setting::all()->pluck('value', 'key');
@@ -53,26 +54,113 @@ class AdminNotificationService
     /**
      * اعلان درخواست گفتگوی مستقیم با پشتیبان انسانی
      */
-    public function notifyHumanSupportRequested(int|string $customerChatId, string $fullName, ?string $username = null, ?string $lastMessage = null): bool
+    public function notifyHumanSupportRequested(int|string $customerChatId, string $fullName, ?string $username = null, ?string $lastMessage = null, ?int $ticketId = null, array|string|null $contextSummary = null): bool
     {
-        $userTag = $username ? "@{$username}" : "بدون یوزرنیم";
-        $text = "🚨 <b>درخواست پشتیبانی انسانی در پی‌وی</b>\n\n" .
-                "👤 <b>مشتری:</b> {$fullName} ({$userTag})\n" .
-                "🆔 <b>شناسه تلگرام:</b> <code>{$customerChatId}</code>\n";
+        $userTag = $username ? '@' . htmlspecialchars($username, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : "بدون یوزرنیم";
+        $safeName = htmlspecialchars($fullName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $text = "🚨 <b>درخواست پشتیبانی انسانی</b>\n\n" .
+                "👤 <b>{$safeName}</b> · {$userTag}\n" .
+                "🆔 <code>{$customerChatId}</code>" .
+                ($ticketId ? " · 🎫 <code>#{$ticketId}</code>" : '') . "\n";
 
-        if (!empty($lastMessage)) {
-            $text .= "💬 <b>آخرین پیام:</b> <i>" . htmlspecialchars($lastMessage) . "</i>\n";
+        if (is_array($contextSummary)) {
+            $subject = $this->safe($contextSummary['subject'] ?? 'درخواست گفتگو با پشتیبان');
+            $text .= "📌 <b>موضوع:</b> {$subject}\n";
+            if (!empty($contextSummary['service_status'])) {
+                $text .= "📡 <b>سرویس:</b> " . $this->safe($contextSummary['service_status']) . "\n";
+            }
+            if (!empty($contextSummary['order'])) {
+                $text .= "🧾 <b>سفارش مرتبط:</b> " . $this->safe($contextSummary['order']) . "\n";
+            }
+            if (!empty($contextSummary['summary'])) {
+                $text .= "\n🧭 <b>جمع‌بندی فرایدی</b>\n<blockquote>" . $this->safe($contextSummary['summary']) . "</blockquote>\n";
+            }
+            if (!empty($contextSummary['last_user_request'])) {
+                $text .= "🗣 <b>آخرین درخواست مرتبط:</b> «" . $this->safe($contextSummary['last_user_request']) . "»\n";
+            }
+        } elseif (!empty($contextSummary)) {
+            $text .= "\n🧭 <b>جمع‌بندی فرایدی</b>\n<blockquote>" . $this->safe($contextSummary) . "</blockquote>\n";
+        } elseif (!empty($lastMessage)) {
+            $text .= "💬 <b>درخواست:</b> " . $this->safe($lastMessage) . "\n";
         }
 
-        $text .= "\n⏱ <i>ربات در این چت به حالت سکوت رفت تا پاسخ دهید.</i>";
+        $text .= "\n🤖 <i>فرایدی تا پایان پاسخ انسانی در این گفتگو ساکت است.</i>";
 
         $keyboard = [
             [
                 ['text' => '💬 ورود به چت مشتری در پی‌وی', 'url' => "tg://user?id={$customerChatId}"]
+            ],
+            [
+                ['text' => '🤖 بازگرداندن به فرایدی', 'callback_data' => "sec_admin_resume_{$customerChatId}"],
+                ['text' => '✅ پایان پشتیبانی', 'callback_data' => "sec_admin_resolve_{$customerChatId}"]
             ]
         ];
 
         return $this->sendNotificationToAdmin($text, $keyboard);
+    }
+
+    public function isAdminChat(int|string $chatId): bool
+    {
+        return (string) $this->adminChatId === (string) $chatId;
+    }
+
+    public function closeLatestHumanTicket(int|string $customerChatId): ?int
+    {
+        $user = User::where('telegram_chat_id', (string) $customerChatId)->first();
+        if (!$user || !class_exists(Ticket::class)) return null;
+        $ticket = Ticket::where('user_id', $user->id)
+            ->where('source', 'telegram_secretary')
+            ->whereIn('status', ['open', 'pending'])
+            ->latest()->first();
+        if (!$ticket) return null;
+        $ticket->update(['status' => 'closed']);
+        return (int) $ticket->id;
+    }
+
+    public function createHumanSupportTicket(?User $user, string $message, array $details = []): ?int
+    {
+        if (!$user || !class_exists(Ticket::class)) return null;
+
+        try {
+            $existing = Ticket::where('user_id', $user->id)
+                ->where('source', 'telegram_secretary')
+                ->whereIn('status', ['open', 'pending'])
+                ->where('created_at', '>=', now()->subHours(12))
+                ->latest()
+                ->first();
+            $extra = [];
+            foreach ($details as $key => $value) {
+                if ($value !== null && $value !== '') $extra[] = "{$key}: {$value}";
+            }
+            $body = trim($message) . (empty($extra) ? '' : "\n\n" . implode("\n", $extra));
+            if ($existing) {
+                $existing->update([
+                    'message' => rtrim((string) $existing->message) .
+                        "\n\n--- به‌روزرسانی " . now()->format('Y-m-d H:i') . " ---\n" . $body,
+                    'priority' => 'high',
+                    'status' => 'open',
+                ]);
+                return (int) $existing->id;
+            }
+
+            $ticket = Ticket::create([
+                'user_id' => $user->id,
+                'subject' => 'درخواست پشتیبانی انسانی از فرایدی',
+                'message' => $body,
+                'priority' => 'high',
+                'status' => 'open',
+                'source' => 'telegram_secretary',
+            ]);
+            return (int) $ticket->id;
+        } catch (\Throwable $e) {
+            Log::error('Failed to create secretary support ticket', ['user_id' => $user->id]);
+            return null;
+        }
+    }
+
+    private function safe(mixed $value): string
+    {
+        return htmlspecialchars(trim((string) $value), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
     /**

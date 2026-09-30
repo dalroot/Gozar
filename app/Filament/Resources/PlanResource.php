@@ -19,7 +19,7 @@ class PlanResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'فروش و مالی';
+    protected static ?string $navigationGroup = 'فروش و درآمد';
 
     protected static ?string $navigationLabel = 'پلن‌های سرویس';
     protected static ?string $pluralModelLabel = 'پلن‌های سرویس';

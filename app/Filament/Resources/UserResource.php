@@ -24,10 +24,11 @@ class UserResource extends Resource
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?string $navigationGroup = 'مدیریت کاربران';
-    protected static ?string $navigationLabel = 'کاربران سایت';
-    protected static ?string $pluralModelLabel = 'کاربران سایت';
-    protected static ?string $modelLabel = 'کاربر';
+    protected static ?string $navigationGroup = null;
+    protected static ?int $navigationSort = -7;
+    protected static ?string $navigationLabel = 'مشتریان';
+    protected static ?string $pluralModelLabel = 'مشتریان';
+    protected static ?string $modelLabel = 'مشتری';
 
     public static function form(Form $form): Form
     {

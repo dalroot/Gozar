@@ -35,7 +35,8 @@ class OrderResource extends Resource
     protected static ?string $navigationLabel = 'سفارشات';
     protected static ?string $modelLabel = 'سفارش';
     protected static ?string $pluralModelLabel = 'سفارشات';
-    protected static ?string $navigationGroup = 'فروش و مالی';
+    protected static ?string $navigationGroup = null;
+    protected static ?int $navigationSort = -9;
 
     public static function form(Form $form): Form
     {

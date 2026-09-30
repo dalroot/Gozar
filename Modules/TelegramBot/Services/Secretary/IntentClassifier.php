@@ -2,63 +2,68 @@
 
 namespace Modules\TelegramBot\Services\Secretary;
 
-/**
- * IntentClassifier — فقط برای side effects (notify admin, receipt)
- * و تصمیم نمایش دکمه‌ها استفاده می‌شود.
- * تولید متن پاسخ کاملاً برعهده AI است.
- */
 class IntentClassifier
 {
-    public const SIDE_HUMAN   = 'human';
-    public const SIDE_RECEIPT = 'receipt';
-    public const SIDE_TRIAL   = 'trial';
-    public const SIDE_PLANS   = 'plans';
-    public const SIDE_STATUS  = 'status';
-    public const SIDE_NONE    = 'none';
+    public const HUMAN = 'human';
+    public const RECEIPT = 'receipt';
+    public const TRIAL = 'trial';
+    public const PLANS = 'plans';
+    public const STATUS = 'status';
+    public const LINK = 'link';
+    public const TECHNICAL = 'technical';
+    public const PAYMENT = 'payment';
+    public const RENEWAL = 'renewal';
+    public const TUTORIAL = 'tutorial';
+    public const FAQ = 'faq';
+    public const GREETING = 'greeting';
+    public const THANKS = 'thanks';
+    public const UNKNOWN = 'unknown';
 
-    protected function normalize(string $text): string
-    {
-        $text = mb_strtolower(trim($text), 'UTF-8');
-        $text = str_replace(
-            ['آ','أ','إ','ي','ك','ة','‌',"\u{200C}"],
-            ['ا','ا','ا','ی','ک','ه',' ',' '],
-            $text
-        );
-        return preg_replace('/\s+/', ' ', $text);
-    }
+    public const SIDE_HUMAN = self::HUMAN;
+    public const SIDE_RECEIPT = self::RECEIPT;
+    public const SIDE_TRIAL = self::TRIAL;
+    public const SIDE_PLANS = self::PLANS;
+    public const SIDE_STATUS = self::STATUS;
+    public const SIDE_NONE = self::UNKNOWN;
 
-    /**
-     * تشخیص side effect پیام کاربر
-     */
-    public function detectSideEffect(string $message): string
+    public function classify(string $message): string
     {
         $msg = $this->normalize($message);
-
-        // ۱. درخواست پشتیبان انسانی
-        if (preg_match('/(ادمین|پشتیبان|انسان|مدیر|وصل کن|صاحبت|خودت جواب نده)/u', $msg)) {
-            return self::SIDE_HUMAN;
+        // Quick commands are intentionally language-neutral so users can type
+        // STATUS (or /status) without navigating any buttons.
+        if (in_array($msg, ['status', '/status', 'وضعیت', '/وضعیت'], true)) {
+            return self::STATUS;
         }
-
-        // ۲. ارسال فیش
-        if (preg_match('/(فیش|واریز کردم|پرداخت کردم|کارت به کارت|رسید)/u', $msg)) {
-            return self::SIDE_RECEIPT;
+        $rules = [
+            self::HUMAN => '/(ادمین|پشتیبان\s*انسانی|اپراتور|مدیر|انسان|خودت\s*جواب\s*نده|شکایت|با\s*پشتیبان.{0,10}(وصل|صحبت)|وصل.{0,10}(ادمین|اپراتور|پشتیبان))/u',
+            self::RECEIPT => '/(فیش|رسید|واریز کردم|پرداخت کردم|کارت به کارت کردم)/u',
+            self::TRIAL => '/(\/trial|تست(?!\s*(سرعت|پینگ|اتصال))|اکانت\s*(تست|رایگان)|رایگان\s*(بده|میخوام|می خوام))/u',
+            self::TECHNICAL => '/(وصل\s*(نمیشه|نمی.?شه|نشد)|نمی.?تونم\s*وصل|قطعه|قط\s*(هستم|شدم|بودم|هست|شده)|قطع\s*(هستم|شدم|بودم|هست|شده)|از\s*(دیروز|دیشب|امروز).{0,12}(قط|قطع|وصل)|کار\s*(نمی.?کنه|نمیکنه|نمی.?کنن|نکرد)|بازم\s*نشد|ارور|خطا|کند|پینگ|اینترنت\s*ندارم|آپدیت\s*(نمیشه|نشد)|update|timeout)/u',
+            self::FAQ => '/(صرافی|بایننس|کوکوین|نوبیتکس|ای\s*پی\s*(ثابت|اختصاصی)|ip\s*(ثابت|اختصاصی)|حساب\s*بانکی|ثابت\s*بودن\s*ای\s*پی|نت\s*ملی|اینترنت\s*ملی|قطع.{0,12}بین.?الملل|کیل\s*سوییچ|kill\s*switch|لوکیشن|کشور|سرور\s*(المان|ترکیه|هلند|فنلاند|امریکا)|ضمانت|بازگشت\s*وجه|پس\s*دادن\s*پول|چه\s*حسابی.{0,10}بر.{0,4}گرد|فورس\s*ماژور|sla|پایداری|هدیه)/u',
+            self::RENEWAL => '/(تمدید|اضافه کردن زمان|ترافیک اضافه|حجم\s*اضافه|خرید حجم|انتقال.{0,20}(حجم|زمان)|(حجم|زمان).{0,20}منتقل|ریوک|revoke|باطل.{0,12}لینک|لینک.{0,12}باطل)/u',
+            self::LINK => '/(لینک|کانفیگ|subscription|سابسکریپشن|کپی لینک|لینک اتصال)/u',
+            self::STATUS => '/(وضعیت.{0,8}(اشتراک|سرویس)|(اشتراک|سرویس).{0,12}(من|بررسی|وضعیت)|اشتراکم|سرویسم|هنوز فعاله|انقضا|چقدر\s*مونده|(چند|چه قدر).{0,8}گیگ|گیگ.{0,8}مونده|حجمم|مصرف.{0,8}(من|چقدر)|حجم.{0,8}(باقی|مونده|چقدر))/u',
+            self::PAYMENT => '/(شماره کارت|کارت بانکی|پرداخت|درگاه|کیف پول|واریز|هزینه رو کجا|شبا|ارز\s*دیجیتال|رمز.?ارز)/u',
+            self::PLANS => '/(قیمت|خرید|تعرفه|پلن|بسته|وی\s*پی\s*ان|فیلتر\s*شکن|vpn|چنده|هزینه|(?:\d+|سی|پنجاه|صد)\s*گیگ|(?:یک|دو|سه|\d+)\s*ماهه?)/u',
+            self::TUTORIAL => '/(اموزش|راهنما|چطور وصل|نصب|اندروید|ایفون|ویندوز|مک|v2ray|hiddify|streisand|nekobox|nekoray|clash|sing.?box|shadowrocket|v2box)/u',
+            self::THANKS => '/^(ممنون|مرسی|سپاس|تشکر|دمت گرم|اوکی|باشه|حل شد)[!. ]*$/u',
+            self::GREETING => '/^(سلام|درود|وقت بخیر|صبح بخیر|شب بخیر|خوبی|حالت چطوره|hi|hello)([!.، ]|$)/u',
+        ];
+        foreach ($rules as $intent => $pattern) {
+            if (preg_match($pattern, $msg)) return $intent;
         }
+        return self::UNKNOWN;
+    }
 
-        // ۳. درخواست تست رایگان
-        if (preg_match('/(\/trial|تست رایگان|اکانت تست|تست بده|رایگان بده)/u', $msg)) {
-            return self::SIDE_TRIAL;
-        }
+    public function detectSideEffect(string $message): string
+    {
+        return $this->classify($message);
+    }
 
-        // ۴. استعلام وضعیت اشتراک
-        if (preg_match('/(وضعیت اشتراک|اشتراکم چ|اشتراک من|چک کن|سرویسم|کانفیگم|هنوز فعاله|انقضا)/u', $msg)) {
-            return self::SIDE_STATUS;
-        }
-
-        // ۵. استعلام قیمت/خرید
-        if (preg_match('/(قیمت|خرید|تعرفه|پلن|بسته|وی\s*پی\s*ان|فیلتر\s*شکن|vpn|چنده|هزینه)/u', $msg)) {
-            return self::SIDE_PLANS;
-        }
-
-        return self::SIDE_NONE;
+    private function normalize(string $text): string
+    {
+        $text = mb_strtolower(trim($text), 'UTF-8');
+        $text = str_replace(['آ', 'أ', 'إ', 'ي', 'ك', 'ة', "\u{200C}"], ['ا', 'ا', 'ا', 'ی', 'ک', 'ه', ' '], $text);
+        return preg_replace('/\s+/u', ' ', $text) ?: $text;
     }
 }
