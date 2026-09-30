@@ -769,33 +769,32 @@ class TelegramSecretaryService
         }
 
         if ($data === 'sec_get_trial') {
-            $this->answerCallbackQuery($callbackId, 'در حال بررسی سهمیه و ساخت اکانت…');
-            if ($messageId) {
-                $this->editBusinessMessage(
-                    $businessConnectionId,
-                    $chatId,
-                    $messageId,
-                    "⚙️ <b>در حال ساخت اکانت تست روزنه</b>\n\nسهمیه در حال بررسی و اتصال به پنل در حال انجام است؛ لطفاً چند لحظه صبر کنید…"
-                );
-            }
-            $trialReply = $this->commerce->createTrial($chatId, $businessConnectionId, $fullName, $username);
-            if (!empty($trialReply['delete_progress']) && $messageId) {
-                $this->deleteInteractiveMessage($businessConnectionId, $chatId, $messageId);
-            } else {
-                $sent = $messageId ? $this->editBusinessMessage($businessConnectionId, $chatId, $messageId, $trialReply['text'], $trialReply['buttons'] ?? null) : false;
-                if (!$sent) $this->sendBusinessMessage($businessConnectionId, $chatId, $trialReply['text'], $trialReply['buttons'] ?? null);
-            }
+            $this->answerCallbackQuery($callbackId, 'انجام شد');
+            $trialReply = [
+                'text' => "⚡️ <b>دریافت اکانت تست رایگان روزنه</b>\n\n" .
+                          "سرویس تست رایگان به‌صورت خودکار در <b>ربات فروشگاه روزنه</b> صادر و تحویل داده می‌شود.\n" .
+                          "جهت دریافت آنی کانفیگ، لطفاً وارد ربات فروشگاه شوید 🌿",
+                'buttons' => [
+                    [['text' => '🎁 دریافت تست در ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                    [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']]
+                ]
+            ];
+            $sent = $messageId ? $this->editBusinessMessage($businessConnectionId, $chatId, $messageId, $trialReply['text'], $trialReply['buttons']) : false;
+            if (!$sent) $this->sendBusinessMessage($businessConnectionId, $chatId, $trialReply['text'], $trialReply['buttons']);
             return;
         }
 
         $commerceReply = null;
-        if ($data === 'sec_view_durations') {
-            $commerceReply = $this->commerce->chooseMode($chatId, $fullName, $username);
-        } elseif ($data === 'sec_start_purchase') {
-            $this->commerce->setMode($chatId, 'purchase');
-            $commerceReply = ['text' => '➕ <b>خرید سرویس جدید</b>\n\nمدت موردنظرتان را انتخاب کنید.', 'buttons' => $this->funnel->getDurationKeyboard()];
-        } elseif ($data === 'sec_start_renewal') {
-            $commerceReply = $this->commerce->startRenewal($chatId, $fullName, $username);
+        if (in_array($data, ['sec_view_durations', 'sec_start_purchase', 'sec_start_renewal'], true)) {
+            $commerceReply = [
+                'text' => "🛍️ <b>خرید و تمدید اشتراک روزنه</b>\n\n" .
+                          "تمامی خدمات خرید، تمدید، انتخاب پلن و پرداخت‌ها در <b>ربات رسمی فروشگاه روزنه</b> انجام می‌شود.\n" .
+                          "جهت مشاهده تعرفه‌ها و ثبت سفارش، دکمهٔ زیر را لمس فرمایید 🌿",
+                'buttons' => [
+                    [['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                    [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']]
+                ]
+            ];
         } elseif (str_starts_with($data, 'sec_renew_service_')) {
             $commerceReply = $this->commerce->selectRenewalService($chatId, (int) str_replace('sec_renew_service_', '', $data));
         } elseif (str_starts_with($data, 'sec_invoice_')) {
@@ -902,15 +901,16 @@ class TelegramSecretaryService
         // ۳. بازگشت به لیست دوره‌ها
         // ۴. انتخاب پلن مشخص → ساخت فاکتور در موتور مشترک فروش و ادامه داخل فرایدی
         if (str_starts_with($data, 'sec_buy_plan_')) {
-            $planId    = str_replace('sec_buy_plan_', '', $data);
-            $orderInfo = $this->commerce->selectPlan($chatId, (int) $planId, $businessConnectionId, $fullName, $username);
-            $this->recordButtonInteraction($chatId, $data, "انتخاب بسته شماره {$planId}", false);
-            $this->answerCallbackQuery($callbackId, "پلن انتخاب شد");
+            $this->answerCallbackQuery($callbackId, "ربات فروشگاه");
             $this->deleteInteractiveMessage($businessConnectionId, $chatId, $messageId);
             if ($chatId) {
                 $this->sendBusinessMessage(
                     $businessConnectionId, $chatId,
-                    $orderInfo['text'], $orderInfo['buttons']
+                    "🛍️ <b>خرید و ثبت سفارش</b>\n\nبرای تکمیل سفارش و فعال‌سازی آنی، لطفاً وارد ربات فروشگاه روزنه شوید:",
+                    [
+                        [['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                        [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']]
+                    ]
                 );
             }
             return;

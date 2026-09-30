@@ -141,16 +141,15 @@ class DeterministicSupportService
 
     private function plans(array $ctx): array
     {
-        if ($ctx['plans']->isEmpty()) return $this->text('در حال حاضر پلن فعالی ثبت نشده است.');
-
-        $lines = ['🛍 <b>بسته‌های فعال روزنه</b>', '', 'بسته‌ها را می‌توانید بر اساس مدت و حجم موردنیازتان انتخاب کنید 🌿', ''];
-        foreach ($ctx['plans']->take(12) as $plan) {
-            $volume = $plan->volume_gb ? $this->e($plan->volume_gb) . ' گیگ' : 'نامحدود';
-            $duration = $this->duration((int) $plan->duration_days);
-            $lines[] = '▫️ <b>' . $this->e(trim($plan->name)) . "</b> — {$duration}";
-            $lines[] = "   {$volume} | <code>" . number_format((int) $plan->price) . ' تومان</code>';
-        }
-        return $this->text(implode("\n", $lines), $this->sales->getDurationKeyboard());
+        return $this->text(
+            "🛍️ <b>تعرفه‌ها و خرید اشتراک روزنه</b>\n\n" .
+            "تمامی پلن‌های روزنه با سرورهای اختصاصی و تانل ملی در <b>ربات فروشگاه</b> فعال و قابل سفارش هستند.\n" .
+            "جهت مشاهده آخرین قیمت‌ها و خرید آنی، لطفاً وارد ربات فروشگاه شوید 🌿",
+            [
+                [['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']]
+            ]
+        );
     }
 
     private function faq(string $message, array $ctx): ?array
@@ -242,54 +241,46 @@ class DeterministicSupportService
 
     private function payment(string $message, array $ctx): array
     {
-        $labels = $this->payments->userFacingLabels($ctx['settings']);
-        $methods = $this->joinPersian($labels);
-        $methodText = $methods !== ''
-            ? "روش‌های فعال فعلی: <b>{$this->e($methods)}</b>."
-            : 'روش پرداخت فعالی در حال حاضر ثبت نشده است؛ لطفاً با پشتیبانی انسانی در ارتباط باشید.';
-
         return $this->text(
-            "برای پرداخت ابتدا بستهٔ موردنظرتان را انتخاب کنید. مبلغ نهایی و فقط روش‌هایی که واقعاً آمادهٔ پرداخت هستند در همان سفارش نمایش داده می‌شوند.\n\n{$methodText}",
-            $this->salesButton('انتخاب پلن و پرداخت')
+            "💳 تمامی روش‌های پرداخت (کارت‌به‌کارت و کیف پول) به‌صورت خودکار در <b>ربات فروشگاه روزنه</b> پردازش و فعال‌سازی می‌شوند.\n\nجهت ثبت سفارش یا پرداخت، از دکمهٔ زیر وارد ربات فروشگاه شوید:",
+            [
+                [['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']]
+            ]
         );
     }
 
     private function receipt(): array
     {
-        return $this->text('برای ثبت رسید، ابتدا سفارش را همین‌جا انتخاب کنید و روش کارت‌به‌کارت را بزنید؛ سپس تصویر یا شماره پیگیری را در همین گفتگو بفرستید.', $this->salesButton('انتخاب بسته و ثبت سفارش'));
+        return $this->text(
+            "رسیدهای کارت‌به‌کارت که در ربات فروشگاه ثبت شده‌اند، در صف تایید واحد مالی قرار دارند و طبق زمان‌بندی بررسی و تایید می‌شوند.\n\nاگر سوالی دارید یا می‌خواهید سفارشتان توسط پشتیبان انسانی بررسی شود، شماره سفارش یا پیام خود را همین‌جا ارسال نمایید 🌿",
+            [
+                [['text' => '👨🏻‍💻 ارتباط با پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                [['text' => '🛍️ بازگشت به ربات فروشگاه', 'url' => 'https://t.me/RoozanehNetBot']]
+            ]
+        );
     }
 
     private function renewal(string $message, array $ctx): array
     {
-        if (preg_match('/(ریوک|revoke|باطل.{0,12}لینک|لینک.{0,12}باطل)/ui', $message)) {
-            return $this->text(
-                'هر زمان بخواهید می‌توانید لینک فعلی سرویس را ریوک کنید. با این کار لینک‌ها و کانفیگ‌های قبلی باطل می‌شوند و لینک تازه دریافت می‌کنید؛ حجم و زمان سرویس تغییر نمی‌کند. برای امنیت حساب، لینک جدید را فقط روی دستگاه‌های خودتان وارد کنید.',
-                $this->salesButton('مدیریت سرویس و ریوک لینک')
-            );
-        }
-
-        $message = $ctx['service']
-            ? 'حتماً 🌿 تمدید روی همان اشتراک فعلی انجام می‌شود. حجم باقی‌مانده به دورهٔ بعد منتقل می‌شود، اما زمان باقی‌مانده منتقل نخواهد شد. برای مشاهده بسته‌ها و ادامه پرداخت از دکمهٔ زیر استفاده کنید.'
-            : 'حتماً 🌿 ابتدا بستهٔ مناسب را انتخاب کنید تا مراحل ثبت سفارش و پرداخت برایتان نمایش داده شود.';
-        return $this->text($message, $this->sales->getDurationKeyboard());
+        return $this->text(
+            "🔄 <b>تمدید اشتراک روزنه</b>\n\n" .
+            "برای تمدید سرویس و افزایش اعتبار اشتراک فعلی، لطفاً به بخش مدیریت سرویس در ربات فروشگاه مراجعه فرمایید:",
+            [
+                [['text' => '🔄 تمدید در ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']]
+            ]
+        );
     }
 
     private function trial(array $ctx): array
     {
-        $enabled = filter_var($ctx['settings']->get('trial_enabled', false), FILTER_VALIDATE_BOOLEAN);
-        if (!$enabled) {
-            return $this->text('در حال حاضر ارائهٔ تست رایگان غیرفعال است.');
-        }
-
-        $limit = (int) $ctx['settings']->get('trial_limit_per_user', 1);
-        $taken = (int) ($ctx['user']?->trial_accounts_taken ?? 0);
-        if ($ctx['user'] && $taken >= $limit) {
-            return $this->text('سهمیهٔ تست این حساب قبلاً استفاده شده است.', $this->salesButton('مشاهده پلن‌ها'));
-        }
-
         return $this->text(
-            "بله 🌿 یک گیگابایت تست رایگان بدون محدودیت زمانی دارید تا با خیال راحت کیفیت اتصال را بررسی کنید. این تست برای هر شناسهٔ تلگرام فقط یک‌بار ارائه می‌شود. اگر بعد از تست خرید کنید، یک گیگابایت هدیهٔ دیگر هم به حسابتان اضافه می‌شود.",
-            [[['text' => '⚡️ دریافت تست رایگان', 'callback_data' => 'sec_get_trial']]]
+            "⚡️ <b>دریافت اکانت تست رایگان</b>\n\n" .
+            "سرویس تست رایگان به‌صورت خودکار در <b>ربات فروشگاه روزنه</b> صادر و تحویل داده می‌شود.\nجهت دریافت آنی کانفیگ تست، دکمهٔ زیر را لمس نمایید 🌿",
+            [
+                [['text' => '🎁 دریافت تست در ربات فروشگاه', 'url' => 'https://t.me/RoozanehNetBot']]
+            ]
         );
     }
 
@@ -300,7 +291,7 @@ class DeterministicSupportService
 
     private function human(): array
     {
-        return $this->text("درخواست ارتباط با پشتیبان انسانی ثبت شد.\nسابقهٔ گفتگو برای پشتیبان ارسال شده است.\n\nهمچنین می‌توانید مستقیماً در تلگرام با کارشناس پشتیبانی در ارتباط باشید:\n👨🏻‍💻 @RoozanehHelp", [
+        return $this->text("درخواست ارتباط با پشتیبان انسانی ثبت شد.\nپیام و سابقهٔ گفتگو به پشتیبان اطلاع داده شد و همکاران به‌زودی در همین گفتگو پاسخگوی شما خواهند بود 🌸", [
             [['text' => '👨🏻‍💻 پیام به پشتیبانی تلگرام (@RoozanehHelp)', 'url' => 'https://t.me/RoozanehHelp']]
         ]);
     }
@@ -318,10 +309,10 @@ class DeterministicSupportService
     private function verificationRequired(): array
     {
         return $this->text(
-            "برای این گفتگو هنوز سرویس روزنه‌ای ثبت نشده است. نیازی نیست به ربات دیگری بروید؛ تست رایگان یا خرید را همین‌جا شروع کنید تا حساب به‌صورت خودکار ساخته شود. هر سؤال دیگری هم دارید می‌توانید بنویسید.",
+            "برای این گفتگو هنوز سرویس روزنه‌ای ثبت نشده است.\n" .
+            "جهت دریافت تست رایگان یا خرید اشتراک، لطفاً به ربات رسمی فروشگاه مراجعه فرمایید یا در صورت داشتن هرگونه سوال، پیام خود را بنویسید 🌿",
             [
-                [['text' => '⚡️ تست رایگان', 'callback_data' => 'sec_get_trial']],
-                [['text' => '🛍 خرید سرویس', 'callback_data' => 'sec_view_durations']],
+                [['text' => '🛍️ ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
                 [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
             ]
         );
@@ -329,7 +320,7 @@ class DeterministicSupportService
 
     private function salesButton(string $label): array
     {
-        return [[['text' => $label, 'callback_data' => 'sec_view_durations']]];
+        return [[['text' => "🛍️ {$label} در ربات فروشگاه", 'url' => 'https://t.me/RoozanehNetBot']]];
     }
 
     private function text(string $text, ?array $buttons = null): array
