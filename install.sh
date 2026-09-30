@@ -96,6 +96,10 @@ fi
 # Enable core services
 systemctl enable --now $PHP_FPM_SERVICE nginx mysql redis-server supervisor
 
+# Configure sudoers for wizard finalizer
+echo "www-data ALL=(ALL) NOPASSWD: /var/www/gozar/setup_finalize.sh" > /etc/sudoers.d/gozar
+chmod 440 /etc/sudoers.d/gozar
+
 # Firewall rules
 ufw allow 'OpenSSH' > /dev/null 2>&1 || true
 ufw allow 'Nginx Full' > /dev/null 2>&1 || true
@@ -175,7 +179,7 @@ supervisorctl start all > /dev/null 2>&1 || true
 
 # --- Step 7: Launch Setup Wizard ---
 echo -e "${YELLOW}[7/7] 🚀 Launching Web Setup Wizard...${NC}"
-killall -9 php 2>/dev/null || true
+fuser -k ${SETUP_PORT}/tcp >/dev/null 2>&1 || true
 nohup sudo -u www-data php -S 0.0.0.0:$SETUP_PORT -t "$PROJECT_PATH/public" "$PROJECT_PATH/server.php" > /tmp/gozar_wizard.log 2>&1 &
 
 echo

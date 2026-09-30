@@ -106,26 +106,81 @@ class InstallWizardController extends Controller
         }
 
         $token = trim($request->input('bot_token', ''));
+        $chatId = trim($request->input('admin_chat_id', ''));
+
         if (empty($token)) {
-            return response()->json(['success' => false, 'message' => 'Token cannot be empty.']);
+            return response()->json(['success' => false, 'message' => 'لطفاً توکن ربات را وارد کنید.']);
         }
 
         try {
-            $response = Http::timeout(6)->get("https://api.telegram.org/bot{$token}/getMe");
+            $response = Http::timeout(7)->get("https://api.telegram.org/bot{$token}/getMe");
             if ($response->successful() && $response->json('ok')) {
                 $bot = $response->json('result');
+                $botName = $bot['first_name'] ?? 'Bot';
+                $botUsername = '@' . ($bot['username'] ?? '');
+
+                $testMessageSent = false;
+                $sentChatId = null;
+
+                // If user didn't provide chat ID, check getUpdates in case they started the bot
+                if (empty($chatId)) {
+                    $updatesRes = Http::timeout(4)->get("https://api.telegram.org/bot{$token}/getUpdates?limit=5");
+                    if ($updatesRes->successful() && $updatesRes->json('ok')) {
+                        $updates = $updatesRes->json('result');
+                        if (!empty($updates) && is_array($updates)) {
+                            $lastUpdate = end($updates);
+                            $msg = $lastUpdate['message'] ?? $lastUpdate['callback_query']['message'] ?? null;
+                            if ($msg && isset($msg['chat']['id'])) {
+                                $chatId = (string) $msg['chat']['id'];
+                            }
+                        }
+                    }
+                }
+
+                // If chat ID is available, send a test message!
+                if (!empty($chatId)) {
+                    $dateStr = date('Y-m-d H:i:s');
+                    $sendText = "⚡️ *ارتباط سرور با ربات گذر (Gozar) با موفقیت برقرار شد!*\n\n"
+                              . "🤖 ربات: *{$botName}* ({$botUsername})\n"
+                              . "🆔 چت‌آی‌دی شما: `{$chatId}`\n"
+                              . "⏰ زمان تست: `{$dateStr}`\n\n"
+                              . "🚀 این پیام نشان‌دهنده اتصال کامل ربات به سیستم است.";
+
+                    $sendRes = Http::timeout(6)->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                        'chat_id' => $chatId,
+                        'text' => $sendText,
+                        'parse_mode' => 'Markdown'
+                    ]);
+
+                    if ($sendRes->successful() && $sendRes->json('ok')) {
+                        $testMessageSent = true;
+                        $sentChatId = $chatId;
+                    }
+                }
+
+                $msg = "✅ ربات {$botName} ({$botUsername}) معتبر است.";
+                if ($testMessageSent) {
+                    $msg .= " یک پیام تست نیز با موفقیت به تلگرام شما (چت آی‌دی: {$sentChatId}) ارسال شد!";
+                } elseif (!empty($chatId)) {
+                    $msg .= " (امکان ارسال پیام به {$chatId} وجود نداشت. مطمئن شوید ابتدا در ربات دکمه Start را زده‌اید).";
+                } else {
+                    $msg .= " (جهت ارسال پیام تست، در ربات {$botUsername} دکمه Start را بزنید یا چت‌آی‌دی خود را وارد نمایید و مجدد تست کنید).";
+                }
+
                 return response()->json([
                     'success' => true,
-                    'bot_name' => $bot['first_name'] ?? 'Bot',
-                    'username' => '@' . ($bot['username'] ?? ''),
-                    'message' => "Connected to " . ($bot['first_name'] ?? '') . " (@" . ($bot['username'] ?? '') . ")"
+                    'bot_name' => $botName,
+                    'username' => $botUsername,
+                    'message_sent' => $testMessageSent,
+                    'detected_chat_id' => $sentChatId,
+                    'message' => $msg
                 ]);
             }
         } catch (\Exception $e) {
             Log::error('Setup Bot check failed: ' . $e->getMessage());
         }
 
-        return response()->json(['success' => false, 'message' => 'Invalid bot token or cannot connect to Telegram API.']);
+        return response()->json(['success' => false, 'message' => 'توکن ربات نامعتبر است یا امکان ارتباط با سرورهای تلگرام فراهم نیست.']);
     }
 
     public function process(Request $request)
@@ -139,6 +194,7 @@ class InstallWizardController extends Controller
             'admin_email' => 'required|email',
             'admin_password' => 'required|min:6',
             'bot_token' => 'nullable|string',
+            'admin_chat_id' => 'nullable|string',
             'panel_type' => 'nullable|string'
         ]);
 
@@ -150,8 +206,12 @@ class InstallWizardController extends Controller
         $admin = User::firstOrNew(['email' => $request->input('admin_email')]);
         $admin->name = 'System Administrator';
         $admin->email = $request->input('admin_email');
-        $admin->password = Hash::make($request->input('admin_password'));
+        // User model casts 'password' => 'hashed', so plain assignment hashes automatically
+        $admin->password = $request->input('admin_password');
         $admin->is_admin = true;
+        if ($request->filled('admin_chat_id')) {
+            $admin->telegram_chat_id = trim($request->input('admin_chat_id'));
+        }
         $admin->save();
 
         // Save Settings
@@ -162,6 +222,9 @@ class InstallWizardController extends Controller
 
         if ($request->filled('bot_token')) {
             $settings['telegram_bot_token'] = trim($request->input('bot_token'));
+        }
+        if ($request->filled('admin_chat_id')) {
+            $settings['telegram_admin_chat_id'] = trim($request->input('admin_chat_id'));
         }
 
         foreach ($settings as $key => $val) {
@@ -181,6 +244,14 @@ class InstallWizardController extends Controller
                     $env .= "\nTELEGRAM_BOT_TOKEN={$botToken}";
                 }
             }
+            if ($request->filled('admin_chat_id')) {
+                $adminChatId = trim($request->input('admin_chat_id'));
+                if (preg_match('/^TELEGRAM_ADMIN_CHAT_ID=/m', $env)) {
+                    $env = preg_replace('/^TELEGRAM_ADMIN_CHAT_ID=.*$/m', "TELEGRAM_ADMIN_CHAT_ID={$adminChatId}", $env);
+                } else {
+                    $env .= "\nTELEGRAM_ADMIN_CHAT_ID={$adminChatId}";
+                }
+            }
             file_put_contents($envPath, $env);
         }
 
@@ -194,7 +265,9 @@ class InstallWizardController extends Controller
 
         return response()->json([
             'success' => true,
-            'redirect_url' => "https://{$domain}/admin"
+            'admin_url' => "https://{$domain}/admin",
+            'admin_email' => $request->input('admin_email'),
+            'domain' => $domain
         ]);
     }
 }
