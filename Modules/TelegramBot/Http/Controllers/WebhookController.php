@@ -2511,26 +2511,23 @@ class WebhookController extends Controller
         $keyboard = Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton([
-                    'text' => $emojiDeposit ? 'شارژ حساب' : '➕ شارژ حساب', 
+                    'text' => '➕ افزایش موجودی / شارژ', 
                     'callback_data' => '/deposit', 
                     'style' => 'success',
-                    'icon_custom_emoji_id' => $emojiDeposit ? (int)$emojiDeposit : null
                 ]),
                 $this->makeInlineButton([
-                    'text' => $emojiOrders ? 'تراکنش‌ها' : '🧾 تراکنش‌ها', 
+                    'text' => '🧾 گزارش تراکنش‌ها', 
                     'callback_data' => '/transactions', 
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $emojiOrders ? (int)$emojiOrders : null
                 ]),
             ])
             ->row([
                 $this->makeInlineButton([
-                    'text' => $emojiProfile ? 'حساب من' : '👤 حساب من', 
+                    'text' => '👤 حساب کاربری من', 
                     'callback_data' => '/profile', 
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $emojiProfile ? (int)$emojiProfile : null
                 ]),
-                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '🏠 بازگشت به خانه', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
 
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
@@ -2684,9 +2681,8 @@ class WebhookController extends Controller
         $keyboard = Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton([
-                    'text' => $emojiReferral ? 'اشتراک‌گذاری لینک دعوت' : '📣 اشتراک‌گذاری لینک دعوت', 
+                    'text' => '📣 اشتراک‌گذاری لینک دعوت', 
                     'url' => $shareUrl,
-                    'icon_custom_emoji_id' => $emojiReferral ? (int)$emojiReferral : null
                 ]),
             ])
             ->row([
@@ -2697,27 +2693,25 @@ class WebhookController extends Controller
             ])
             ->row([
                 $this->makeInlineButton([
-                    'text' => '🖼 دریافت بنر تبلیغاتی',
+                    'text' => '🖼 دریافت بنر اختصاصی دعوت',
                     'callback_data' => 'get_referral_banner',
                     'style' => 'success'
                 ]),
             ])
             ->row([
                 $this->makeInlineButton([
-                    'text' => $emojiProfile ? 'حساب من' : '👤 حساب من', 
+                    'text' => '👤 حساب کاربری من', 
                     'callback_data' => '/profile', 
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $emojiProfile ? (int)$emojiProfile : null
                 ]),
                 $this->makeInlineButton([
-                    'text' => $emojiDeposit ? 'کیف پول' : '👛 کیف پول', 
+                    'text' => '💳 کیف پول و پرداخت', 
                     'callback_data' => '/wallet', 
                     'style' => 'success',
-                    'icon_custom_emoji_id' => $emojiDeposit ? (int)$emojiDeposit : null
                 ]),
             ])
             ->row([
-                $this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '🏠 بازگشت به خانه', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
             
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
@@ -5119,7 +5113,7 @@ class WebhookController extends Controller
 
     /**
      * یک نقطه مرکزی برای ظاهر تمام دکمه‌های شیشه‌ای ربات فروش.
-     * رنگ و آیکن بر اساس مفهوم عملیات انتخاب می‌شوند تا منوها یکدست بمانند.
+     * استفاده از ایموجی‌های استاندارد و پایدار جهت سازگاری ۱۰۰٪ با تمامی کلاینت‌های تلگرام.
      */
     protected function makeInlineButton(array $params): array
     {
@@ -5144,27 +5138,41 @@ class WebhookController extends Controller
             }
         }
 
-        if (empty($params['icon_custom_emoji_id'])) {
-            $icon = $this->resolveButtonIcon($signal);
-            $iconId = app(RozanehExperience::class)->icon($icon);
-            if ($iconId) {
-                $params['icon_custom_emoji_id'] = $iconId;
+        // جلوگیری از ارسال ایموجی کاستوم برای حفظ حداکثر سازگاری در تمامی دستگاه‌ها
+        unset($params['icon_custom_emoji_id']);
 
-                // برای لوکیشن، زبان، کپچا و وضعیت سرویس، ایموجی ابتدای متن خودش اطلاعات دارد.
-                if (!$this->buttonSignalContains($callback, ['select_loc_', 'captcha_', 'show_service_'])) {
-                    $cleanLabel = preg_replace(
-                        '/^[\p{So}\p{Sk}\x{FE0F}\x{200D}\x{20E3}\s]+/u',
-                        '',
-                        (string) ($params['text'] ?? '')
-                    );
-                    if (is_string($cleanLabel) && trim($cleanLabel) !== '') {
-                        $params['text'] = trim($cleanLabel);
-                    }
-                }
+        // اضافه کردن خودکار ایموجی استاندارد اگر دکمه از قبل ایموجی نداشته باشد
+        $text = (string) ($params['text'] ?? '');
+        $hasEmoji = (bool) preg_match('/[\p{So}\p{Sk}\x{1F300}-\x{1F9FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}]/u', $text);
+        if (!$hasEmoji && trim($text) !== '') {
+            $standardEmoji = $this->resolveStandardEmoji($signal);
+            if ($standardEmoji !== '') {
+                $params['text'] = $standardEmoji . ' ' . $text;
             }
         }
 
         return array_filter($params, fn($val) => $val !== null);
+    }
+
+    protected function resolveStandardEmoji(string $signal): string
+    {
+        if ($this->buttonSignalContains($signal, ['home', 'خانه', '/start'])) return '🏠';
+        if ($this->buttonSignalContains($signal, ['plans', 'shop', 'خرید', 'فروشگاه', 'تمدید'])) return '🛍️';
+        if ($this->buttonSignalContains($signal, ['trial', 'تست'])) return '🎁';
+        if ($this->buttonSignalContains($signal, ['service', 'سرویس', 'config', 'کانفیگ'])) return '📦';
+        if ($this->buttonSignalContains($signal, ['wallet', 'کیف پول', 'deposit', 'شارژ'])) return '💳';
+        if ($this->buttonSignalContains($signal, ['referral', 'دعوت', 'زیرمجموعه', 'کسب درآمد', 'gift', 'هدیه'])) return '👥';
+        if ($this->buttonSignalContains($signal, ['tutorial', 'آموزش', 'راهنما'])) return '📖';
+        if ($this->buttonSignalContains($signal, ['support', 'پشتیبان', 'ticket', 'تیکت', 'فرایدی'])) return '👨🏻‍💻';
+        if ($this->buttonSignalContains($signal, ['about', 'درباره'])) return '✈️';
+        if ($this->buttonSignalContains($signal, ['profile', 'حساب کاربری', 'پروفایل'])) return '👤';
+        if ($this->buttonSignalContains($signal, ['transaction', 'تراکنش', 'فاکتور'])) return '🧾';
+        if ($this->buttonSignalContains($signal, ['channel', 'کانال'])) return '📢';
+        if ($this->buttonSignalContains($signal, ['approve', 'تایید', 'تأیید', 'ثبت'])) return '✅';
+        if ($this->buttonSignalContains($signal, ['reject', 'cancel', 'لغو', 'انصراف', 'رد'])) return '❌';
+        if ($this->buttonSignalContains($signal, ['back', 'بازگشت', 'قبلی'])) return '🔙';
+        if ($this->buttonSignalContains($signal, ['next', 'بعدی'])) return '🔜';
+        return '';
     }
 
     protected function buttonSignalContains(string $signal, array $needles): bool
@@ -5525,77 +5533,65 @@ I am here to build the most secure and stable connection path for you.
 
     protected function getMainMenuKeyboard(): Keyboard
     {
-        $experience = app(RozanehExperience::class);
-
         return Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton([
-                    'text' => 'خرید یا تمدید',
+                    'text' => '🛍️ خرید یا تمدید اشتراک',
                     'callback_data' => '/plans',
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $experience->icon('plans'),
                 ]),
             ])
             ->row([
                 $this->makeInlineButton([
-                    'text' => 'تست رایگان',
+                    'text' => '🎁 دریافت تست رایگان',
                     'callback_data' => 'trial_request',
                     'style' => 'success',
-                    'icon_custom_emoji_id' => $experience->icon('trial'),
                 ]),
                 $this->makeInlineButton([
-                    'text' => 'سرویس‌های من',
+                    'text' => '📦 سرویس‌های من',
                     'callback_data' => '/my_services',
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $experience->icon('link'),
                 ]),
             ])
             ->row([
                 $this->makeInlineButton([
-                    'text' => 'پشتیبانی فرایدی',
+                    'text' => '🤖 پشتیبانی هوشمند (فرایدی)',
                     'callback_data' => '/support_menu',
                     'style' => 'success',
-                    'icon_custom_emoji_id' => $experience->icon('support'),
                 ]),
                 $this->makeInlineButton([
-                    'text' => 'آموزش اتصال',
+                    'text' => '📖 راهنمای اتصال',
                     'callback_data' => '/tutorials',
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $experience->icon('brand'),
                 ]),
             ])
             ->row([
                 $this->makeInlineButton([
-                    'text' => 'کیف پول و پرداخت',
+                    'text' => '💳 کیف پول و پرداخت',
                     'callback_data' => '/wallet',
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $experience->icon('wallet'),
                 ]),
                 $this->makeInlineButton([
-                    'text' => 'امکانات بیشتر',
+                    'text' => '✨ امکانات بیشتر',
                     'callback_data' => '/more',
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $experience->icon('profile'),
                 ]),
             ]);
     }
 
     protected function sendMoreMenu($chatId, $messageId = null): void
     {
-        $experience = app(RozanehExperience::class);
         $keyboard = Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton([
-                    'text' => 'هدایای معرفی',
+                    'text' => '👥 کسب درآمد و دعوت از دوستان',
                     'callback_data' => '/referral',
                     'style' => 'success',
-                    'icon_custom_emoji_id' => $experience->icon('gift'),
                 ]),
                 $this->makeInlineButton([
-                    'text' => 'درباره روزنه',
+                    'text' => '✈️ درباره روزنه',
                     'callback_data' => '/about',
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $experience->icon('brand'),
                 ]),
             ]);
 
@@ -5607,10 +5603,9 @@ I am here to build the most secure and stable connection path for you.
             if ($webAppUrl !== '') {
                 $keyboard->row([
                     $this->makeInlineButton([
-                        'text' => 'پنل وب روزنه',
+                        'text' => '🌐 پنل کاربری تحت وب',
                         'web_app' => ['url' => $webAppUrl],
                         'style' => 'primary',
-                        'icon_custom_emoji_id' => $experience->icon('profile'),
                     ]),
                 ]);
             }
@@ -5629,10 +5624,9 @@ I am here to build the most secure and stable connection path for you.
             if (str_starts_with($channel, 'http')) {
                 $keyboard->row([
                     $this->makeInlineButton([
-                        'text' => 'عضویت در کانال',
+                        'text' => '📢 عضویت در کانال اطلاع‌رسانی',
                         'url' => $channel,
                         'style' => 'success',
-                        'icon_custom_emoji_id' => $experience->icon('brand'),
                     ]),
                 ]);
             }
@@ -5642,14 +5636,13 @@ I am here to build the most secure and stable connection path for you.
 
         $keyboard->row([
             $this->makeInlineButton([
-                'text' => 'بازگشت به خانه',
+                'text' => '🏠 بازگشت به خانه',
                 'callback_data' => '/start',
-                'style' => 'primary',
-                'icon_custom_emoji_id' => $experience->icon('home'),
+                'style' => 'danger',
             ]),
         ]);
 
-        $text = $experience->customEmoji('brand', '✈️') . "  <b>امکانات بیشتر روزنه</b>\n";
+        $text = "✈️ <b>امکانات بیشتر روزنه</b>\n";
         $text .= "━━━━━━━━━━━━━━━━━━━━\n";
         $text .= "هدایای معرفی، پنل وب، کانال رسمی و اطلاعات روزنه از این بخش در دسترس شماست.";
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -6028,26 +6021,21 @@ I am here to build the most secure and stable connection path for you.
         $text .= "━━━━━━━━━━━━━━━━━━━━";
 
         $botSettings = TelegramBotSetting::pluck('value', 'key');
-        $emojiPlans = $botSettings->get('emoji_plans');
-        $emojiAbout = $botSettings->get('emoji_about');
-
         $keyboard = Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton([
-                    'text' => $emojiPlans ? 'فروشگاه' : '🛍️  فروشگاه', 
+                    'text' => '🛍️ فروشگاه و پلن‌ها', 
                     'callback_data' => '/plans', 
                     'style' => 'success',
-                    'icon_custom_emoji_id' => $emojiPlans ? (int)$emojiPlans : null
                 ]),
                 $this->makeInlineButton([
-                    'text' => $emojiAbout ? 'راهنمای اتصال' : '📖  راهنمای اتصال', 
+                    'text' => '📖 راهنمای اتصال', 
                     'callback_data' => '/tutorials', 
                     'style' => 'primary',
-                    'icon_custom_emoji_id' => $emojiAbout ? (int)$emojiAbout : null
                 ]),
             ])
             ->row([
-                $this->makeInlineButton(['text' => '🏠  بازگشت به خانه', 'callback_data' => '/start', 'style' => 'danger']),
+                $this->makeInlineButton(['text' => '🏠 بازگشت به منوی اصلی', 'callback_data' => '/start', 'style' => 'danger']),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);

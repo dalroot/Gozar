@@ -55,19 +55,19 @@ final class RozanehExperience
     {
         return [
             [
-                $this->button('خرید یا تمدید', 'sec_view_durations', 'plans', 'primary'),
-                $this->button('بررسی سرویس من', 'diag_status', 'status'),
+                $this->button('🛍️ خرید یا تمدید', 'sec_view_durations', 'plans', 'primary'),
+                $this->button('🔍 بررسی سرویس من', 'diag_status', 'status'),
             ],
             [
-                $this->button('مشکل اتصال دارم', 'diag_start', 'secure'),
-                $this->button('لینک اتصال', 'sec_get_link', 'link'),
+                $this->button('⚡ مشکل اتصال دارم', 'diag_start', 'secure'),
+                $this->button('🔗 دریافت لینک اتصال', 'sec_get_link', 'link'),
             ],
             [
-                $this->button('تست رایگان', 'sec_get_trial', 'trial'),
-                $this->button('راهنمای اتصال', 'sec_tutorial', 'brand'),
+                $this->button('🎁 تست رایگان', 'sec_get_trial', 'trial'),
+                $this->button('📖 راهنمای اتصال', 'sec_tutorial', 'brand'),
             ],
             [
-                $this->button('پشتیبان انسانی', 'sec_human', 'support', 'success'),
+                $this->button('👨🏻‍💻 ارتباط با پشتیبان انسانی', 'sec_human', 'support', 'success'),
             ],
         ];
     }
@@ -75,12 +75,11 @@ final class RozanehExperience
     public function button(
         string $text,
         string $callbackData,
-        string $icon,
+        string $icon = '',
         ?string $style = null
     ): array {
         $button = ['text' => $text, 'callback_data' => $callbackData];
         if ($style) $button['style'] = $style;
-        if ($id = $this->icon($icon)) $button['icon_custom_emoji_id'] = $id;
         return $button;
     }
 }
