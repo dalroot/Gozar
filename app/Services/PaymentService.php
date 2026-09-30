@@ -6,6 +6,7 @@ use App\Events\OrderPaid;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\Transaction;
+use App\Models\Inbound;
 use App\Services\MarzbanService;
 use App\Services\XUIService;
 use App\Services\PasargadService;
@@ -211,12 +212,34 @@ class PaymentService
                 $inboundData = null;
                 if ($targetServer) {
                     $inbounds = $xui->getInbounds();
-                    foreach ($inbounds as $i) if ($i['id'] == $inboundId) { $inboundData = $i; break; }
+                    if (is_array($inbounds)) {
+                        foreach ($inbounds as $i) {
+                            if (($i['id'] ?? null) == $inboundId) {
+                                $inboundData = $i;
+                                break;
+                            }
+                        }
+                    }
                 } else {
-                    $im = Inbound::whereJsonContains('inbound_data->id', (int)$inboundId)->first();
-                    if ($im) $inboundData = is_string($im->inbound_data) ? json_decode($im->inbound_data, true) : $im->inbound_data;
+                    $im = null;
+                    if (!empty($inboundId)) {
+                        $im = Inbound::whereJsonContains('inbound_data->id', (int)$inboundId)->first() ?: Inbound::find($inboundId);
+                    }
+                    if (!$im) {
+                        $im = Inbound::first();
+                    }
+                    if ($im) {
+                        $inboundData = is_string($im->inbound_data) ? json_decode($im->inbound_data, true) : $im->inbound_data;
+                    }
                 }
-                if (!$inboundData) throw new \Exception('اینباند یافت نشد.');
+
+                if (!$inboundData) {
+                    $liveInbounds = $xui->getInbounds();
+                    if (!empty($liveInbounds) && is_array($liveInbounds)) {
+                        $inboundData = $liveInbounds[0];
+                    }
+                }
+                if (!$inboundData) throw new \Exception('اینباند در سرور یافت نشد.');
 
                 $linkType = $targetServer ? ($targetServer->link_type ?? 'single') : $settings->get('xui_link_type', 'single');
                 $clientData = ['email' => $uniqueUsername, 'total' => $plan->volume_gb * 1073741824, 'expiryTime' => $newExpiresAt->getTimestamp() * 1000];
@@ -313,8 +336,8 @@ class PaymentService
                 }
                 $success = true;
             }
-            } catch (\Exception $e) {
-                 Log::error("Provisioning failed due to panel error: " . $e->getMessage());
+            } catch (\Throwable $e) {
+                 Log::error("Provisioning failed due to panel error: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
                  // Fallback to Wallet Deposit
                  $order->update(['status' => 'paid', 'plan_id' => null, 'renews_order_id' => null]);
                  $user->increment('balance', $order->amount);
@@ -413,11 +436,14 @@ class PaymentService
 
                         $keyboard = Keyboard::make()->inline()
                             ->row([
-                                Keyboard::inlineButton(['text' => '📋 کپی لینک کانفیگ', 'callback_data' => "copy_link_{$displayOrder->id}"]),
-                                Keyboard::inlineButton(['text' => '📱 QR Code', 'callback_data' => "qrcode_order_{$displayOrder->id}"])
+                                Keyboard::inlineButton(['text' => '📋 دریافت لینک اشتراک', 'callback_data' => "copy_link_{$displayOrder->id}"]),
+                                Keyboard::inlineButton(['text' => '🔗 کانفیگ‌های مستقیم', 'callback_data' => "direct_configs_order_{$displayOrder->id}"])
                             ])
                             ->row([
-                                Keyboard::inlineButton(['text' => '🛠 سرویس‌های من', 'callback_data' => '/my_services']),
+                                Keyboard::inlineButton(['text' => '📱 بارکد QR', 'callback_data' => "qrcode_order_{$displayOrder->id}"]),
+                                Keyboard::inlineButton(['text' => '🛠 سرویس‌های من', 'callback_data' => '/my_services'])
+                            ])
+                            ->row([
                                 Keyboard::inlineButton(['text' => '🏠 منوی اصلی', 'callback_data' => '/start'])
                             ]);
 

@@ -677,7 +677,7 @@ class WebhookController extends Controller
             return;
         } elseif (Str::startsWith($data, 'admin_reject_order_')) {
             $orderId = Str::after($data, 'admin_reject_order_');
-            $this->handleAdminRejectOrder($chatId, $orderId, $callbackQuery->getId(), $messageId);
+            $this->handleAdminRejectOrder($chatId, $orderId, $callbackQuery->getId(), $messageId, $callbackQuery->getFrom());
             return;
         } elseif (Str::startsWith($data, 'admin_reason_')) {
             $payload = Str::after($data, 'admin_reason_');
@@ -1059,10 +1059,11 @@ class WebhookController extends Controller
                         "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                     );
 
-                    // اطلاع‌رسانی به ادمین و کانال فیش‌ها به همراه دکمه‌های شیشه‌ای
+                    // اطلاع‌رسانی به کانال فیش‌ها (در صورت تنظیم) یا به چت ادمین
                     $receiptChannelId = $this->settings->get('telegram_receipt_channel_id');
                     $adminChatId = $this->settings->get('telegram_admin_chat_id');
-                    $destinations = array_filter(array_unique([$receiptChannelId, $adminChatId]));
+                    $targetChatId = !empty($receiptChannelId) ? $receiptChannelId : $adminChatId;
+                    $destinations = array_filter([$targetChatId]);
 
                     $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
                     $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
@@ -1152,10 +1153,11 @@ class WebhookController extends Controller
                     "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                 );
 
-                // Admin Notification to both channel and admin
+                // اطلاع‌رسانی به کانال فیش‌ها (در صورت تنظیم) یا به چت ادمین
                 $receiptChannelId = $this->settings->get('telegram_receipt_channel_id');
                 $adminChatId = $this->settings->get('telegram_admin_chat_id');
-                $destinations = array_filter(array_unique([$receiptChannelId, $adminChatId]));
+                $targetChatId = !empty($receiptChannelId) ? $receiptChannelId : $adminChatId;
+                $destinations = array_filter([$targetChatId]);
 
                 $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
 
@@ -5637,11 +5639,25 @@ I am here to build the most secure and stable connection path for you.
         $text .= "هدایای معرفی، کانال رسمی و اطلاعات روزنه از این بخش در دسترس شماست.";
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
     }
-    protected function handleAdminRejectOrder($adminChatId, $orderId, $callbackQueryId, $messageId)
+    protected function handleAdminRejectOrder($adminChatId, $orderId, $callbackQueryId, $messageId, $adminUser = null)
     {
-        $adminConfigId = $this->settings->get('telegram_admin_chat_id');
-        $receiptChannelId = $this->settings->get('telegram_receipt_channel_id');
-        if ((string)$adminChatId !== (string)$adminConfigId && (string)$adminChatId !== (string)$receiptChannelId) {
+        $adminConfigId = (string) $this->settings->get('telegram_admin_chat_id');
+        $receiptChannelId = (string) $this->settings->get('telegram_receipt_channel_id');
+        $fromId = $adminUser ? (string) $adminUser->getId() : '';
+
+        $isAuthorized = false;
+        if (($adminConfigId !== '' && (string)$adminChatId === $adminConfigId) ||
+            ($receiptChannelId !== '' && (string)$adminChatId === $receiptChannelId) ||
+            ($adminConfigId !== '' && $fromId === $adminConfigId)) {
+            $isAuthorized = true;
+        } else if ($fromId !== '') {
+            $adminDbUser = User::where('telegram_chat_id', $fromId)->first();
+            if ($adminDbUser && ($adminDbUser->is_admin || (method_exists($adminDbUser, 'hasRole') && $adminDbUser->hasRole('admin')))) {
+                $isAuthorized = true;
+            }
+        }
+
+        if (!$isAuthorized) {
             Telegram::answerCallbackQuery([
                 'callback_query_id' => $callbackQueryId,
                 'text' => '❌ شما دسترسی ادمین ندارید.',
@@ -5721,9 +5737,23 @@ I am here to build the most secure and stable connection path for you.
      */
     protected function handleAdminReasonSelection($adminChatId, $orderId, $reasonKey, $callbackQueryId, $messageId, $adminUser)
     {
-        $adminConfigId = $this->settings->get('telegram_admin_chat_id');
-        $receiptChannelId = $this->settings->get('telegram_receipt_channel_id');
-        if ((string)$adminChatId !== (string)$adminConfigId && (string)$adminChatId !== (string)$receiptChannelId) {
+        $adminConfigId = (string) $this->settings->get('telegram_admin_chat_id');
+        $receiptChannelId = (string) $this->settings->get('telegram_receipt_channel_id');
+        $fromId = $adminUser ? (string) $adminUser->getId() : '';
+
+        $isAuthorized = false;
+        if (($adminConfigId !== '' && (string)$adminChatId === $adminConfigId) ||
+            ($receiptChannelId !== '' && (string)$adminChatId === $receiptChannelId) ||
+            ($adminConfigId !== '' && $fromId === $adminConfigId)) {
+            $isAuthorized = true;
+        } else if ($fromId !== '') {
+            $adminDbUser = User::where('telegram_chat_id', $fromId)->first();
+            if ($adminDbUser && ($adminDbUser->is_admin || (method_exists($adminDbUser, 'hasRole') && $adminDbUser->hasRole('admin')))) {
+                $isAuthorized = true;
+            }
+        }
+
+        if (!$isAuthorized) {
             Telegram::answerCallbackQuery([
                 'callback_query_id' => $callbackQueryId,
                 'text' => '❌ شما دسترسی ادمین ندارید.',
@@ -6159,9 +6189,23 @@ I am here to build the most secure and stable connection path for you.
      */
     protected function handleAdminApproveOrder($adminChatId, $orderId, $callbackQueryId, $messageId, $adminUser = null)
     {
-        $adminConfigId = $this->settings->get('telegram_admin_chat_id');
-        $receiptChannelId = $this->settings->get('telegram_receipt_channel_id');
-        if ((string)$adminChatId !== (string)$adminConfigId && (string)$adminChatId !== (string)$receiptChannelId) {
+        $adminConfigId = (string) $this->settings->get('telegram_admin_chat_id');
+        $receiptChannelId = (string) $this->settings->get('telegram_receipt_channel_id');
+        $fromId = $adminUser ? (string) $adminUser->getId() : '';
+
+        $isAuthorized = false;
+        if (($adminConfigId !== '' && (string)$adminChatId === $adminConfigId) ||
+            ($receiptChannelId !== '' && (string)$adminChatId === $receiptChannelId) ||
+            ($adminConfigId !== '' && $fromId === $adminConfigId)) {
+            $isAuthorized = true;
+        } else if ($fromId !== '') {
+            $adminDbUser = User::where('telegram_chat_id', $fromId)->first();
+            if ($adminDbUser && ($adminDbUser->is_admin || (method_exists($adminDbUser, 'hasRole') && $adminDbUser->hasRole('admin')))) {
+                $isAuthorized = true;
+            }
+        }
+
+        if (!$isAuthorized) {
             Telegram::answerCallbackQuery([
                 'callback_query_id' => $callbackQueryId,
                 'text' => '❌ شما دسترسی ادمین ندارید.',
@@ -6189,8 +6233,8 @@ I am here to build the most secure and stable connection path for you.
                 ]);
 
                 $user = $order->user;
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name) . "</a>";
-                $adminName = $adminUser ? ($adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminUser->getFirstName()) : 'ادمین';
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
+                $adminName = $adminUser ? ($adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminUser->getFirstName()) : 'مدیریت';
                 $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
 
                 $this->sendToLogChannel(
@@ -6202,31 +6246,21 @@ I am here to build the most secure and stable connection path for you.
                     "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                 );
 
-                // ادیت پیام ادمین و تغییر وضعیت
-                
-                $userPvLink = $user->telegram_chat_id 
-                    ? "[{$this->escape($user->name)}](tg://user?id={$user->telegram_chat_id})" 
-                    : $this->escape($user->name);
+                // ویرایش پیام رسید با فرمت HTML استاندارد و غیرشکننده
+                $adminString = " توسط " . htmlspecialchars($adminName);
 
-                $adminString = '';
-                if ($adminUser) {
-                    $adminName = $adminUser->getFirstName() . ($adminUser->getLastName() ? ' ' . $adminUser->getLastName() : '');
-                    $adminUsername = $adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminName;
-                    $adminString = " توسط ادمین {$this->escape($adminUsername)}";
-                }
-
-                $updatedMessage = "🧾 *سفارش \\#{$orderId} تایید شد\\.*\n\n";
-                $updatedMessage .= "*کاربر:* {$userPvLink} \\(ID: `{$user->id}`\\)\n";
-                $updatedMessage .= "*مبلغ:* " . $this->escape(number_format($order->amount) . ' تومان') . "\n";
-                $updatedMessage .= "*نوع سفارش:* " . $this->escape($orderType) . "\n\n";
-                $updatedMessage .= "🟢 *وضعیت:* `تایید شد{$adminString}`";
+                $updatedMessage = "🧾 <b>سفارش #{$orderId} تایید شد.</b>\n\n";
+                $updatedMessage .= "👤 <b>کاربر:</b> {$userLink} (ID: <code>{$user->id}</code>)\n";
+                $updatedMessage .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+                $updatedMessage .= "📦 <b>نوع سفارش:</b> " . htmlspecialchars($orderType) . "\n\n";
+                $updatedMessage .= "🟢 <b>وضعیت:</b> <code>تایید شد{$adminString}</code>";
 
                 if ($order->card_payment_receipt && !str_starts_with($order->card_payment_receipt, 'text_receipt:')) {
                     Telegram::editMessageCaption([
                         'chat_id' => $adminChatId,
                         'message_id' => $messageId,
                         'caption' => $updatedMessage,
-                        'parse_mode' => 'MarkdownV2',
+                        'parse_mode' => 'HTML',
                         'reply_markup' => json_encode(['inline_keyboard' => []])
                     ]);
                 } else {
@@ -6234,15 +6268,15 @@ I am here to build the most secure and stable connection path for you.
                         'chat_id' => $adminChatId,
                         'message_id' => $messageId,
                         'text' => $updatedMessage,
-                        'parse_mode' => 'MarkdownV2',
+                        'parse_mode' => 'HTML',
                         'reply_markup' => json_encode(['inline_keyboard' => []])
                     ]);
                 }
             } else {
                 throw new \Exception('PaymentService return false');
             }
-        } catch (\Exception $e) {
-            Log::error("Telegram Admin Approve Action Error: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error("Telegram Admin Approve Action Error: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             Telegram::answerCallbackQuery([
                 'callback_query_id' => $callbackQueryId,
                 'text' => '❌ خطا در تایید پرداخت: ' . $e->getMessage(),
