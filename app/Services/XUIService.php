@@ -89,7 +89,8 @@ class XUIService
                 'full_response' => $data
             ]);
 
-            $settings = json_decode($data['obj']['settings'] ?? '{}', true);
+            $rawSettings = $data['obj']['settings'] ?? '{}';
+            $settings = is_array($rawSettings) ? $rawSettings : json_decode($rawSettings, true);
             $clients = $settings['clients'] ?? [];
 
             Log::info('Successfully fetched clients', [
@@ -102,7 +103,7 @@ class XUIService
 
             return $clients;
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Exception while fetching clients', [
                 'message' => $e->getMessage(),
                 'inbound_id' => $inboundId,
