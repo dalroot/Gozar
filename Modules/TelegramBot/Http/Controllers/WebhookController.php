@@ -6406,26 +6406,48 @@ I am here to build the most secure and stable connection path for you.
         }
 
         try {
-            $ch = curl_init();
-            curl_setopt_array($ch, [
-                CURLOPT_URL            => $pureUrl,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_TIMEOUT        => 12,
-                CURLOPT_CONNECTTIMEOUT => 6,
-                CURLOPT_USERAGENT      => 'v2rayNG/1.8.5',
-            ]);
+            $rawResponse = null;
 
-            $rawResponse = curl_exec($ch);
-            $curlError = curl_error($ch);
-            curl_close($ch);
+            // تلاش اول: file_get_contents با استریم اختصاصی (بدون خطای unexpected EOF در OpenSSL 3)
+            try {
+                $ctx = stream_context_create([
+                    'ssl' => [
+                        'verify_peer'      => false,
+                        'verify_peer_name' => false,
+                    ],
+                    'http' => [
+                        'header'  => "User-Agent: v2rayNG/1.8.5\r\n",
+                        'timeout' => 8,
+                    ],
+                ]);
+                $rawResponse = @file_get_contents($pureUrl, false, $ctx);
+            } catch (\Throwable $e) {}
+
+            // تلاش دوم: باینری محلی curl
+            if (empty($rawResponse)) {
+                $cmd = "curl -s -k -L -A 'v2rayNG/1.8.5' --max-time 6 " . escapeshellarg($pureUrl);
+                $rawResponse = @shell_exec($cmd);
+            }
+
+            // تلاش سوم: cURL داخلی PHP
+            if (empty($rawResponse)) {
+                $ch = curl_init();
+                curl_setopt_array($ch, [
+                    CURLOPT_URL            => $pureUrl,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                    CURLOPT_TIMEOUT        => 8,
+                    CURLOPT_CONNECTTIMEOUT => 4,
+                    CURLOPT_USERAGENT      => 'v2rayNG/1.8.5',
+                ]);
+                $rawResponse = @curl_exec($ch);
+                curl_close($ch);
+            }
 
             if (empty($rawResponse)) {
-                if ($curlError) {
-                    Log::warning("Fetch direct configs curl error: {$curlError} for {$pureUrl}");
-                }
+                Log::warning("Fetch direct configs failed all attempts for {$pureUrl}");
                 return [];
             }
 
