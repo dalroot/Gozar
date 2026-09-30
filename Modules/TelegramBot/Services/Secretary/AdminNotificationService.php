@@ -12,43 +12,77 @@ class AdminNotificationService
 {
     protected string $botToken;
     protected string|int|null $adminChatId;
+    protected string|int|null $logChannelId;
 
     public function __construct()
     {
         $this->botToken = (string) env('SECRETARY_BOT_TOKEN', '');
         
-        // شناسه ادمین اصلی
+        // شناسه ادمین اصلی و کانال لاگ
         $settings = Setting::all()->pluck('value', 'key');
-        $this->adminChatId = $settings->get('telegram_admin_id', '8629398713');
+        $this->adminChatId = $settings->get('telegram_admin_chat_id') ?: $settings->get('telegram_admin_id', '8629398713');
+        $this->logChannelId = $settings->get('telegram_log_channel_id', '-1004458721823');
     }
 
     /**
-     * ارسال پیام مستقیم به ادمین در ربات
+     * ارسال پیام مستقیم به ادمین در ربات و همچنین کانال لاگ
      */
     public function sendNotificationToAdmin(string $message, ?array $keyboard = null): bool
     {
-        if (empty($this->adminChatId) || empty($this->botToken)) {
+        if (empty($this->botToken)) {
+            Log::warning("Cannot send admin notification: SECRETARY_BOT_TOKEN is empty");
             return false;
         }
 
-        try {
-            $url = "https://api.telegram.org/bot{$this->botToken}/sendMessage";
-            $payload = [
-                'chat_id' => $this->adminChatId,
-                'text' => $message,
-                'parse_mode' => 'HTML',
-            ];
+        $sentSuccessfully = false;
 
-            if (!empty($keyboard)) {
-                $payload['reply_markup'] = json_encode(['inline_keyboard' => $keyboard]);
+        $payload = [
+            'text' => $message,
+            'parse_mode' => 'HTML',
+        ];
+        if (!empty($keyboard)) {
+            $payload['reply_markup'] = json_encode(['inline_keyboard' => $keyboard]);
+        }
+
+        // ۱. ارسال به پی‌وی ادمین
+        if (!empty($this->adminChatId)) {
+            try {
+                $payload['chat_id'] = $this->adminChatId;
+                $response = Http::timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/sendMessage", $payload);
+                if ($response->successful()) {
+                    $sentSuccessfully = true;
+                } else {
+                    Log::error("Failed to send notification to admin PV", [
+                        'admin_chat_id' => $this->adminChatId,
+                        'status' => $response->status(),
+                        'response' => $response->json(),
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error("Exception sending notification to admin PV: " . $e->getMessage());
             }
-
-            $response = Http::timeout(10)->post($url, $payload);
-            return $response->successful();
-        } catch (\Exception $e) {
-            Log::error("Failed to send admin notification: " . $e->getMessage());
-            return false;
         }
+
+        // ۲. ارسال موازی به کانال مانیتورینگ/لاگ
+        if (!empty($this->logChannelId) && (string) $this->logChannelId !== (string) $this->adminChatId) {
+            try {
+                $payload['chat_id'] = $this->logChannelId;
+                $response = Http::timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/sendMessage", $payload);
+                if ($response->successful()) {
+                    $sentSuccessfully = true;
+                } else {
+                    Log::error("Failed to send notification to log channel", [
+                        'channel_id' => $this->logChannelId,
+                        'status' => $response->status(),
+                        'response' => $response->json(),
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error("Exception sending notification to log channel: " . $e->getMessage());
+            }
+        }
+
+        return $sentSuccessfully;
     }
 
     /**
@@ -60,7 +94,7 @@ class AdminNotificationService
         $safeName = htmlspecialchars($fullName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $text = "🚨 <b>درخواست پشتیبانی انسانی</b>\n\n" .
                 "👤 <b>{$safeName}</b> · {$userTag}\n" .
-                "🆔 <code>{$customerChatId}</code>" .
+                "🆔 <code>{$customerChatId}</code> (<a href=\"tg://user?id={$customerChatId}\">مشاهده پروفایل</a>)" .
                 ($ticketId ? " · 🎫 <code>#{$ticketId}</code>" : '') . "\n";
 
         if (is_array($contextSummary)) {
@@ -86,14 +120,17 @@ class AdminNotificationService
 
         $text .= "\n🤖 <i>فرایدی تا پایان پاسخ انسانی در این گفتگو ساکت است.</i>";
 
-        $keyboard = [
-            [
-                ['text' => '💬 ورود به چت مشتری در پی‌وی', 'url' => "tg://user?id={$customerChatId}"]
-            ],
-            [
-                ['text' => '🤖 بازگرداندن به فرایدی', 'callback_data' => "sec_admin_resume_{$customerChatId}"],
-                ['text' => '✅ پایان پشتیبانی', 'callback_data' => "sec_admin_resolve_{$customerChatId}"]
-            ]
+        $keyboard = [];
+        if (!empty($username)) {
+            $cleanUser = ltrim($username, '@');
+            $keyboard[] = [
+                ['text' => '💬 پیام به مشتری در پی‌وی', 'url' => "https://t.me/{$cleanUser}"]
+            ];
+        }
+
+        $keyboard[] = [
+            ['text' => '🤖 بازگرداندن به فرایدی', 'callback_data' => "sec_admin_resume_{$customerChatId}"],
+            ['text' => '✅ پایان پشتیبانی', 'callback_data' => "sec_admin_resolve_{$customerChatId}"]
         ];
 
         return $this->sendNotificationToAdmin($text, $keyboard);
@@ -171,14 +208,16 @@ class AdminNotificationService
         $userTag = $username ? "@{$username}" : "بدون یوزرنیم";
         $text = "💳 <b>اعلان ارسال فیش واریزی / ثبت پرداخت</b>\n\n" .
                 "👤 <b>مشتری:</b> {$fullName} ({$userTag})\n" .
-                "🆔 <b>شناسه تلگرام:</b> <code>{$customerChatId}</code>\n" .
+                "🆔 <code>{$customerChatId}</code> (<a href=\"tg://user?id={$customerChatId}\">مشاهده پروفایل</a>)\n" .
                 "📸 لطفاً جهت بررسی فیش و صدور کانفیگ، پی‌وی مشتری را چک کنید.";
 
-        $keyboard = [
-            [
-                ['text' => '💬 باز کردن پی‌وی مشتری', 'url' => "tg://user?id={$customerChatId}"]
-            ]
-        ];
+        $keyboard = [];
+        if (!empty($username)) {
+            $cleanUser = ltrim($username, '@');
+            $keyboard[] = [
+                ['text' => '💬 باز کردن پی‌وی مشتری', 'url' => "https://t.me/{$cleanUser}"]
+            ];
+        }
 
         return $this->sendNotificationToAdmin($text, $keyboard);
     }
