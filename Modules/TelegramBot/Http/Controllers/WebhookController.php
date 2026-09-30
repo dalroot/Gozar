@@ -2547,11 +2547,9 @@ class WebhookController extends Controller
         $caption .= "🔹 مناسب برای اینستاگرام، یوتیوب، تلگرام، وب‌گردی و گیمینگ 🎮\n\n";
         $caption .= "👇 جهت ورود و دریافت هدیه خود روی دکمه زیر کلیک کنید:";
 
-        $photoUrl = 'https://botpanel.lookanet.app/referral_banner.jpg';
-        
         $photoCacheKey = "ref_banner_file_id_v2";
         $photoFileId = Cache::get($photoCacheKey);
-        $photoSource = $photoFileId ? $photoFileId : InputFile::create($photoUrl, 'referral_banner.jpg');
+        $photoSource = $photoFileId ? $photoFileId : InputFile::create(public_path('referral_banner.jpg'), 'referral_banner.jpg');
 
         $shareText = "اتصال پایدار روزنه را تجربه کنید.\n\nبا این لینک وارد ربات شوید و تست رایگان را دریافت کنید:\n";
         $shareUrl = "https://t.me/share/url?url=" . urlencode($referralLink) . "&text=" . urlencode($shareText);
@@ -5948,8 +5946,7 @@ I am here to build the most secure and stable connection path for you.
             if ($photoFileId) {
                 $photoSource = $photoFileId;
             } else {
-                $photoUrl    = 'https://botpanel.lookanet.app/menu_banner.jpg';
-                $photoSource = InputFile::create($photoUrl, 'menu_banner.jpg');
+                $photoSource = InputFile::create(public_path('menu_banner.jpg'), 'menu_banner.jpg');
             }
 
             $sent = Telegram::sendPhoto([
@@ -5992,7 +5989,7 @@ I am here to build the most secure and stable connection path for you.
         $text .= "✅ دسترسی به مستندات و آموزش اتصال در تمام سیستم‌عامل‌ها\n\n";
         $text .= "ما همواره در تلاشیم تا با ارائه بالاترین کیفیت شبکه، ارتباطی بدون قطعی و امن را برای شما فراهم کنیم. اعتماد شما سرمایه ماست.\n";
         $text .= "</blockquote>\n";
-        $text .= "🔗 <b>آدرس پنل وب:</b> botpanel.lookanet.app\n";
+        $text .= "🔗 <b>آدرس پنل وب:</b> bot.cinemapluss.ir\n";
         $text .= "━━━━━━━━━━━━━━━━━━━━";
 
         $botSettings = TelegramBotSetting::pluck('value', 'key');
