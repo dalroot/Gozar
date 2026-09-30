@@ -1059,60 +1059,75 @@ class WebhookController extends Controller
                         "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                     );
 
-                    // اطلاع‌رسانی به ادمین به همراه دکمه‌های شیشه‌ای
-                    $targetChatId = $this->settings->get('telegram_receipt_channel_id') ?: $this->settings->get('telegram_admin_chat_id');
-                    if ($targetChatId && is_numeric($targetChatId)) {
-                        $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
+                    // اطلاع‌رسانی به ادمین و کانال فیش‌ها به همراه دکمه‌های شیشه‌ای
+                    $receiptChannelId = $this->settings->get('telegram_receipt_channel_id');
+                    $adminChatId = $this->settings->get('telegram_admin_chat_id');
+                    $destinations = array_filter(array_unique([$receiptChannelId, $adminChatId]));
 
-                        $userPvLink = $user->telegram_chat_id 
-                            ? "[{$this->escape($user->name)}](tg://user?id={$user->telegram_chat_id})" 
-                            : $this->escape($user->name);
+                    $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
+                    $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
 
-                        $adminMessage = "🧾 *رسید جدید برای سفارش \\#{$orderId}*\n\n";
-                        $adminMessage .= "*کاربر:* {$userPvLink} \\(ID: `{$user->id}`\\)\n";
-                        $adminMessage .= "*مبلغ:* " . $this->escape(number_format($order->amount) . ' تومان') . "\n";
-                        $adminMessage .= "*نوع سفارش:* " . $this->escape($orderType) . "\n\n";
+                    $adminCaption = "🧾 <b>رسید پرداخت جدید برای سفارش #{$orderId}</b>\n\n";
+                    $adminCaption .= "👤 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n";
+                    $adminCaption .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+                    $adminCaption .= "📦 <b>نوع سفارش:</b> {$orderType}\n\n";
+                    $adminCaption .= "👇 <i>جهت بررسی فیش از دکمه‌های زیر استفاده کنید:</i>";
 
-                        $keyboard = Keyboard::make()->inline()
-                            ->row([
-                                $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
-                                $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
-                            ]);
+                    $keyboard = Keyboard::make()->inline()
+                        ->row([
+                            $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
+                            $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
+                        ]);
 
+                    $photoPath = Storage::disk('public')->path($fileName);
+
+                    foreach ($destinations as $targetChatId) {
+                        if (!is_numeric($targetChatId)) continue;
                         try {
                             Telegram::sendPhoto([
-                                'chat_id' => $targetChatId,
-                                'photo' => InputFile::create(Storage::disk('public')->path($fileName)),
-                                'caption' => $adminMessage,
-                                'parse_mode' => 'MarkdownV2',
+                                'chat_id'      => $targetChatId,
+                                'photo'        => InputFile::create($photoPath),
+                                'caption'      => $adminCaption,
+                                'parse_mode'   => 'HTML',
                                 'reply_markup' => $keyboard
                             ]);
                         } catch (\Exception $e) {
-                             Log::error("Failed to send receipt to admin: " . $e->getMessage());
-                             // Silent failure for admin notification, user flow should continue
+                            Log::error("Failed to send receipt to {$targetChatId}: " . $e->getMessage());
                         }
                     }
 
                 } catch (\Exception $e) {
                     Log::error("Receipt processing failed for order {$orderId}: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-                    Telegram::sendMessage(['chat_id' => $chatId, 'text' => $this->escape("❌ خطا در پردازش رسید. لطفاً دوباره تلاش کنید."), 'parse_mode' => 'MarkdownV2']);
-                    $this->sendOrEditMainMenu($chatId, $this->escape("لطفا دوباره تلاش کنید."));
+                    Telegram::sendMessage(['chat_id' => $chatId, 'text' => "❌ خطا در پردازش رسید. لطفاً دوباره تلاش کنید."]);
                 }
             } else {
-                Telegram::sendMessage(['chat_id' => $chatId, 'text' => $this->escape("❌ سفارش نامعتبر است یا در انتظار پرداخت نیست."), 'parse_mode' => 'MarkdownV2']);
-                $this->sendOrEditMainMenu($chatId, $this->escape("لطفا وضعیت سفارش خود را بررسی کنید."));
+                Telegram::sendMessage(['chat_id' => $chatId, 'text' => "❌ سفارش نامعتبر است یا در انتظار پرداخت نیست."]);
             }
         }
     }
 
     protected function sendUserReceiptConfirmation($chatId)
     {
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => $this->escape("✅ رسید شما با موفقیت ثبت شد و در انتظار تایید مدیریت است."),
-            'parse_mode' => 'MarkdownV2'
-        ]);
-        $this->sendOrEditMainMenu($chatId, $this->escape("رسید ثبت شد."));
+        $text = "✅ <b>رسید شما با موفقیت ثبت شد</b>\n\n" .
+                "⏳ سفارش شما در صف بررسی مدیریت قرار گرفت.\n" .
+                "به محض تایید پرداخت توسط پشتیبانی، سرویس شما فعال شده و مشخصات اتصال در همین چت برای شما ارسال خواهد شد.\n\n" .
+                "<i>از همراهی و شکیبایی شما سپاسگزاریم.</i> 🌸";
+
+        $keyboard = Keyboard::make()->inline()
+            ->row([
+                $this->makeInlineButton(['text' => '🏠 بازگشت به خانه', 'callback_data' => '/start', 'style' => 'primary']),
+            ]);
+
+        try {
+            Telegram::sendMessage([
+                'chat_id'      => $chatId,
+                'text'         => $text,
+                'parse_mode'   => 'HTML',
+                'reply_markup' => $keyboard
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Failed to send receipt confirmation to user: " . $e->getMessage());
+        }
     }
 
     protected function processTextReceiptSubmission($user, $orderId, $text, $chatId)
@@ -1126,57 +1141,56 @@ class WebhookController extends Controller
 
                 $this->sendUserReceiptConfirmation($chatId);
 
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name) . "</a>";
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
                 $this->sendToLogChannel(
                     "🧾 <b>ثبت فیش واریزی جدید (متنی / شماره پیگیری)</b>\n\n" .
                     "🔹 <b>شماره سفارش:</b> #{$orderId}\n" .
                     "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
                     "🔹 <b>مبلغ:</b> " . number_format($order->amount) . " تومان\n" .
                     "🔹 <b>متن/کد پیگیری:</b> <code>" . htmlspecialchars($text) . "</code>\n" .
-                    "🔹 <b>وضعیت:</b> ⏳ ارسال شد به کانال تایید فیش‌ها برای بررسی ادمین\n" .
+                    "🔹 <b>وضعیت:</b> ⏳ در انتظار تایید مدیریت\n" .
                     "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                 );
 
-                // Admin Notification
-                $targetChatId = $this->settings->get('telegram_receipt_channel_id') ?: $this->settings->get('telegram_admin_chat_id');
-                if ($targetChatId && is_numeric($targetChatId)) {
-                    $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
+                // Admin Notification to both channel and admin
+                $receiptChannelId = $this->settings->get('telegram_receipt_channel_id');
+                $adminChatId = $this->settings->get('telegram_admin_chat_id');
+                $destinations = array_filter(array_unique([$receiptChannelId, $adminChatId]));
 
-                    $userPvLink = $user->telegram_chat_id 
-                        ? "[{$this->escape($user->name)}](tg://user?id={$user->telegram_chat_id})" 
-                        : $this->escape($user->name);
+                $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
 
-                    $adminMessage = "🧾 *رسید متنی جدید برای سفارش \\#{$orderId}*\n\n";
-                    $adminMessage .= "*کاربر:* {$userPvLink} \\(ID: `{$user->id}`\\)\n";
-                    $adminMessage .= "*مبلغ:* " . $this->escape(number_format($order->amount) . ' تومان') . "\n";
-                    $adminMessage .= "*نوع سفارش:* " . $this->escape($orderType) . "\n";
-                    $adminMessage .= "*متن رسید:* " . $this->escape($text) . "\n\n";
+                $adminMessage = "🧾 <b>رسید متنی جدید برای سفارش #{$orderId}</b>\n\n";
+                $adminMessage .= "👤 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n";
+                $adminMessage .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+                $adminMessage .= "📦 <b>نوع سفارش:</b> {$orderType}\n";
+                $adminMessage .= "📝 <b>متن فیش:</b> <code>" . htmlspecialchars($text) . "</code>\n\n";
+                $adminMessage .= "👇 <i>جهت بررسی فیش از دکمه‌های زیر استفاده کنید:</i>";
 
-                    $keyboard = Keyboard::make()->inline()
-                        ->row([
-                            $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
-                            $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
-                        ]);
+                $keyboard = Keyboard::make()->inline()
+                    ->row([
+                        $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
+                        $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
+                    ]);
 
+                foreach ($destinations as $targetChatId) {
+                    if (!is_numeric($targetChatId)) continue;
                     try {
                         Telegram::sendMessage([
-                            'chat_id' => $targetChatId,
-                            'text' => $adminMessage,
-                            'parse_mode' => 'MarkdownV2',
+                            'chat_id'      => $targetChatId,
+                            'text'         => $adminMessage,
+                            'parse_mode'   => 'HTML',
                             'reply_markup' => $keyboard
                         ]);
                     } catch (\Exception $e) {
-                         Log::error("Failed to send text receipt to admin: " . $e->getMessage());
+                        Log::error("Failed to send text receipt to {$targetChatId}: " . $e->getMessage());
                     }
                 }
             } catch (\Exception $e) {
                 Log::error("Text receipt processing failed for order {$orderId}: " . $e->getMessage());
-                Telegram::sendMessage(['chat_id' => $chatId, 'text' => $this->escape("❌ خطا در پردازش رسید. لطفاً دوباره تلاش کنید."), 'parse_mode' => 'MarkdownV2']);
-                $this->sendOrEditMainMenu($chatId, $this->escape("لطفا دوباره تلاش کنید."));
+                Telegram::sendMessage(['chat_id' => $chatId, 'text' => "❌ خطا در پردازش رسید. لطفاً دوباره تلاش کنید."]);
             }
         } else {
-            Telegram::sendMessage(['chat_id' => $chatId, 'text' => $this->escape("❌ سفارش نامعتبر است یا در انتظار پرداخت نیست."), 'parse_mode' => 'MarkdownV2']);
-            $this->sendOrEditMainMenu($chatId, $this->escape("لطفا وضعیت سفارش خود را بررسی کنید."));
+            Telegram::sendMessage(['chat_id' => $chatId, 'text' => "❌ سفارش نامعتبر است یا در انتظار پرداخت نیست."]);
         }
     }
 
