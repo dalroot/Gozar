@@ -5544,41 +5544,41 @@ I am here to build the most secure and stable connection path for you.
         return Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton([
-                    'text' => '🛍️ خرید اشتراک',
+                    'text' => '🛍️ خرید یا تمدید اشتراک',
                     'callback_data' => '/plans',
                     'style' => 'primary',
                 ]),
+            ])
+            ->row([
                 $this->makeInlineButton([
-                    'text' => '🎁 تست رایگان',
+                    'text' => '🎁 دریافت تست رایگان',
                     'callback_data' => 'trial_request',
                     'style' => 'success',
                 ]),
-            ])
-            ->row([
                 $this->makeInlineButton([
                     'text' => '📦 سرویس‌های من',
                     'callback_data' => '/my_services',
                     'style' => 'primary',
                 ]),
+            ])
+            ->row([
                 $this->makeInlineButton([
                     'text' => '💳 کیف پول',
                     'callback_data' => '/wallet',
                     'style' => 'primary',
                 ]),
-            ])
-            ->row([
                 $this->makeInlineButton([
                     'text' => '🤖 پشتیبانی هوشمند',
                     'callback_data' => '/support_menu',
                     'style' => 'success',
                 ]),
+            ])
+            ->row([
                 $this->makeInlineButton([
                     'text' => '📖 راهنمای اتصال',
                     'callback_data' => '/tutorials',
                     'style' => 'primary',
                 ]),
-            ])
-            ->row([
                 $this->makeInlineButton([
                     'text' => '✨ امکانات بیشتر',
                     'callback_data' => '/more',
