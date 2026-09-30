@@ -127,6 +127,8 @@ sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS|" .env
 sed -i "s|APP_URL=.*|APP_URL=http://$SERVER_IP:$SETUP_PORT|" .env
 sed -i "s|APP_ENV=.*|APP_ENV=production|" .env
 sed -i "s|QUEUE_CONNECTION=.*|QUEUE_CONNECTION=redis|" .env
+chown www-data:www-data "$PROJECT_PATH/.env"
+chmod 664 "$PROJECT_PATH/.env"
 
 # --- Step 6: Dependencies & Migrations ---
 echo -e "${YELLOW}[6/7] 🧰 Installing dependencies and preparing database...${NC}"
@@ -136,11 +138,12 @@ mkdir -p "$PROJECT_PATH/storage/framework/cache/data"
 mkdir -p "$PROJECT_PATH/storage/framework/sessions"
 mkdir -p "$PROJECT_PATH/storage/logs"
 mkdir -p "$PROJECT_PATH/bootstrap/cache"
-chown -R www-data:www-data /var/www/.cache "$PROJECT_PATH/storage" "$PROJECT_PATH/bootstrap/cache"
+chown -R www-data:www-data /var/www/.cache "$PROJECT_PATH/storage" "$PROJECT_PATH/bootstrap/cache" "$PROJECT_PATH/.env"
 chmod -R 775 "$PROJECT_PATH/storage" "$PROJECT_PATH/bootstrap/cache"
+chmod 664 "$PROJECT_PATH/.env"
 
 sudo -u www-data COMPOSER_HOME="/var/www/.cache/composer" composer install --no-dev --optimize-autoloader --ignore-platform-reqs
-sudo -u www-data php artisan key:generate
+sudo -u www-data php artisan key:generate --force
 sudo -u www-data php artisan migrate --seed --force
 sudo -u www-data php artisan storage:link
 
