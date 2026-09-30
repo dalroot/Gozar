@@ -275,7 +275,11 @@ class PaymentService
                         $base = rtrim($subUrl, '/');
                         if($subPort && !Str::contains($base, ":$subPort")) $base .= ":$subPort";
                         if(!Str::startsWith($base, 'http')) $base = "$prot://$base";
-                        $finalConfig = "$base" . ($targetServer->subscription_path ?? '/sub/') . $finalSubId;
+                        $parsedSub = parse_url($base);
+                        $subPath = trim($parsedSub['path'] ?? '', '/');
+                        $finalConfig = !empty($subPath) 
+                            ? ("$base/$finalSubId") 
+                            : ("$base" . ($targetServer->subscription_path ?? '/sub/') . $finalSubId);
                         break;
 
                     case 'tunnel':

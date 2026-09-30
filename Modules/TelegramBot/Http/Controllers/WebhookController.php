@@ -3275,15 +3275,21 @@ class WebhookController extends Controller
                                 $protocolScheme = $isHttps ? 'https' : 'http';
 
                                 $configLink = "{$protocolScheme}://{$baseUrl}" . rtrim($subPath, '/') . '/' . $subId;
+                            } else {
                                 $subBaseUrl = trim($settings->get('xui_subscription_url_base') ?? '');
-                                if (empty($subBaseUrl)) {
+                                if (!empty($subBaseUrl)) {
+                                    $parsedSub = parse_url($subBaseUrl);
+                                    $subPath = trim($parsedSub['path'] ?? '', '/');
+                                    $configLink = !empty($subPath) 
+                                        ? (rtrim($subBaseUrl, '/') . '/' . $subId) 
+                                        : (rtrim($subBaseUrl, '/') . '/sub/' . $subId);
+                                } else {
                                     $parsedHost = parse_url($settings->get('xui_host') ?? '');
                                     $subScheme = $parsedHost['scheme'] ?? 'https';
                                     $subHostName = $parsedHost['host'] ?? 'panel.cinemapluss.ir';
                                     $subPortNum = isset($parsedHost['port']) ? ':' . $parsedHost['port'] : '';
-                                    $subBaseUrl = "{$subScheme}://{$subHostName}{$subPortNum}";
+                                    $configLink = "{$subScheme}://{$subHostName}{$subPortNum}/sub/{$subId}";
                                 }
-                                $configLink = rtrim($subBaseUrl, '/') . '/sub/' . $subId;
                             }
                             break;
 
@@ -4827,14 +4833,19 @@ class WebhookController extends Controller
                             $configLink = "{$prot}://{$baseUrl}" . rtrim($subPath, '/') . '/' . $subId;
                         } else {
                             $subBaseUrl = trim($settings->get('xui_subscription_url_base') ?? '');
-                            if (empty($subBaseUrl)) {
+                            if (!empty($subBaseUrl)) {
+                                $parsedSub = parse_url($subBaseUrl);
+                                $subPath = trim($parsedSub['path'] ?? '', '/');
+                                $configLink = !empty($subPath) 
+                                    ? (rtrim($subBaseUrl, '/') . '/' . $subId) 
+                                    : (rtrim($subBaseUrl, '/') . '/sub/' . $subId);
+                            } else {
                                 $parsedHost = parse_url($settings->get('xui_host') ?? '');
                                 $subScheme = $parsedHost['scheme'] ?? 'https';
                                 $subHostName = $parsedHost['host'] ?? 'panel.cinemapluss.ir';
                                 $subPortNum = isset($parsedHost['port']) ? ':' . $parsedHost['port'] : '';
-                                $subBaseUrl = "{$subScheme}://{$subHostName}{$subPortNum}";
+                                $configLink = "{$subScheme}://{$subHostName}{$subPortNum}/sub/{$subId}";
                             }
-                            $configLink = rtrim($subBaseUrl, '/') . '/sub/' . $subId;
                         }
                         break;
                     case 'tunnel':

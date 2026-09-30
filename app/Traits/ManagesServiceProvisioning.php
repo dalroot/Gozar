@@ -140,9 +140,13 @@ trait ManagesServiceProvisioning
                     $linkType = $settings->get('xui_link_type', 'single');
                     if ($linkType === 'subscription') {
                         $subId = $response['generated_subId'] ?? null;
-                        $subBaseUrl = rtrim($settings->get('xui_subscription_url_base'), '/');
+                        $subBaseUrl = trim($settings->get('xui_subscription_url_base') ?? '');
                         if ($subBaseUrl && $subId) {
-                            $finalConfig = $subBaseUrl . '/sub/' . $subId;
+                            $parsedSub = parse_url($subBaseUrl);
+                            $subPath = trim($parsedSub['path'] ?? '', '/');
+                            $finalConfig = !empty($subPath) 
+                                ? (rtrim($subBaseUrl, '/') . '/' . $subId) 
+                                : (rtrim($subBaseUrl, '/') . '/sub/' . $subId);
                             $success = true;
                         } else {
                             $this->handleProvisioningError('آدرس پایه اشتراک XUI یا ID اشتراک ست نشده.', $isTelegramContext); return false;

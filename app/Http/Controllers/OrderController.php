@@ -642,10 +642,14 @@ class OrderController extends Controller
 
                             if ($linkType === 'subscription') {
                                 $subId = $response['generated_subId'];
-                                $subBaseUrl = rtrim($settings->get('xui_subscription_url_base'), '/');
+                                $subBaseUrl = trim($settings->get('xui_subscription_url_base') ?? '');
 
                                 if ($subBaseUrl && $subId) {
-                                    $finalConfig = $subBaseUrl . '/sub/' . $subId;
+                                    $parsedSub = parse_url($subBaseUrl);
+                                    $subPath = trim($parsedSub['path'] ?? '', '/');
+                                    $finalConfig = !empty($subPath) 
+                                        ? (rtrim($subBaseUrl, '/') . '/' . $subId) 
+                                        : (rtrim($subBaseUrl, '/') . '/sub/' . $subId);
                                     $success = true;
                                 } else {
                                     throw new \Exception('خطا در ساخت لینک سابسکریپشن.');
