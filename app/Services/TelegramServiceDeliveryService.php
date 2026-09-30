@@ -112,6 +112,10 @@ final class TelegramServiceDeliveryService
             ->row([
                 Keyboard::inlineButton(['text' => '📚 راهنمای اتصال', 'callback_data' => '/tutorials']),
                 Keyboard::inlineButton(['text' => '🛠 سرویس‌های من', 'callback_data' => '/my_services']),
+            ])
+            ->row([
+                Keyboard::inlineButton(['text' => '🤖 پشتیبانی تلگرام', 'url' => 'https://t.me/RoozanehHelp']),
+                Keyboard::inlineButton(['text' => '🏠 منوی اصلی', 'callback_data' => '/start']),
             ]);
     }
 
@@ -158,7 +162,7 @@ final class TelegramServiceDeliveryService
             $caption .= "⏳ *اعتبار زمانی:* " . $this->escape('بدون محدودیت زمانی') . "\n";
             $caption .= "👤 *نام سرویس:* `" . $this->escapeCode((string) $order->panel_username) . "`\n\n";
             $caption .= "🔗 *لینک اشتراک:*\n`" . $this->escapeCode((string) $order->config_details) . "`\n\n";
-            $caption .= $this->escape('این تست برای هر حساب تلگرام فقط یک‌بار ارائه می‌شود. اگر پس از تست خرید کنید، یک گیگابایت هدیه دیگر نیز برایتان در نظر گرفته می‌شود.');
+            $caption .= $this->escape("📱 برای اتصال، بارکد QR بالا را اسکن کرده یا لینک اشتراک را در برنامه وارد کنید. این تست برای هر حساب فقط یک‌بار ارائه می‌شود.\n\n💬 در صورت بروز هرگونه سوال یا مشکل، با پشتیبانی (@RoozanehHelp) در ارتباط باشید.");
             return $caption;
         }
         $title = $isRenewal ? 'تمدید سرویس با موفقیت انجام شد' : 'اشتراک شما با موفقیت فعال شد';
@@ -174,7 +178,7 @@ final class TelegramServiceDeliveryService
         $caption .= "⏳ *تاریخ پایان:* `" . $expiry . "`\n";
         $caption .= "👤 *نام سرویس:* `" . $this->escapeCode((string) $order->panel_username) . "`\n\n";
         $caption .= "🔗 *لینک اشتراک:*\n`" . $this->escapeCode((string) $order->config_details) . "`\n\n";
-        $caption .= $this->escape('QR را اسکن کنید یا لینک بالا را داخل برنامه وارد کنید. برای دریافت VLESS/VMESS جداگانه، دکمهٔ لینک‌های اتصال مستقیم را بزنید.');
+        $caption .= $this->escape("📱 برای اتصال، بارکد QR بالا را اسکن کرده یا لینک اشتراک را در برنامه وارد کنید. جهت دریافت کانفیگ‌های مستقیم، دکمهٔ «لینک‌های اتصال مستقیم» را لمس فرمایید.\n\n💬 در صورت بروز هرگونه سوال یا مشکل در اتصال، به پشتیبانی (@RoozanehHelp) پیام دهید.");
 
         return $caption;
     }
