@@ -290,4 +290,14 @@ class BusinessSecretaryController extends Controller
         $result = $this->secretaryService->setWebhook($webhookUrl);
         return response()->json(['webhook_url' => $webhookUrl, 'result' => $result]);
     }
+
+    public function webhookInfo()
+    {
+        $botToken = (string) env('SECRETARY_BOT_TOKEN', '');
+        if (empty($botToken)) {
+            return response()->json(['ok' => false, 'description' => 'SECRETARY_BOT_TOKEN not configured']);
+        }
+        $res = \Illuminate\Support\Facades\Http::get("https://api.telegram.org/bot{$botToken}/getWebhookInfo");
+        return response()->json($res->json() ?? ['ok' => false]);
+    }
 }
