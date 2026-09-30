@@ -3199,50 +3199,42 @@ class WebhookController extends Controller
             // پنل X-UI
             // ==========================================
             elseif ($panelType === 'xui') {
-                if ($inboundId <= 0 && !$isMultiServer) {
-                    $fallbackInbound = Inbound::all()->first(function (Inbound $candidate) {
-                        $data = is_string($candidate->inbound_data)
-                            ? json_decode($candidate->inbound_data, true)
-                            : $candidate->inbound_data;
-                        return ($data['protocol'] ?? null) === 'vless';
-                    });
-                    if ($fallbackInbound) {
-                        $fallbackData = is_string($fallbackInbound->inbound_data)
-                            ? json_decode($fallbackInbound->inbound_data, true)
-                            : $fallbackInbound->inbound_data;
-                        $inboundId = (int) ($fallbackData['id'] ?? 0);
-                        Log::warning('X-UI default inbound was not configured; using first VLESS inbound.', [
-                            'inbound_id' => $inboundId,
-                        ]);
-                    }
-                }
-                if ($inboundId <= 0) {
-                    throw new \Exception("Inbound ID نامعتبر است: {$inboundId}");
-                }
-
                 $xui = new XUIService($xuiHost, $xuiUser, $xuiPass);
 
                 if (!$xui->login()) {
                     throw new \Exception("❌ خطا در لاگین به پنل X-UI");
                 }
 
-                // دریافت اینباند
+                // تعیین اینباندهای هدف
+                $targetInboundIds = [3, 7, 11, 14];
+                if ($isMultiServer && $targetServer) {
+                    $targetInboundIds = [$inboundId];
+                } else {
+                    $settingInbounds = $settings->get('xui_target_inbounds');
+                    if (!empty($settingInbounds)) {
+                        $parsed = is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true);
+                        if (!is_array($parsed)) {
+                            $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
+                        }
+                        if (!empty($parsed)) {
+                            $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
+                        }
+                    }
+                }
+
+                // دریافت اطلاعات اینباند جهت لینک‌های تکی یا تانل
+                $primaryInboundId = $targetInboundIds[0] ?? $inboundId;
                 $inboundData = null;
-                if ($isMultiServer) {
-                    $allInbounds = $xui->getInbounds();
+                $allInbounds = $xui->getInbounds();
+                if (is_array($allInbounds)) {
                     foreach ($allInbounds as $remoteInbound) {
-                        if ($remoteInbound['id'] == $inboundId) {
+                        if (($remoteInbound['id'] ?? null) == $primaryInboundId) {
                             $inboundData = $remoteInbound;
                             break;
                         }
                     }
-                    if (!$inboundData) throw new \Exception("اینباند در سرور یافت نشد.");
-                } else {
-                    $inboundModel = Inbound::whereJsonContains('inbound_data->id', (int)$inboundId)->first();
-                    if ($inboundModel) {
-                        $inboundData = is_string($inboundModel->inbound_data) ? json_decode($inboundModel->inbound_data, true) : $inboundModel->inbound_data;
-                    } else {
-                        throw new \Exception("اینباند پیش‌فرض یافت نشد.");
+                    if (!$inboundData && !empty($allInbounds)) {
+                        $inboundData = $allInbounds[0];
                     }
                 }
 
@@ -3259,11 +3251,14 @@ class WebhookController extends Controller
                     $clientData['subId'] = Str::random(16);
                 }
 
-                Log::info("Creating XUI client", ['email' => $uniqueUsername, 'link_type' => $linkType]);
+                Log::info("Creating XUI client across inbounds", [
+                    'email' => $uniqueUsername,
+                    'inbounds' => $targetInboundIds,
+                    'link_type' => $linkType
+                ]);
 
-                // ساخت کاربر
-                $response = $xui->addClient($inboundId, $clientData);
-
+                // ساخت کاربر در پنل
+                $response = $xui->addClient($targetInboundIds, $clientData);
 
                 if ($response && isset($response['success']) && $response['success']) {
                     // استخراج اطلاعات

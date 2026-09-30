@@ -209,82 +209,57 @@ class PaymentService
                 $xui = new XUIService($xuiHost, $xuiUser, $xuiPass);
                 if (!$xui->login()) throw new \Exception('خطا در لاگین X-UI');
 
-                $inboundData = null;
+                // تعیین اینباندهای هدف
+                $targetInboundIds = [3, 7, 11, 14];
                 if ($targetServer) {
-                    $inbounds = $xui->getInbounds();
-                    if (is_array($inbounds)) {
-                        foreach ($inbounds as $i) {
-                            if (($i['id'] ?? null) == $inboundId) {
-                                $inboundData = $i;
-                                break;
-                            }
+                    $targetInboundIds = [$inboundId];
+                } else {
+                    $settingInbounds = $settings->get('xui_target_inbounds');
+                    if (!empty($settingInbounds)) {
+                        $parsed = is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true);
+                        if (!is_array($parsed)) {
+                            $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
+                        }
+                        if (!empty($parsed)) {
+                            $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
                         }
                     }
-                } else {
-                    $im = null;
-                    if (!empty($inboundId)) {
-                        $im = Inbound::whereJsonContains('inbound_data->id', (int)$inboundId)->first() ?: Inbound::find($inboundId);
-                    }
-                    if (!$im) {
-                        $im = Inbound::first();
-                    }
-                    if ($im) {
-                        $inboundData = is_string($im->inbound_data) ? json_decode($im->inbound_data, true) : $im->inbound_data;
-                    }
                 }
-
-                if (!$inboundData) {
-                    $liveInbounds = $xui->getInbounds();
-                    if (!empty($liveInbounds) && is_array($liveInbounds)) {
-                        $inboundData = $liveInbounds[0];
-                    }
-                }
-                if (!$inboundData) throw new \Exception('اینباند در سرور یافت نشد.');
 
                 $linkType = $targetServer ? ($targetServer->link_type ?? 'single') : $settings->get('xui_link_type', 'single');
-                $clientData = ['email' => $uniqueUsername, 'total' => $plan->volume_gb * 1073741824, 'expiryTime' => $newExpiresAt->getTimestamp() * 1000];
+                $clientData = [
+                    'email' => $uniqueUsername,
+                    'total' => $plan->volume_gb * 1073741824,
+                    'expiryTime' => $newExpiresAt->getTimestamp() * 1000
+                ];
 
-                if ($isRenewal) {
-                    $clients = $xui->getClients($inboundData['id']);
-                    $client = collect($clients)->first(function ($c) use ($uniqueUsername) {
-                        return strtolower(trim($c['email'])) === strtolower(trim($uniqueUsername));
-                    });
+                if ($linkType === 'subscription') {
+                    $clientData['subId'] = Str::random(16);
+                }
 
-                    if ($client) {
-                        $clientData['id'] = $client['id'];
-                        $clientData['subId'] = $client['subId'] ?? Str::random(16);
-                        $upRes = $xui->updateClient($inboundData['id'], $client['id'], $clientData);
-                        if ($upRes && ($upRes['success'] ?? false)) {
-                            $xui->resetClientTraffic($inboundData['id'], $uniqueUsername);
-                            $finalUuid = $client['id'];
-                            $finalSubId = $clientData['subId'];
-                        } else throw new \Exception('خطا در آپدیت کاربر X-UI');
-                    } else throw new \Exception("کاربر {$uniqueUsername} یافت نشد.");
+                // ساخت یا آپدیت کلاینت در تمامی اینباندهای هدف
+                $addRes = $xui->addClient($targetInboundIds, $clientData);
+                if ($addRes && ($addRes['success'] ?? false)) {
+                    $finalUuid = $addRes['generated_uuid'] ?? null;
+                    $finalSubId = $addRes['generated_subId'] ?? ($clientData['subId'] ?? null);
+                    if ($targetServer) $targetServer->increment('current_users');
                 } else {
-                    $clients = $xui->getClients($inboundData['id']);
-                    $existingClient = collect($clients)->first(function ($c) use ($uniqueUsername) {
-                        return strtolower(trim($c['email'])) === strtolower(trim($uniqueUsername));
-                    });
+                    throw new \Exception('خطا در ساخت یا آپدیت کلاینت X-UI: ' . ($addRes['msg'] ?? 'خطای نامشخص'));
+                }
 
-                    if ($existingClient) {
-                        $clientData['id'] = $existingClient['id'];
-                        $clientData['subId'] = $existingClient['subId'] ?? Str::random(16);
-                        $upRes = $xui->updateClient($inboundData['id'], $existingClient['id'], $clientData);
-                        if ($upRes && ($upRes['success'] ?? false)) {
-                            $xui->resetClientTraffic($inboundData['id'], $uniqueUsername);
-                            $finalUuid = $existingClient['id'];
-                            $finalSubId = $clientData['subId'];
-                        } else throw new \Exception('خطا در آپدیت کاربر موجود');
-                    } else {
-                        if ($linkType === 'subscription') $clientData['subId'] = Str::random(16);
-                        $addRes = $xui->addClient($inboundData['id'], $clientData);
-                        if ($addRes && ($addRes['success'] ?? false)) {
-                            $rawAddSettings = $addRes['obj']['settings'] ?? '{}';
-                            $cAddSettings = is_array($rawAddSettings) ? $rawAddSettings : json_decode($rawAddSettings, true);
-                            $finalUuid = $addRes['generated_uuid'] ?? ($cAddSettings['clients'][0]['id'] ?? null);
-                            $finalSubId = $addRes['generated_subId'] ?? $clientData['subId'];
-                            if ($targetServer) $targetServer->increment('current_users');
-                        } else throw new \Exception('خطا در ساخت کاربر: ' . ($addRes['msg'] ?? 'Unknown error'));
+                // دریافت اطلاعات اینباند جهت لینک‌های تکی یا تانل
+                $primaryInboundId = $targetInboundIds[0] ?? $inboundId;
+                $inboundData = null;
+                $liveInbounds = $xui->getInbounds();
+                if (is_array($liveInbounds)) {
+                    foreach ($liveInbounds as $i) {
+                        if (($i['id'] ?? null) == $primaryInboundId) {
+                            $inboundData = $i;
+                            break;
+                        }
+                    }
+                    if (!$inboundData && !empty($liveInbounds)) {
+                        $inboundData = $liveInbounds[0];
                     }
                 }
 

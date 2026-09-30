@@ -219,21 +219,150 @@ class XUIService
         }
     }
 
-    public function addClient(int $inboundId, array $clientData): ?array
+    public function getClientByEmail(string $email): ?array
+    {
+        if (!$this->login()) {
+            return null;
+        }
+
+        try {
+            $cleanBasePath = rtrim($this->basePath, '/');
+            $url = $this->baseUrl . $cleanBasePath . '/panel/api/clients/get/' . rawurlencode($email);
+            $response = $this->getClient()->get($url);
+
+            if ($response->successful() && ($response->json('success') === true)) {
+                $obj = $response->json('obj');
+                return $obj['client'] ?? $obj;
+            }
+            return null;
+        } catch (\Throwable $e) {
+            Log::warning('Error fetching client by email: ' . $e->getMessage(), ['email' => $email]);
+            return null;
+        }
+    }
+
+    public function updateClientByEmail(string $email, array $clientData): ?array
+    {
+        if (!$this->login()) {
+            return ['success' => false, 'msg' => 'Authentication failed.'];
+        }
+
+        try {
+            $cleanBasePath = rtrim($this->basePath, '/');
+            $url = $this->baseUrl . $cleanBasePath . '/panel/api/clients/update/' . rawurlencode($email);
+
+            $payload = [
+                'id' => $clientData['id'] ?? $clientData['uuid'] ?? Str::uuid()->toString(),
+                'email' => $email,
+                'totalGB' => $clientData['total'] ?? $clientData['totalGB'] ?? 0,
+                'expiryTime' => $clientData['expiryTime'] ?? 0,
+                'enable' => $clientData['enable'] ?? true,
+                'subId' => $clientData['subId'] ?? Str::random(16),
+                'tgId' => $clientData['tgId'] ?? 0,
+                'limitIp' => $clientData['limitIp'] ?? 0,
+                'flow' => $clientData['flow'] ?? '',
+            ];
+
+            Log::info('Updating XUI client by email', ['email' => $email, 'url' => $url]);
+            $response = $this->getClient()->asJson()->post($url, $payload);
+
+            return $response->json() ?? ['success' => $response->successful()];
+        } catch (\Throwable $e) {
+            Log::error('Exception in updateClientByEmail', ['email' => $email, 'error' => $e->getMessage()]);
+            return ['success' => false, 'msg' => $e->getMessage()];
+        }
+    }
+
+    public function attachClient(string $email, array $inboundIds): ?array
+    {
+        if (!$this->login() || empty($inboundIds)) {
+            return ['success' => false, 'msg' => 'Invalid parameters or auth failed.'];
+        }
+
+        try {
+            $cleanBasePath = rtrim($this->basePath, '/');
+            $url = $this->baseUrl . $cleanBasePath . '/panel/api/clients/' . rawurlencode($email) . '/attach';
+
+            $payload = [
+                'inboundIds' => array_values(array_unique(array_map('intval', $inboundIds)))
+            ];
+
+            Log::info('Attaching XUI client to inbounds', ['email' => $email, 'inbound_ids' => $payload['inboundIds']]);
+            $response = $this->getClient()->asJson()->post($url, $payload);
+
+            return $response->json() ?? ['success' => $response->successful()];
+        } catch (\Throwable $e) {
+            Log::error('Exception in attachClient', ['email' => $email, 'error' => $e->getMessage()]);
+            return ['success' => false, 'msg' => $e->getMessage()];
+        }
+    }
+
+    public function resetClientTrafficByEmail(string $email): bool
+    {
+        if (!$this->login()) {
+            return false;
+        }
+
+        try {
+            $cleanBasePath = rtrim($this->basePath, '/');
+            $url = $this->baseUrl . $cleanBasePath . '/panel/api/clients/resetTraffic/' . rawurlencode($email);
+            $response = $this->getClient()->post($url);
+
+            return $response->successful() && ($response->json('success') ?? false);
+        } catch (\Throwable $e) {
+            Log::warning('Error resetting traffic by email', ['email' => $email, 'error' => $e->getMessage()]);
+            return false;
+        }
+    }
+
+    public function addClient($inboundId, array $clientData): ?array
     {
         if (!$this->login()) {
             return ['success' => false, 'msg' => 'Authentication to X-UI panel failed.'];
         }
 
         try {
-            $uuid = Str::uuid()->toString();
-            $subId = Str::random(16);
+            $inboundIds = is_array($inboundId) ? array_map('intval', $inboundId) : [(int) $inboundId];
+            $inboundIds = array_values(array_unique(array_filter($inboundIds)));
+            $primaryInboundId = $inboundIds[0] ?? 0;
+
             $email = $clientData['email'] ?? ('client_' . rand(1000, 9999));
-            $totalGB = $clientData['total'] ?? 0;
+            $totalGB = $clientData['total'] ?? $clientData['totalGB'] ?? 0;
             $expiryTime = $clientData['expiryTime'] ?? 0;
 
+            // بررسی کلاینت موجود در پنل مدرن
+            $existing = $this->getClientByEmail($email);
+            if ($existing) {
+                Log::info('Client already exists in XUI, updating and attaching inbounds', ['email' => $email]);
+                $uuid = $existing['uuid'] ?? $existing['id'] ?? ($clientData['id'] ?? Str::uuid()->toString());
+                $subId = $existing['subId'] ?? ($clientData['subId'] ?? Str::random(16));
+
+                $updateData = array_merge($clientData, [
+                    'id' => $uuid,
+                    'subId' => $subId,
+                    'total' => $totalGB,
+                    'expiryTime' => $expiryTime,
+                ]);
+
+                $this->updateClientByEmail($email, $updateData);
+                $this->attachClient($email, $inboundIds);
+                $this->resetClientTrafficByEmail($email);
+
+                return [
+                    'success' => true,
+                    'msg' => 'Client updated and attached.',
+                    'generated_uuid' => $uuid,
+                    'generated_subId' => $subId,
+                    'inbound_id' => $primaryInboundId,
+                    'inbound_ids' => $inboundIds
+                ];
+            }
+
+            $uuid = $clientData['id'] ?? $clientData['uuid'] ?? Str::uuid()->toString();
+            $subId = $clientData['subId'] ?? Str::random(16);
+
             Log::info('Creating XUI client', [
-                'inbound_id' => $inboundId,
+                'inbound_ids' => $inboundIds,
                 'email' => $email,
                 'generated_uuid' => $uuid,
                 'generated_subId' => $subId
@@ -244,7 +373,7 @@ class XUIService
             // Attempt 1: Modern 3x-ui v3.6+ API endpoint (/panel/api/clients/add)
             $modernUrl = $this->baseUrl . $cleanBasePath . '/panel/api/clients/add';
             $modernPayload = [
-                'inboundIds' => [$inboundId],
+                'inboundIds' => $inboundIds,
                 'client' => [
                     'id' => $uuid,
                     'email' => $email,
@@ -258,7 +387,7 @@ class XUIService
                 ]
             ];
 
-            Log::info('Trying modern XUI clients/add endpoint', ['url' => $modernUrl, 'inbound_id' => $inboundId]);
+            Log::info('Trying modern XUI clients/add endpoint', ['url' => $modernUrl, 'inbound_ids' => $inboundIds]);
             $response = $this->getClient()->asJson()->post($modernUrl, $modernPayload);
 
             if ($response->status() === 200 && ($response->json('success') === true || Str::contains($response->body(), 'success'))) {
@@ -266,16 +395,39 @@ class XUIService
                 return array_merge($response->json() ?? ['success' => true], [
                     'generated_uuid' => $uuid,
                     'generated_subId' => $subId,
-                    'inbound_id' => $inboundId
+                    'inbound_id' => $primaryInboundId,
+                    'inbound_ids' => $inboundIds
                 ]);
+            }
+
+            $respBody = $response->body();
+            if (Str::contains($respBody, 'already in use') || Str::contains($respBody, 'already exists')) {
+                Log::info('Client email already in use during add, switching to update/attach', ['email' => $email]);
+                $this->updateClientByEmail($email, [
+                    'id' => $uuid,
+                    'subId' => $subId,
+                    'total' => $totalGB,
+                    'expiryTime' => $expiryTime,
+                ]);
+                $this->attachClient($email, $inboundIds);
+                $this->resetClientTrafficByEmail($email);
+
+                return [
+                    'success' => true,
+                    'msg' => 'Client updated and attached.',
+                    'generated_uuid' => $uuid,
+                    'generated_subId' => $subId,
+                    'inbound_id' => $primaryInboundId,
+                    'inbound_ids' => $inboundIds
+                ];
             }
 
             Log::warning('Modern XUI clients/add returned non-success, attempting legacy endpoints', [
                 'status' => $response->status(),
-                'body' => $response->body()
+                'body' => $respBody
             ]);
 
-            // Attempt 2: Legacy 3x-ui / 3x-ui v2.x form endpoints
+            // Attempt 2: Legacy 3x-ui / 3x-ui v2.x form endpoints for each inbound
             $clientSettings = [
                 'id' => $uuid,
                 'email' => $email,
@@ -297,41 +449,47 @@ class XUIService
 
             $lastError = $response->json('msg') ?? $response->body();
             $lastResponse = $response;
+            $successCount = 0;
 
-            foreach ($legacyEndpoints as $endpoint) {
-                $addClientUrl = $this->baseUrl . $endpoint;
-                Log::info('Trying legacy XUI addClient endpoint', ['url' => $addClientUrl, 'inbound_id' => $inboundId]);
-
-                $currentResponse = $this->getClient()->asForm()->post($addClientUrl, [
-                    'id' => $inboundId,
-                    'settings' => $settingsJson,
-                ]);
-
-                $lastResponse = $currentResponse;
-                $status = $currentResponse->status();
-                $responseData = $currentResponse->json();
-
-                if ($status === 200 && isset($responseData['success']) && $responseData['success'] === true) {
-                    Log::info('Legacy XUI addClient successful', ['endpoint' => $endpoint]);
-                    return array_merge($responseData, [
-                        'generated_uuid' => $uuid,
-                        'generated_subId' => $subId,
-                        'inbound_id' => $inboundId
+            foreach ($inboundIds as $inbId) {
+                foreach ($legacyEndpoints as $endpoint) {
+                    $addClientUrl = $this->baseUrl . $endpoint;
+                    $currentResponse = $this->getClient()->asForm()->post($addClientUrl, [
+                        'id' => $inbId,
+                        'settings' => $settingsJson,
                     ]);
-                } else {
-                    $lastError = $responseData['msg'] ?? $currentResponse->body();
+
+                    $lastResponse = $currentResponse;
+                    $responseData = $currentResponse->json();
+
+                    if ($currentResponse->status() === 200 && isset($responseData['success']) && $responseData['success'] === true) {
+                        $successCount++;
+                        break;
+                    } else {
+                        $lastError = $responseData['msg'] ?? $currentResponse->body();
+                    }
                 }
+            }
+
+            if ($successCount > 0) {
+                return [
+                    'success' => true,
+                    'generated_uuid' => $uuid,
+                    'generated_subId' => $subId,
+                    'inbound_id' => $primaryInboundId,
+                    'inbound_ids' => $inboundIds
+                ];
             }
 
             $errorMsg = "All addClient endpoints failed. Last error: " . ($lastError ?: 'Unknown error');
             Log::error('XUI addClient failed completely', [
-                'inbound_id' => $inboundId,
+                'inbound_ids' => $inboundIds,
                 'last_error' => $lastError,
                 'last_response_body' => $lastResponse?->body()
             ]);
             return ['success' => false, 'msg' => $errorMsg];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Exception in XUI addClient', [
                 'message' => $e->getMessage(),
                 'inbound_id' => $inboundId,

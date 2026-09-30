@@ -566,20 +566,21 @@ class OrderController extends Controller
                         $settings->get('xui_pass')
                     );
 
-                    $defaultInboundId = $settings->get('xui_default_inbound_id');
-
-                    if (empty($defaultInboundId)) {
-                        throw new \Exception('تنظیمات اینباند پیش‌فرض برای X-UI یافت نشد.');
+                    $targetInboundIds = [3, 7, 11, 14];
+                    $settingInbounds = $settings->get('xui_target_inbounds');
+                    if (!empty($settingInbounds)) {
+                        $parsed = is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true);
+                        if (!is_array($parsed)) {
+                            $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
+                        }
+                        if (!empty($parsed)) {
+                            $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
+                        }
                     }
 
-                    $numericInboundId = (int) $defaultInboundId;
-                    $inbound = Inbound::whereJsonContains('inbound_data->id', $numericInboundId)->first();
-
-                    if (!$inbound || !$inbound->inbound_data) {
-                        throw new \Exception("اینباند با ID {$defaultInboundId} در دیتابیس یافت نشد.");
-                    }
-
-                    $inboundData = $inbound->inbound_data;
+                    $primaryInboundId = $targetInboundIds[0] ?? (int) $settings->get('xui_default_inbound_id', 3);
+                    $inbound = Inbound::whereJsonContains('inbound_data->id', $primaryInboundId)->first() ?: Inbound::first();
+                    $inboundData = $inbound ? (is_string($inbound->inbound_data) ? json_decode($inbound->inbound_data, true) : $inbound->inbound_data) : [];
 
                     if (!$xuiService->login()) {
                         throw new \Exception('خطا در لاگین به پنل X-UI.');
@@ -591,51 +592,12 @@ class OrderController extends Controller
                         'expiryTime' => $timestamp * 1000
                     ];
 
-                    // ==========================================
-                    // تمدید سرویس در X-UI
-                    // ==========================================
-                    if ($isRenewal) {
-                        $linkType = $settings->get('xui_link_type', 'single');
-                        $originalConfig = $originalOrder->config_details;
-
-                        // پیدا کردن کلاینت توسط ایمیل
-                        $clients = $xuiService->getClients($inboundData['id']);
-
-                        if (empty($clients)) {
-                            throw new \Exception('❌ هیچ کلاینتی در اینباند یافت نشد.');
-                        }
-
-                        $client = collect($clients)->firstWhere('email', $uniqueUsername);
-
-                        if (!$client) {
-                            throw new \Exception("❌ کلاینت با ایمیل {$uniqueUsername} یافت نشد. امکان تمدید وجود ندارد.");
-                        }
-
-                        // آماده‌سازی داده برای بروزرسانی
-                        $clientData['id'] = $client['id'];
-
-                        // اگرلینک subscription است، subId را هم اضافه کن
-                        if ($linkType === 'subscription' && isset($client['subId'])) {
-                            $clientData['subId'] = $client['subId'];
-                        }
-
-                        // آپدیت کلاینت
-                        $response = $xuiService->updateClient($inboundData['id'], $client['id'], $clientData);
-
-                        if ($response && isset($response['success']) && $response['success']) {
-                            $finalConfig = $originalConfig; // لینک قبلی
-                            $success = true;
-                        } else {
-                            $errorMsg = $response['msg'] ?? 'خطای نامشخص';
-                            throw new \Exception("❌ خطا در بروزرسانی کلاینت: " . $errorMsg);
-                        }
+                    $linkType = $settings->get('xui_link_type', 'single');
+                    if ($linkType === 'subscription') {
+                        $clientData['subId'] = Str::random(16);
                     }
 
-                    // ==========================================
-                    // سفارش جدید در X-UI
-                    // ==========================================
-                    else {
-                        $response = $xuiService->addClient($inboundData['id'], $clientData);
+                    $response = $xuiService->addClient($targetInboundIds, $clientData);
 
                         if ($response && isset($response['success']) && $response['success']) {
                             $linkType = $settings->get('xui_link_type', 'single');
@@ -685,7 +647,6 @@ class OrderController extends Controller
                             $errorMsg = $response['msg'] ?? 'خطای نامشخص';
                             throw new \Exception('خطا در ساخت کاربر در پنل X-UI: ' . $errorMsg);
                         }
-                    }
 
                     if (!$success) {
                         throw new \Exception('خطا در ارتباط با سرور برای فعال‌سازی سرویس.');

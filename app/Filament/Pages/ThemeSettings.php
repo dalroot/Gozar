@@ -45,6 +45,10 @@ class ThemeSettings extends Page implements HasForms
             if ($key === 'xui_default_inbound_id' && $value !== null) {
                 $settings[$key] = (string) $value;
             }
+            if ($key === 'xui_target_inbounds' && !empty($value)) {
+                $decoded = is_string($value) ? json_decode($value, true) : $value;
+                $settings[$key] = is_array($decoded) ? array_map('strval', $decoded) : [];
+            }
         }
 
         $this->form->fill(array_merge([
@@ -53,6 +57,7 @@ class ThemeSettings extends Page implements HasForms
             'xui_user' => null,
             'xui_pass' => null,
             'xui_default_inbound_id' => null,
+            'xui_target_inbounds' => ['3', '7', '11', '14'],
             'xui_link_type' => 'single',
             'marzban_host' => null,
             'marzban_sudo_username' => null,
@@ -426,7 +431,37 @@ class ThemeSettings extends Page implements HasForms
                                         ->searchable()
                                         ->preload()
                                         ->placeholder('ابتدا Sync از X-UI را بزنید و صفحه را رفرش کنید')
-                                        ->helperText('این اینباند برای پرداخت‌های خودکار استفاده می‌شود'),
+                                        ->helperText('این اینباند به عنوان اینباند پایه در لینک‌های تک‌کانفیگ استفاده می‌شود'),
+
+                                    Select::make('xui_target_inbounds')
+                                        ->label('اینباندهای اشتراک (تحویل همزمان کانفیگ‌ها)')
+                                        ->multiple()
+                                        ->options(function () {
+                                            $options = [];
+                                            $inbounds = \App\Models\Inbound::all();
+
+                                            foreach ($inbounds as $inbound) {
+                                                $data = $inbound->inbound_data;
+                                                if (!is_array($data) || !isset($data['id'])) {
+                                                    continue;
+                                                }
+
+                                                $panelId = (string) $data['id'];
+                                                $options[$panelId] = sprintf(
+                                                    '%s (ID: %s) - %s:%s',
+                                                    $data['remark'] ?? 'بدون عنوان',
+                                                    $panelId,
+                                                    strtoupper($data['protocol'] ?? 'unknown'),
+                                                    $data['port'] ?? '-'
+                                                );
+                                            }
+
+                                            return $options;
+                                        })
+                                        ->native(false)
+                                        ->searchable()
+                                        ->preload()
+                                        ->helperText('اینباندهایی که هنگام خرید، تمدید یا تایید سرویس، به صورت خودکار به سابسکریپشن کاربر متصل می‌شوند (پیش‌فرض: ۳، ۷، ۱۱، ۱۴)'),
 
                                     Radio::make('xui_link_type')->label('نوع لینک تحویلی')->options(['single' => 'لینک تکی', 'subscription' => 'لینک سابسکریپشن'])->default('single')
                                         ->required(),
