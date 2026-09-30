@@ -67,7 +67,7 @@ final class RozanehExperience
                 $this->button('📖 راهنمای اتصال', 'sec_tutorial', 'brand'),
             ],
             [
-                $this->button('👨🏻‍💻 ارتباط با پشتیبان انسانی', 'sec_human', 'support', 'success'),
+                $this->button('👨🏻‍💻 ارتباط با پشتیبان (@RoozanehHelp)', 'sec_human', 'support', 'success'),
             ],
         ];
     }

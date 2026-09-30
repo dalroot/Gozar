@@ -3990,10 +3990,18 @@ class WebhookController extends Controller
             }
         }
 
-        $keyboard = Keyboard::make()->inline()->row([
-            $this->makeInlineButton(['text' => '📝 تیکت جدید', 'callback_data' => '/support_new', 'style' => 'success']),
-            $this->makeInlineButton(['text' => '📖 راهنما و آموزش‌ها', 'callback_data' => '/tutorials', 'style' => 'primary'])
-        ]);
+        $keyboard = Keyboard::make()->inline()
+            ->row([
+                $this->makeInlineButton([
+                    'text' => '👨🏻‍💻 پشتیبانی آنلاین تلگرام (@RoozanehHelp)',
+                    'url' => 'https://t.me/RoozanehHelp',
+                    'style' => 'success'
+                ]),
+            ])
+            ->row([
+                $this->makeInlineButton(['text' => '📝 ثبت تیکت جدید', 'callback_data' => '/support_new', 'style' => 'primary']),
+                $this->makeInlineButton(['text' => '📖 راهنما و آموزش‌ها', 'callback_data' => '/tutorials', 'style' => 'primary'])
+            ]);
         foreach ($tickets as $ticket) {
             if ($ticket->status !== 'closed') {
                 $keyboard->row([
@@ -4002,7 +4010,7 @@ class WebhookController extends Controller
                 ]);
             }
         }
-        $keyboard->row([$this->makeInlineButton(['text' => '🏠 خانه', 'callback_data' => '/start', 'style' => 'danger'])]);
+        $keyboard->row([$this->makeInlineButton(['text' => '🏠 بازگشت به خانه', 'callback_data' => '/start', 'style' => 'danger'])]);
         $this->sendOrEditMessage($user->telegram_chat_id, $message, $keyboard, $messageId);
     }
 
@@ -5536,26 +5544,31 @@ I am here to build the most secure and stable connection path for you.
         return Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton([
-                    'text' => '🛍️ خرید یا تمدید اشتراک',
+                    'text' => '🛍️ خرید اشتراک',
                     'callback_data' => '/plans',
                     'style' => 'primary',
                 ]),
-            ])
-            ->row([
                 $this->makeInlineButton([
-                    'text' => '🎁 دریافت تست رایگان',
+                    'text' => '🎁 تست رایگان',
                     'callback_data' => 'trial_request',
                     'style' => 'success',
                 ]),
+            ])
+            ->row([
                 $this->makeInlineButton([
                     'text' => '📦 سرویس‌های من',
                     'callback_data' => '/my_services',
                     'style' => 'primary',
                 ]),
+                $this->makeInlineButton([
+                    'text' => '💳 کیف پول',
+                    'callback_data' => '/wallet',
+                    'style' => 'primary',
+                ]),
             ])
             ->row([
                 $this->makeInlineButton([
-                    'text' => '🤖 پشتیبانی هوشمند (فرایدی)',
+                    'text' => '🤖 پشتیبانی هوشمند',
                     'callback_data' => '/support_menu',
                     'style' => 'success',
                 ]),
@@ -5566,11 +5579,6 @@ I am here to build the most secure and stable connection path for you.
                 ]),
             ])
             ->row([
-                $this->makeInlineButton([
-                    'text' => '💳 کیف پول و پرداخت',
-                    'callback_data' => '/wallet',
-                    'style' => 'primary',
-                ]),
                 $this->makeInlineButton([
                     'text' => '✨ امکانات بیشتر',
                     'callback_data' => '/more',
@@ -5594,24 +5602,6 @@ I am here to build the most secure and stable connection path for you.
                     'style' => 'primary',
                 ]),
             ]);
-
-        try {
-            $webAppUrl = trim((string) route('webapp.index'));
-            if (str_starts_with($webAppUrl, 'http://')) {
-                $webAppUrl = str_replace('http://', 'https://', $webAppUrl);
-            }
-            if ($webAppUrl !== '') {
-                $keyboard->row([
-                    $this->makeInlineButton([
-                        'text' => '🌐 پنل کاربری تحت وب',
-                        'web_app' => ['url' => $webAppUrl],
-                        'style' => 'primary',
-                    ]),
-                ]);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('WebApp route is unavailable in more menu', ['error' => $e->getMessage()]);
-        }
 
         try {
             $channel = $this->settings->get('telegram_channel_url')
@@ -5644,7 +5634,7 @@ I am here to build the most secure and stable connection path for you.
 
         $text = "✈️ <b>امکانات بیشتر روزنه</b>\n";
         $text .= "━━━━━━━━━━━━━━━━━━━━\n";
-        $text .= "هدایای معرفی، پنل وب، کانال رسمی و اطلاعات روزنه از این بخش در دسترس شماست.";
+        $text .= "هدایای معرفی، کانال رسمی و اطلاعات روزنه از این بخش در دسترس شماست.";
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
     }
     protected function handleAdminRejectOrder($adminChatId, $orderId, $callbackQueryId, $messageId)

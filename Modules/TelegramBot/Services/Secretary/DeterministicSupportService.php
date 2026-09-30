@@ -300,7 +300,9 @@ class DeterministicSupportService
 
     private function human(): array
     {
-        return $this->text('درخواست ارتباط با پشتیبان انسانی ثبت شد. سابقهٔ گفتگو و بررسی‌های انجام‌شده برای پشتیبان ارسال شده است؛ نیازی نیست توضیحات قبلی را دوباره بنویسید و گفتگو از همین‌جا ادامه پیدا می‌کند.');
+        return $this->text("درخواست ارتباط با پشتیبان انسانی ثبت شد.\nسابقهٔ گفتگو برای پشتیبان ارسال شده است.\n\nهمچنین می‌توانید مستقیماً در تلگرام با کارشناس پشتیبانی در ارتباط باشید:\n👨🏻‍💻 @RoozanehHelp", [
+            [['text' => '👨🏻‍💻 پیام به پشتیبانی تلگرام (@RoozanehHelp)', 'url' => 'https://t.me/RoozanehHelp']]
+        ]);
     }
 
     private function mainMenuButtons(): array
@@ -310,7 +312,7 @@ class DeterministicSupportService
 
     private function humanButton(): array
     {
-        return [[['text' => '👨🏻‍💻 ارتباط با پشتیبان انسانی', 'callback_data' => 'sec_human']]];
+        return [[['text' => '👨🏻‍💻 ارتباط با پشتیبان (@RoozanehHelp)', 'url' => 'https://t.me/RoozanehHelp']]];
     }
 
     private function verificationRequired(): array
