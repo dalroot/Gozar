@@ -124,7 +124,7 @@ class WebhookController extends Controller
         }
     }
 
-    public function sendToLogChannel(string $message, string $parseMode = 'HTML'): bool
+    public function sendToLogChannel(string $message, string $parseMode = 'HTML', $replyMarkup = null): bool
     {
         try {
             if ($this->settings->isEmpty()) {
@@ -140,12 +140,17 @@ class WebhookController extends Controller
 
             Telegram::setAccessToken(trim($botToken, '"\' '));
 
-            Telegram::sendMessage([
+            $params = [
                 'chat_id' => $logChannelId,
                 'text' => $message,
                 'parse_mode' => $parseMode,
                 'disable_web_page_preview' => true,
-            ]);
+            ];
+            if ($replyMarkup) {
+                $params['reply_markup'] = $replyMarkup;
+            }
+
+            Telegram::sendMessage($params);
 
             Log::info("✅ Log notification sent successfully to channel {$logChannelId}");
             return true;
@@ -1048,11 +1053,11 @@ class WebhookController extends Controller
 
                     $this->sendUserReceiptConfirmation($chatId);
 
-                    $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name) . "</a>";
+                    $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " ({$user->telegram_chat_id})</a>";
                     $this->sendToLogChannel(
                         "🧾 <b>ثبت فیش واریزی جدید (تصویر فیش)</b>\n\n" .
                         "🔹 <b>شماره سفارش:</b> #{$orderId}\n" .
-                        "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
+                        "🔹 <b>کاربر:</b> {$userLink}\n" .
                         "🔹 <b>مبلغ:</b> " . number_format($order->amount) . " تومان\n" .
                         "🔹 <b>نوع:</b> " . ($order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول')) . "\n" .
                         "🔹 <b>وضعیت:</b> ⏳ ارسال شد به کانال تایید فیش‌ها برای تایید مدیریت\n" .
@@ -1142,11 +1147,11 @@ class WebhookController extends Controller
 
                 $this->sendUserReceiptConfirmation($chatId);
 
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " ({$user->telegram_chat_id})</a>";
                 $this->sendToLogChannel(
                     "🧾 <b>ثبت فیش واریزی جدید (متنی / شماره پیگیری)</b>\n\n" .
                     "🔹 <b>شماره سفارش:</b> #{$orderId}\n" .
-                    "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
+                    "🔹 <b>کاربر:</b> {$userLink}\n" .
                     "🔹 <b>مبلغ:</b> " . number_format($order->amount) . " تومان\n" .
                     "🔹 <b>متن/کد پیگیری:</b> <code>" . htmlspecialchars($text) . "</code>\n" .
                     "🔹 <b>وضعیت:</b> ⏳ در انتظار تایید مدیریت\n" .
@@ -1762,16 +1767,22 @@ class WebhookController extends Controller
                 $locationFlag = '🦅';
             }
 
-            $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name) . "</a>";
+            $userNameDisplay = htmlspecialchars($user->name ?: 'کاربر');
+            $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">{$userNameDisplay} ({$user->telegram_chat_id})</a>";
+            $logKeyboard = Keyboard::make()->inline()->row([
+                $this->makeInlineButton(['text' => '👤 ارسال پیام به کاربر (پی‌وی)', 'url' => "tg://user?id={$user->telegram_chat_id}"])
+            ]);
             $this->sendToLogChannel(
                 "🛍 <b>خرید و فعال‌سازی سرویس با کیف پول</b>\n\n" .
                 "🔹 <b>سفارش:</b> #{$order->id}\n" .
-                "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
+                "🔹 <b>کاربر:</b> {$userLink}\n" .
                 "🔹 <b>پلن:</b> " . htmlspecialchars($order->plan->name ?? $plan->name) . "\n" .
                 "🔹 <b>مبلغ پرداختی:</b> " . number_format($order->amount) . " تومان\n" .
                 "🔹 <b>نام کاربری پنل:</b> <code>{$order->panel_username}</code>\n" .
                 "🔹 <b>سرور:</b> {$locationFlag} {$locationName}\n" .
-                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                'HTML',
+                $logKeyboard
             );
 
             // ساخت پیام کامل با ظاهر پریمیوم
@@ -6233,13 +6244,13 @@ I am here to build the most secure and stable connection path for you.
                 ]);
 
                 $user = $order->user;
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " ({$user->telegram_chat_id})</a>";
                 $adminName = $adminUser ? ($adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminUser->getFirstName()) : 'مدیریت';
                 $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
 
                 $this->sendToLogChannel(
                     "✅ <b>فیش سفارش #{$orderId} توسط ادمین تایید و فعال شد</b>\n\n" .
-                    "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
+                    "🔹 <b>کاربر:</b> {$userLink}\n" .
                     "🔹 <b>مبلغ:</b> " . number_format($order->amount) . " تومان\n" .
                     "🔹 <b>نوع:</b> {$orderType}\n" .
                     "🔹 <b>ادمین تاییدکننده:</b> " . htmlspecialchars($adminName) . "\n" .
