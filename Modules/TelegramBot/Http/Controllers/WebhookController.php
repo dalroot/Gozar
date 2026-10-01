@@ -914,6 +914,37 @@ class WebhookController extends Controller
         elseif (Str::startsWith($data, 'direct_configs_trial_')) {
             $this->sendDirectConfigsForTrial($user);
         }
+        elseif ($data === 'trial_feedback_satisfied') {
+            try {
+                Telegram::answerCallbackQuery([
+                    'callback_query_id' => $callbackQuery->getId(),
+                    'text' => 'خیلی خوشحالیم که راضی هستید! هر زمان نیاز به راهنمایی داشتید در کنارتون هستیم 🤍',
+                    'show_alert' => true,
+                ]);
+            } catch (\Exception $e) {}
+            $this->sendToLogChannel("✅ <b>بازخورد تست:</b> کاربر {$user->name} (<code>{$user->telegram_chat_id}</code>) اعلام کرد از تست راضی است و مشکلی ندارد.");
+            return;
+        }
+        elseif ($data === 'trial_feedback_need_help') {
+            try {
+                Telegram::answerCallbackQuery([
+                    'callback_query_id' => $callbackQuery->getId(),
+                    'text' => 'کارشناسان پشتیبانی آماده راهنمایی شما هستند.',
+                    'show_alert' => false,
+                ]);
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => "👨🏻‍💻 <b>همراه گرامی روزنه؛</b>\n\nهمکاران ما در بخش پشتیبانی فنی آماده بررسی مشکل اتصال شما هستند.\n\nلطفاً برای راهنمایی فوری به آیدی پشتیبانی پیام دهید:\n👉 @RoozanehHelp",
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => Keyboard::make()->inline()->row([
+                        $this->makeInlineButton(['text' => '💬 پیام به پشتیبان انسانی', 'url' => 'https://t.me/RoozanehHelp']),
+                        $this->makeInlineButton(['text' => '📚 آموزش اتصال', 'callback_data' => '/tutorials']),
+                    ])
+                ]);
+            } catch (\Exception $e) {}
+            $this->sendToLogChannel("⚠️ <b>درخواست راهنمایی تست:</b> کاربر {$user->name} (<code>{$user->telegram_chat_id}</code>) اعلام کرد در اتصال اکانت تست به راهنمایی نیاز دارد.");
+            return;
+        }
 
         elseif (Str::startsWith($data, 'remove_discount_')) {
             $orderId = Str::after($data, 'remove_discount_');
