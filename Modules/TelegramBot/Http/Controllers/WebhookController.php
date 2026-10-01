@@ -430,15 +430,13 @@ class WebhookController extends Controller
         } elseif (str_contains($normalizedText, 'آموزشاتصال') || str_contains($normalizedText, 'راهنمایاتصال') || $text === '/tutorials') {
             $this->sendTutorialsMenu($chatId);
         } elseif (str_contains($normalizedText, 'تسترایگان') || str_contains($normalizedText, 'اکانتتست') || $text === '/trial') {
-            $telegramUsername = $message->getFrom()->getUsername();
-            $this->handleTrialRequest($user, $telegramUsername);
+            $this->handleTrialRequest($user);
         } elseif ($text === '/profile') {
             $this->sendProfile($user);
         } elseif ($text === '/about' || str_contains($normalizedText, 'درباره')) {
             $this->sendAbout($chatId);
         } elseif ($text === '/start trial') {
-            $telegramUsername = $message->getFrom()->getUsername();
-            $this->handleTrialRequest($user, $telegramUsername);
+            $this->handleTrialRequest($user);
         } elseif (preg_match('/^\/start\s+plan_(\d+)$/', $text, $matches)) {
             $plan = Plan::whereKey((int) $matches[1])->where('is_active', true)->first();
             if (!$plan) {
@@ -807,8 +805,7 @@ class WebhookController extends Controller
             return;
         }
         elseif ($data === 'trial_request') {
-            $telegramUsername = $callbackQuery->getFrom()->getUsername();
-            $this->handleTrialRequest($user, $telegramUsername, $callbackQuery->getId(), $messageId);
+            $this->handleTrialRequest($user, null, $callbackQuery->getId(), $messageId);
             return;
         }
         elseif (Str::startsWith($data, 'pay_wallet_')) {
@@ -3244,20 +3241,19 @@ class WebhookController extends Controller
                     throw new \Exception("❌ خطا در لاگین به پنل X-UI");
                 }
 
-                // تعیین اینباندهای هدف
-                $targetInboundIds = [3, 7, 11, 14];
+                // تعیین اینباندهای هدف به صورت کاملاً پویا و بدون هاردکد
                 if ($isMultiServer && $targetServer) {
                     $targetInboundIds = [$inboundId];
                 } else {
                     $settingInbounds = $settings->get('xui_target_inbounds');
-                    if (!empty($settingInbounds)) {
-                        $parsed = is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true);
-                        if (!is_array($parsed)) {
-                            $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
-                        }
-                        if (!empty($parsed)) {
-                            $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
-                        }
+                    $parsed = !empty($settingInbounds) ? (is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true)) : null;
+                    if (!is_array($parsed) && !empty($settingInbounds)) {
+                        $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
+                    }
+                    if (!empty($parsed)) {
+                        $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
+                    } else {
+                        $targetInboundIds = $xui->getActiveInboundIds();
                     }
                 }
 
@@ -4530,25 +4526,15 @@ class WebhookController extends Controller
             $volumeMB = (int) $settings->get('trial_volume_mb', 1024);
             $durationHours = 0; // تست حجمی است و محدودیت زمانی ندارد.
 
-            // ایجاد یوزرنیم: اولویت با یوزرنیم تلگرام، وگرنه آیدی عددی
-            $usernameBase = !empty($extraUsername) ? $extraUsername : $user->telegram_chat_id;
-            
-            // تمیز کردن یوزرنیم (حذف کاراکترهای غیرمجاز)
-            $usernameBase = preg_replace('/[^a-zA-Z0-9_]/', '', $usernameBase);
-            
-            $uniqueUsername = "trial_" . $usernameBase;
-            if ($currentTrials > 0 || strlen($usernameBase) < 3) {
-                $uniqueUsername .= "_" . ($currentTrials + 1);
-            } else {
-                $uniqueUsername .= "_" . rand(100, 999);
-            }
+            // ایجاد نام کاربری استاندارد و تمیز روزنه (بدون افشای نام کاربری یا آیدی شخصی تلگرام)
+            $uniqueUsername = "rz_test_" . $user->id . "_" . Str::lower(Str::random(4));
 
             $expiresAt = null;
             $dataLimitBytes = $volumeMB * 1024 * 1024;
 
             $configLink = null;
-            $locationFlag = '🏳️';
-            $locationName = 'نامشخص';
+            $locationFlag = '🇩🇪🇳🇱';
+            $locationName = '🇩🇪 آلمان و 🇳🇱 هلند';
 
             $this->updateProgressMessage($chatId, $loadingMsgId, 40, 'اتصال به پنل X-UI و ثبت کاربر...');
 
@@ -4818,57 +4804,50 @@ class WebhookController extends Controller
             if (!$xuiService->login()) {
                 throw new \Exception('خطا در لاگین به پنل X-UI.');
             }
-            $inboundData = null;
+            $targetInboundIds = [];
             if ($targetServer) {
-                $inbounds = $xuiService->getInbounds();
-                foreach ($inbounds as $rem) {
-                    if ($rem['id'] == $inboundId) { $inboundData = $rem; break; }
-                }
+                $targetInboundIds = [$inboundId];
             } else {
-                // 1. Priority: check trial_inbound_ids array from settings
-                $trialInboundIdsRaw = $settings->get('trial_inbound_ids');
-                $trialInboundIds = is_string($trialInboundIdsRaw) ? json_decode($trialInboundIdsRaw, true) : (is_array($trialInboundIdsRaw) ? $trialInboundIdsRaw : []);
-
-                $inboundModel = null;
-                if (!empty($trialInboundIds) && is_array($trialInboundIds)) {
-                    $inboundModel = Inbound::whereIn('id', $trialInboundIds)->inRandomOrder()->first();
-                }
-
-                if (!$inboundModel) {
-                    $singleTrialId = $settings->get('trial_inbound_id');
-                    if ($singleTrialId) {
-                        $inboundModel = Inbound::find($singleTrialId);
-                    }
-                }
-
-                if (!$inboundModel && !empty($inboundId)) {
-                    $inboundModel = Inbound::whereJsonContains('inbound_data->id', (int)$inboundId)->first();
-                }
-
-                if (!$inboundModel) {
-                    $inboundModel = Inbound::first();
-                }
-
-                if ($inboundModel) {
-                    $inboundData = is_string($inboundModel->inbound_data) ? json_decode($inboundModel->inbound_data, true) : $inboundModel->inbound_data;
+                $targetInboundIds = $xuiService->getActiveInboundIds();
+                if (empty($targetInboundIds)) {
+                    $defInb = (int) $settings->get('xui_default_inbound_id', 3);
+                    $targetInboundIds = $defInb > 0 ? [$defInb] : [];
                 }
             }
 
-            if (!$inboundData) {
-                $liveInbounds = $xuiService->getInbounds();
-                if (!empty($liveInbounds)) {
-                    $inboundData = $liveInbounds[0];
-                }
+            if (empty($targetInboundIds)) {
+                throw new \Exception('هیچ اینباند فعالی در پنل X-UI یافت نشد.');
             }
 
-            if (!$inboundData) throw new \Exception('اینباند مورد نظر یافت نشد.');
+            $primaryInboundId = $targetInboundIds[0];
+            $inboundData = null;
+            $allInbounds = $xuiService->getInbounds();
+            foreach ($allInbounds as $rem) {
+                if (($rem['id'] ?? null) == $primaryInboundId) {
+                    $inboundData = $rem;
+                    break;
+                }
+            }
+            if (!$inboundData && !empty($allInbounds)) {
+                $inboundData = $allInbounds[0];
+            }
+
+            if (!$inboundData) throw new \Exception('اطلاعات اینباند مورد نظر یافت نشد.');
+
+            if ($locationName === 'نامشخص') {
+                $locationName = '🇩🇪 آلمان و 🇳🇱 هلند';
+                $locationFlag = '🇩🇪🇳🇱';
+            }
+
             $clientData = [
                 'email' => $uniqueUsername,
                 'total' => $dataLimitBytes,
                 'expiryTime' => $expiresAt ? $expiresAt->timestamp * 1000 : 0,
             ];
             if ($linkType === 'subscription') $clientData['subId'] = Str::random(16);
-            $response = $xuiService->addClient($inboundData['id'], $clientData);
+
+            // اتصال کلاینت به تمامی اینباندهای فعال (بدون هاردکد)
+            $response = $xuiService->addClient($targetInboundIds, $clientData);
             if ($response && isset($response['success']) && $response['success']) {
                 $uuid = $response['generated_uuid'] ?? null;
                 if (!$uuid && isset($response['obj']['settings'])) {

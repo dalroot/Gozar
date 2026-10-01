@@ -209,20 +209,19 @@ class PaymentService
                 $xui = new XUIService($xuiHost, $xuiUser, $xuiPass);
                 if (!$xui->login()) throw new \Exception('خطا در لاگین X-UI');
 
-                // تعیین اینباندهای هدف
-                $targetInboundIds = [3, 7, 11, 14];
+                // تعیین اینباندهای هدف به صورت کاملاً پویا و بدون هاردکد
                 if ($targetServer) {
                     $targetInboundIds = [$inboundId];
                 } else {
                     $settingInbounds = $settings->get('xui_target_inbounds');
-                    if (!empty($settingInbounds)) {
-                        $parsed = is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true);
-                        if (!is_array($parsed)) {
-                            $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
-                        }
-                        if (!empty($parsed)) {
-                            $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
-                        }
+                    $parsed = !empty($settingInbounds) ? (is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true)) : null;
+                    if (!is_array($parsed) && !empty($settingInbounds)) {
+                        $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
+                    }
+                    if (!empty($parsed)) {
+                        $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
+                    } else {
+                        $targetInboundIds = $xui->getActiveInboundIds();
                     }
                 }
 

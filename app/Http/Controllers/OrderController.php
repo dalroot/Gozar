@@ -566,25 +566,25 @@ class OrderController extends Controller
                         $settings->get('xui_pass')
                     );
 
-                    $targetInboundIds = [3, 7, 11, 14];
+                    if (!$xuiService->login()) {
+                        throw new \Exception('خطا در لاگین به پنل X-UI.');
+                    }
+
+                    // تعیین اینباندهای هدف به صورت کاملاً پویا و بدون هاردکد
                     $settingInbounds = $settings->get('xui_target_inbounds');
-                    if (!empty($settingInbounds)) {
-                        $parsed = is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true);
-                        if (!is_array($parsed)) {
-                            $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
-                        }
-                        if (!empty($parsed)) {
-                            $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
-                        }
+                    $parsed = !empty($settingInbounds) ? (is_array($settingInbounds) ? $settingInbounds : json_decode($settingInbounds, true)) : null;
+                    if (!is_array($parsed) && !empty($settingInbounds)) {
+                        $parsed = array_filter(array_map('trim', explode(',', (string)$settingInbounds)));
+                    }
+                    if (!empty($parsed)) {
+                        $targetInboundIds = array_values(array_unique(array_map('intval', $parsed)));
+                    } else {
+                        $targetInboundIds = $xuiService->getActiveInboundIds();
                     }
 
                     $primaryInboundId = $targetInboundIds[0] ?? (int) $settings->get('xui_default_inbound_id', 3);
                     $inbound = Inbound::whereJsonContains('inbound_data->id', $primaryInboundId)->first() ?: Inbound::first();
                     $inboundData = $inbound ? (is_string($inbound->inbound_data) ? json_decode($inbound->inbound_data, true) : $inbound->inbound_data) : [];
-
-                    if (!$xuiService->login()) {
-                        throw new \Exception('خطا در لاگین به پنل X-UI.');
-                    }
 
                     $clientData = [
                         'email' => $uniqueUsername,

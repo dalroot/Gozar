@@ -219,6 +219,43 @@ class XUIService
         }
     }
 
+    /**
+     * دریافت لیست شناسه تمامی اینباندهای فعال به صورت پویا (بدون هاردکد)
+     *
+     * @return int[]
+     */
+    public function getActiveInboundIds(): array
+    {
+        $ids = [];
+        try {
+            $inbounds = $this->getInbounds();
+            foreach ($inbounds as $inbound) {
+                if (($inbound['enable'] ?? true) !== false && isset($inbound['id'])) {
+                    $ids[] = (int) $inbound['id'];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Error getting active inbounds from XUI panel: ' . $e->getMessage());
+        }
+
+        // اگر پنل موقتاً خروجی نداد، از اینباندهای فعال دیتابیس لوکال استفاده شود
+        if (empty($ids) && class_exists('\App\Models\Inbound')) {
+            try {
+                $dbInbounds = \App\Models\Inbound::all();
+                foreach ($dbInbounds as $dbInb) {
+                    $data = is_string($dbInb->inbound_data) ? json_decode($dbInb->inbound_data, true) : $dbInb->inbound_data;
+                    if (($data['enable'] ?? true) !== false && isset($data['id'])) {
+                        $ids[] = (int) $data['id'];
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Error getting inbounds from DB: ' . $e->getMessage());
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids)));
+    }
+
     public function getClientByEmail(string $email): ?array
     {
         if (!$this->login()) {

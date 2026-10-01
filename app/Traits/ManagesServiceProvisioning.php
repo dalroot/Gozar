@@ -111,21 +111,25 @@ trait ManagesServiceProvisioning
                 }
 
             } elseif ($panelType === 'xui') {
-                $inboundId = $settings->get('xui_default_inbound_id');
-                if (!$inboundId) {
-                    $this->handleProvisioningError('اینباند XUI در تنظیمات ست نشده.', $isTelegramContext); return false;
-                }
                 $xuiService = new XUIService($settings->get('xui_host'), $settings->get('xui_user'), $settings->get('xui_pass'));
                 if (!$xuiService->login()) {
                     $this->handleProvisioningError('خطا در لاگین به پنل X-UI.', $isTelegramContext); return false;
                 }
-                $inbound = Inbound::find($inboundId);
-                if (!$inbound || !$inbound->inbound_data) {
-                    $this->handleProvisioningError('اطلاعات اینباند پیش‌فرض X-UI یافت نشد.', $isTelegramContext); return false;
+
+                $targetInboundIds = $xuiService->getActiveInboundIds();
+                if (empty($targetInboundIds)) {
+                    $defId = (int) $settings->get('xui_default_inbound_id', 3);
+                    $targetInboundIds = $defId > 0 ? [$defId] : [];
                 }
 
-                $inboundData = json_decode($inbound->inbound_data, true);
-                // مطمئن شوید مدل Plan ستون data_limit_gb را دارد (در کد شما volume_gb بود، من به data_limit_gb تغییر دادم)
+                if (empty($targetInboundIds)) {
+                    $this->handleProvisioningError('هیچ اینباند فعالی در پنل X-UI یافت نشد.', $isTelegramContext); return false;
+                }
+
+                $primaryInboundId = $targetInboundIds[0];
+                $inbound = Inbound::whereJsonContains('inbound_data->id', $primaryInboundId)->first() ?: Inbound::first();
+                $inboundData = $inbound ? (is_string($inbound->inbound_data) ? json_decode($inbound->inbound_data, true) : $inbound->inbound_data) : [];
+
                 $clientData = ['email' => $uniqueUsername, 'total' => $plan->data_limit_gb * 1024 * 1024 * 1024, 'expiryTime' => $newExpiresAt->getTimestamp() * 1000];
 
                 if ($isRenewal) {
@@ -134,7 +138,7 @@ trait ManagesServiceProvisioning
                     return false;
                 }
 
-                $response = $xuiService->addClient($inboundData['id'], $clientData);
+                $response = $xuiService->addClient($targetInboundIds, $clientData);
 
                 if ($response && isset($response['success']) && $response['success']) {
                     $linkType = $settings->get('xui_link_type', 'single');
