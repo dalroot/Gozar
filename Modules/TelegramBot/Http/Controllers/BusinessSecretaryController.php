@@ -105,6 +105,25 @@ class BusinessSecretaryController extends Controller
                 return response()->json(['status' => 'bot_authored_business_message']);
             }
 
+            // هدایت پیام‌های مستقیم خود ربات به ربات فروشگاه و اکانت پشتیبانی (پیام‌های بیزینس @RoozanehHelp کاملاً دست‌نخورده می‌مانند)
+            if (!$isBusinessMessage) {
+                $redirectText = "درود بر شما 🌿\n\n" .
+                                "کلیه خدمات خرید اشتراک، دریافت تست رایگان ۲۴ ساعته و پشتیبانی فنی روزنه به ربات فروشگاه و اکانت پشتیبانی منتقل شده است:\n\n" .
+                                "🛍️ <b>ربات فروشگاه و تست:</b> @RoozanehNetBot\n" .
+                                "💬 <b>ارتباط با پشتیبانی:</b> @RoozanehHelp\n" .
+                                "🆔 <b>کانال رسمی:</b> @joinroozaneh\n\n" .
+                                "لطفاً جهت دریافت آنی خدمات، به بخش‌های بالا مراجعه فرمایید.";
+
+                $buttons = [
+                    [['text' => '🛍️ ورود به ربات فروشگاه', 'url' => 'https://t.me/RoozanehNetBot']],
+                    [['text' => '🎁 دریافت تست رایگان ۲۴ ساعته', 'url' => 'https://t.me/RoozanehNetBot?start=test']],
+                    [['text' => '💬 ارتباط با پشتیبانی روزنه', 'url' => 'https://t.me/RoozanehHelp']]
+                ];
+
+                $this->secretaryService->sendBusinessMessage(null, $chatId, $redirectText, $buttons);
+                return response()->json(['status' => 'direct_message_redirected']);
+            }
+
             $isAdminBusinessMessage = $isBusinessMessage && $chatId != $senderId;
             $normalizedAdminCommand = preg_replace('/\s+/u', ' ', mb_strtolower($text, 'UTF-8'));
             if ($isAdminBusinessMessage && preg_match('/^سکوت(?:\s+1)?$/u', $normalizedAdminCommand)) {
