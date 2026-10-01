@@ -435,8 +435,30 @@ class WebhookController extends Controller
             $this->sendProfile($user);
         } elseif ($text === '/about' || str_contains($normalizedText, 'درباره')) {
             $this->sendAbout($chatId);
-        } elseif ($text === '/start trial') {
+        } elseif ($text === '/start trial' || $text === '/start rayan_test' || $text === '/start fall_test') {
+            if ($text !== '/start trial') {
+                $campaignName = str_contains($text, 'rayan') ? 'رایان موزیک 🎵' : 'فروش پاییزه 🍂';
+                $username = $message->getFrom()->getUsername() ? '@' . $message->getFrom()->getUsername() : 'بدون یوزرنیم';
+                $alert = "🎁 <b>کلیک جدید از کمپین {$campaignName}</b>\n\n" .
+                         "👤 <b>کاربر:</b> <a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($user->name ?? 'کاربر') . "</a> ({$username})\n" .
+                         "🎯 <b>هدف:</b> دریافت تست رایگان ۲۴ ساعته\n" .
+                         "⏰ <b>زمان:</b> " . now()->format('H:i:s');
+                Telegram::sendMessage(['chat_id' => '8629398713', 'text' => $alert, 'parse_mode' => 'HTML']);
+                $this->sendToLogChannel($alert);
+            }
             $this->handleTrialRequest($user);
+            return;
+        } elseif ($text === '/start rayan' || $text === '/start rayan_buy' || $text === '/start fall_plans') {
+            $campaignName = str_contains($text, 'rayan') ? 'رایان موزیک 🎵' : 'فروش پاییزه 🍂';
+            $username = $message->getFrom()->getUsername() ? '@' . $message->getFrom()->getUsername() : 'بدون یوزرنیم';
+            $alert = "🛍️ <b>کلیک جدید از کمپین {$campaignName}</b>\n\n" .
+                     "👤 <b>کاربر:</b> <a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($user->name ?? 'کاربر') . "</a> ({$username})\n" .
+                     "🎯 <b>هدف:</b> مشاهده تعرفه‌ها و خرید اشتراک\n" .
+                     "⏰ <b>زمان:</b> " . now()->format('H:i:s');
+            Telegram::sendMessage(['chat_id' => '8629398713', 'text' => $alert, 'parse_mode' => 'HTML']);
+            $this->sendToLogChannel($alert);
+            $this->sendPlans($chatId);
+            return;
         } elseif (preg_match('/^\/start\s+plan_(\d+)$/', $text, $matches)) {
             $plan = Plan::whereKey((int) $matches[1])->where('is_active', true)->first();
             if (!$plan) {
