@@ -41,37 +41,24 @@ final class RozanehExperience
     public function assistantIntroduction(?string $name = null): string
     {
         $safeName = trim((string) $name);
-        $greeting = $safeName !== ''
+        $greeting = ($safeName !== '' && $safeName !== 'همراه گرامی')
             ? 'سلام <b>' . htmlspecialchars($safeName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ' عزیز</b>،'
-            : 'سلام،';
+            : 'سلام همراه گرامی،';
 
-        return $this->customEmoji('brand', '✈️') . '  <b>پشتیبانی ' . self::BRAND . "</b>\n\n" .
-            "{$greeting} من <b>" . self::ASSISTANT . "</b>، ربات دستیار هوشمند روزنه هستم 🤖\n\n" .
-            "برای تسریع امور شما، خدمات زیر را به‌صورت آنی انجام می‌دهم:\n" .
-            "📊 <b>استعلام حجم و زمان باقیمانده سرویس</b>\n" .
-            "🔗 <b>دریافت مجدد لینک‌های اتصال</b>\n" .
-            "🛠 <b>راهنمایی و رفع مشکل قطعی اتصال</b>\n\n" .
-            "👨🏻‍💻 <i>توجه: تیم پشتیبانی و ادمین روزنه پیام‌های شما را مستقیماً مطالعه می‌کنند و هر لحظه پاسخگوی شما خواهند بود.</i>\n\n" .
-            "🛍️ <i>برای خرید اشتراک جدید یا تمدید، لطفاً از ربات رسمی فروشگاه (@RoozanehNetBot) استفاده فرمایید.</i>";
+        return "{$greeting} من <b>" . self::ASSISTANT . "</b> دستیار هوشمند " . self::BRAND . " هستم 🤖\n\n" .
+            "من به سرورها متصلم و می‌تونم در چند ثانیه <b>حجم، روزهای باقی‌مانده و لینک اتصال</b> شما رو بررسی کنم.\n" .
+            "همچنین متن پیام‌های شما برای <b>همکاران پشتیبانی</b> ارسال می‌شود و در همین گفتگو پاسخگوی شما خواهند بود 🌿";
     }
 
     public function assistantMenu(): array
     {
         return [
             [
-                ['text' => '🛍️ خرید و تمدید اشتراک', 'url' => 'https://t.me/RoozanehNetBot'],
-                $this->button('🔍 بررسی سرویس من', 'diag_status', 'status'),
-            ],
-            [
-                $this->button('⚡ مشکل اتصال دارم', 'diag_start', 'secure'),
+                $this->button('📊 وضعیت و حجم اشتراک', 'diag_status', 'status'),
                 $this->button('🔗 دریافت لینک اتصال', 'sec_get_link', 'link'),
             ],
             [
-                ['text' => '🎁 دریافت تست رایگان', 'url' => 'https://t.me/RoozanehNetBot'],
-                $this->button('📖 راهنمای اتصال', 'sec_tutorial', 'brand'),
-            ],
-            [
-                $this->button('👨🏻‍💻 ارتباط با پشتیبان انسانی', 'sec_human', 'support', 'success'),
+                ['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot'],
             ],
         ];
     }

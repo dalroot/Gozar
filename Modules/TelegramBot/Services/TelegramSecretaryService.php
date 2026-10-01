@@ -64,10 +64,8 @@ class TelegramSecretaryService
     public function getUserData(int|string $chatId, ?string $username = null, ?string $fullName = null): array
     {
         $user = User::where('telegram_chat_id', (string)$chatId)->first();
-        $name = trim($fullName ?? ($user?->name ?? ''));
-        if (empty($name)) {
-            $name = $username ?? 'دوست گرامی';
-        }
+        $raw = trim($fullName ?? ($user?->name ?? ''));
+        $name = $this->customers->sanitizeName($raw ?: $username);
 
         return [
             'user'     => $user,

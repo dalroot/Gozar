@@ -29,10 +29,12 @@ class CustomerContextService
 
         $settings = Setting::query()->pluck('value', 'key');
 
+        $rawName = $fullName ?: ($user?->name ?: $username);
+
         return [
             'chat_id' => (string) $chatId,
             'username' => $username,
-            'name' => trim($fullName ?: ($user?->name ?: ($username ?: 'دوست عزیز'))),
+            'name' => $this->sanitizeName($rawName),
             'user' => $user,
             'is_verified' => $user !== null,
             'service' => $service,
@@ -40,6 +42,17 @@ class CustomerContextService
             'plans' => $this->catalog->activePlans(),
             'settings' => $settings,
         ];
+    }
+
+    public function sanitizeName(?string $name): string
+    {
+        $raw = trim((string) $name);
+        $clean = preg_replace('/[.\-_,،:;!؟?~`@#$%^&*()+=\[\]{}|\/\\\\<>]/u', '', $raw);
+        $clean = trim(preg_replace('/\s+/u', ' ', $clean));
+        if (mb_strlen($clean, 'UTF-8') >= 2) {
+            return $clean;
+        }
+        return 'همراه گرامی';
     }
 
     private function extractServiceLink(Order $order): ?string
