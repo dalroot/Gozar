@@ -443,7 +443,6 @@ class WebhookController extends Controller
                          "👤 <b>کاربر:</b> <a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($user->name ?? 'کاربر') . "</a> ({$username})\n" .
                          "🎯 <b>هدف:</b> دریافت تست رایگان ۲۴ ساعته\n" .
                          "⏰ <b>زمان:</b> " . now()->format('H:i:s');
-                Telegram::sendMessage(['chat_id' => '8629398713', 'text' => $alert, 'parse_mode' => 'HTML']);
                 $this->sendToLogChannel($alert);
             }
             $this->handleTrialRequest($user);
@@ -455,7 +454,6 @@ class WebhookController extends Controller
                      "👤 <b>کاربر:</b> <a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($user->name ?? 'کاربر') . "</a> ({$username})\n" .
                      "🎯 <b>هدف:</b> مشاهده تعرفه‌ها و خرید اشتراک\n" .
                      "⏰ <b>زمان:</b> " . now()->format('H:i:s');
-            Telegram::sendMessage(['chat_id' => '8629398713', 'text' => $alert, 'parse_mode' => 'HTML']);
             $this->sendToLogChannel($alert);
             $this->sendPlans($chatId);
             return;
