@@ -208,8 +208,21 @@ class BusinessSecretaryController extends Controller
             // ه) بافر کردن پیام ورودی
             $this->secretaryService->state->pushMessageToBuffer($chatId, $text);
 
-            // ایجاد تاخیر کوتاه برای تجمیع پیام‌های پشت سر هم کاربر
-            usleep(600000); // تجمیع کوتاه بدون اشغال طولانی worker
+            // ارسال اکشن typing برای حس پاسخ‌گویی طبیعی
+            $this->secretaryService->sendChatAction($businessConnectionId, $chatId, 'typing');
+
+            // ثبت زمان ورود برای مدیریت پیام‌های رگباری (Debounce)
+            $arrivalTime = microtime(true);
+            \Illuminate\Support\Facades\Cache::put("sec_msg_time_{$chatId}", $arrivalTime, 30);
+
+            // تاخیر هوشمند برای تجمیع پیام‌های پشت سر هم کاربر (۲.۵ ثانیه)
+            usleep(2500000);
+
+            // اگر کاربر پیام جدیدتری در این فاصله فرستاده باشد، این پردازش متوقف می‌شود تا پیام بعدی کل متن را تجمیع کند
+            $latestTime = (float) \Illuminate\Support\Facades\Cache::get("sec_msg_time_{$chatId}", 0);
+            if ($latestTime > $arrivalTime) {
+                return response()->json(['status' => 'waiting_for_more_messages']);
+            }
 
             // و) دریافت قفل اختصاصی برای پردازش تک‌نوبتی
             $lockAcquired = false;
@@ -236,17 +249,6 @@ class BusinessSecretaryController extends Controller
                 ]);
 
                 $progressMessageId = null;
-                $intent = $this->secretaryService->classifier->classify($aggregatedText);
-                if (in_array($intent, [
-                    \Modules\TelegramBot\Services\Secretary\IntentClassifier::STATUS,
-                    \Modules\TelegramBot\Services\Secretary\IntentClassifier::TECHNICAL,
-                ], true) || $this->secretaryService->state->getDiagnosis($chatId)) {
-                    $progressMessageId = $this->secretaryService->sendBusinessMessageWithId(
-                        $businessConnectionId,
-                        $chatId,
-                        '🔍 کاربر گرامی، در حال بررسی وضعیت واقعی اشتراک شما هستم؛ لطفاً چند لحظه منتظر بمانید…'
-                    );
-                }
 
                 // ز) پردازش متن تجمیع‌شده با هوش مصنوعی
                 $replyData = $this->secretaryService->processIncomingMessage($aggregatedText, $chatId, $username, $fullName);

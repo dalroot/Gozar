@@ -181,14 +181,23 @@ class TelegramSecretaryService
             ? ['text' => $humanText, 'buttons' => null]
             : $this->diagnosisReply($userMessage, $chatId, $context, $sideEffect);
 
-        // پاسخ عملیاتی قطعی است؛ AI فقط fallback پرسش‌های عمومی ناشناخته است.
+        // پاسخ عملیاتی قطعی است؛ بدون هوش مصنوعی خارجی
         $reply ??= $this->support->reply($sideEffect, $userMessage, $context);
         if ($humanTicketId && $reply) {
             $reply['text'] .= "\n\nشماره پیگیری درخواست شما: <code>#{$humanTicketId}</code>";
         }
         if ($reply === null) {
-            $text = $this->ai->generateReply($userMessage, $userData, $paymentData, $chatHistory, $isIntroduced);
-            $reply = ['text' => $text, 'buttons' => null];
+            // گزارش پیام متفرقه به ادمین و کانال لاگ
+            $this->notifier->notifyGeneralMessage(
+                $chatId,
+                $userData['fullName'],
+                $username,
+                $userMessage
+            );
+            $reply = [
+                'text' => "پیام شما دریافت شد و برای همکاران پشتیبانی انسانی ارسال گردید 🌿\nبه زودی پاسخ شما در همین گفتگو داده خواهد شد.\n\nدر صورتی که درخواست دیگری دارید، می‌توانید از گزینه‌های زیر استفاده کنید:",
+                'buttons' => $this->experience->assistantMenu(),
+            ];
         }
         // A first standalone thank-you should open with Friday's complete welcome,
         // not look like the welcome and a separate canned reply were glued together.
@@ -389,28 +398,29 @@ class TelegramSecretaryService
 
     private function startDiagnosis(int|string $chatId, array $ctx): array
     {
-        if (!$ctx['is_verified']) {
-            return $this->diagText('برای این گفتگو هنوز سرویس فعالی ثبت نشده است. می‌توانید همین‌جا تست رایگان بگیرید یا بسته بخرید؛ حساب روزنه هنگام ادامهٔ فرایند به‌صورت خودکار برایتان ساخته می‌شود.', [
-                [['text' => '⚡️ دریافت تست رایگان', 'callback_data' => 'sec_get_trial']],
-                [['text' => '🛍 خرید سرویس', 'callback_data' => 'sec_view_durations']],
-                [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
-            ]);
+        if (!$ctx['is_verified'] || !$ctx['service']) {
+            return $this->diagText(
+                "🛠️ <b>عیب‌یابی سرویس روزنه</b>\n\n" .
+                "روی این حساب تلگرام، هنوز اشتراک فعالی ثبت نشده است 🌿\n\n" .
+                "اگر با اکانت یا شماره دیگری خرید کرده‌اید، لطفاً <b>نام کاربری کانفیگ یا لینک اشتراک</b> خود را ارسال فرمایید تا همکاران پشتیبانی دستی بررسی نمایند.\n\n" .
+                "همچنین می‌توانید از گزینه‌های زیر استفاده فرمایید:",
+                [
+                    [['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                    [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                    [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
+                ]
+            );
         }
         $order = $ctx['service'];
-        if (!$order) {
-            return $this->diagText('سرویس فعالی برای این حساب پیدا نکردم. می‌تونید بسته جدید انتخاب کنید یا از پشتیبان انسانی کمک بگیرید.', [
-                [['text' => '🛍 مشاهده بسته‌ها', 'callback_data' => 'sec_view_durations']],
-                [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
-            ]);
-        }
         if ($order->expires_at && now()->gte($order->expires_at)) {
             return $this->support->reply(IntentClassifier::TECHNICAL, 'وصل نمیشه', $ctx);
         }
         $usage = $this->usage->get($order, $ctx['settings']);
         if ($usage && $usage['total_bytes'] > 0 && $usage['remaining_bytes'] <= 0) {
-            return $this->diagText('حجم سرویس شما به پایان رسیده و علت قطعی همین مورد است. برای اتصال دوباره لازم است بسته را تمدید یا حجم جدید تهیه کنید.', [
-                [['text' => '🔄 تمدید یا خرید', 'callback_data' => 'sec_view_durations']],
+            return $this->diagText('حجم سرویس شما به پایان رسیده و علت قطعی همین مورد است. برای اتصال دوباره لازم است بسته را در ربات فروشگاه تمدید کنید.', [
+                [['text' => '🔄 تمدید در ربات فروشگاه', 'url' => 'https://t.me/RoozanehNetBot']],
                 [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
             ]);
         }
         $this->state->setDiagnosis($chatId, ['step' => 'internet', 'started_at' => now()->toIso8601String()]);
@@ -632,6 +642,20 @@ class TelegramSecretaryService
         }
     }
 
+    public function sendChatAction(?string $businessConnectionId, int|string $chatId, string $action = 'typing'): bool
+    {
+        try {
+            $payload = ['chat_id' => $chatId, 'action' => $action];
+            if ($businessConnectionId) {
+                $payload['business_connection_id'] = $businessConnectionId;
+            }
+            Http::timeout(5)->post("https://api.telegram.org/bot{$this->botToken}/sendChatAction", $payload);
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     public function automationResumedReply(): array
     {
         return [
@@ -831,9 +855,12 @@ class TelegramSecretaryService
 
         $supportActions = [
             'diag_status' => 'وضعیت اشتراکم را بررسی کن',
+            'sec_status' => 'وضعیت اشتراکم را بررسی کن',
             'diag_start' => 'سرویسم وصل نمی‌شود',
+            'sec_diag' => 'سرویسم وصل نمی‌شود',
             'sec_get_link' => 'لینک اشتراکم را بده',
             'sec_tutorial' => 'راهنمای اتصال می‌خواهم',
+            'sec_apps' => 'راهنمای اتصال می‌خواهم',
             'sec_human' => 'پشتیبان انسانی می‌خواهم',
         ];
         $diagnosisActions = [

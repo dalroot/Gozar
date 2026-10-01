@@ -42,23 +42,35 @@ final class RozanehExperience
     {
         $safeName = trim((string) $name);
         $greeting = ($safeName !== '' && $safeName !== 'همراه گرامی')
-            ? 'سلام <b>' . htmlspecialchars($safeName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . ' عزیز</b>،'
-            : 'سلام همراه گرامی،';
+            ? 'سلام <b>' . htmlspecialchars($safeName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</b> عزیز 🌸'
+            : 'سلام همراه گرامی 🌸';
 
-        return "{$greeting} من <b>" . self::ASSISTANT . "</b> دستیار هوشمند " . self::BRAND . " هستم 🤖\n\n" .
-            "من به سرورها متصلم و می‌تونم در چند ثانیه <b>حجم، روزهای باقی‌مانده و لینک اتصال</b> شما رو بررسی کنم.\n" .
-            "همچنین متن پیام‌های شما برای <b>همکاران پشتیبانی</b> ارسال می‌شود و در همین گفتگو پاسخگوی شما خواهند بود 🌿";
+        return "{$greeting}\n" .
+            "من <b>" . self::ASSISTANT . "</b> هستم، دستیار پشتیبانی " . self::BRAND . " 🤖\n\n" .
+            "اینجا می‌تونم در موارد زیر کمکتون کنم:\n" .
+            "🔹 <b>بررسی وضعیت اشتراک، حجم و تاریخ انقضا</b>\n" .
+            "🔹 <b>عیب‌یابی اختلال اتصال و لینک ساب</b>\n" .
+            "🔹 <b>دانلود نرم‌افزارها و راهنمای راه‌اندازی</b>\n\n" .
+            "💬 در صورت نیاز به بررسی دقیق‌تر، پیام شما به <b>پشتیبان انسانی</b> ارجاع داده می‌شود.\n\n" .
+            "درخواستتون رو بنویسید یا از گزینه‌های زیر انتخاب کنید:";
     }
 
     public function assistantMenu(): array
     {
         return [
             [
-                $this->button('📊 وضعیت و حجم اشتراک', 'diag_status', 'status'),
-                $this->button('🔗 دریافت لینک اتصال', 'sec_get_link', 'link'),
+                ['text' => '📊 وضعیت اشتراک من', 'callback_data' => 'diag_status'],
+                ['text' => '🛠️ عیب‌یابی اتصال', 'callback_data' => 'diag_start'],
+            ],
+            [
+                ['text' => '📱 دانلود نرم‌افزار و آموزش', 'callback_data' => 'sec_apps'],
+                ['text' => '🔗 دریافت لینک اتصال', 'callback_data' => 'sec_get_link'],
             ],
             [
                 ['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot'],
+            ],
+            [
+                ['text' => '👨🏻‍💻 ارتباط با پشتیبان انسانی', 'callback_data' => 'sec_human'],
             ],
         ];
     }

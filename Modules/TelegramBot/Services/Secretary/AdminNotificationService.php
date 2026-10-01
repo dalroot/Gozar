@@ -130,6 +130,27 @@ class AdminNotificationService
         return $this->sendNotificationToAdmin($text, $keyboard);
     }
 
+    /**
+     * اعلان دریافت پیام متفرقه/عمومی که توسط اتوماسیون پاسخ داده نشد
+     */
+    public function notifyGeneralMessage(int|string $customerChatId, string $fullName, ?string $username = null, string $message = ''): bool
+    {
+        $userTag = $username ? '@' . htmlspecialchars($username, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : "بدون یوزرنیم";
+        $safeName = htmlspecialchars($fullName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $safeMsg = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $text = "📩 <b>پیام جدید کاربر در پشتیبانی روزنه</b>\n\n" .
+                "👤 <b>{$safeName}</b> · {$userTag}\n" .
+                "🆔 <code>{$customerChatId}</code> (<a href=\"tg://user?id={$customerChatId}\">مشاهده پروفایل</a>)\n\n" .
+                "💬 <b>متن پیام:</b>\n<blockquote>{$safeMsg}</blockquote>\n\n" .
+                "ℹ️ <i>به کاربر اعلام شد پیام به پشتیبان انسانی ارجاع شده است.</i>";
+
+        $keyboard = [];
+        if (!empty($username)) {
+            $keyboard[] = [['text' => '💬 ورود به پی‌وی کاربر', 'url' => "https://t.me/" . ltrim($username, '@')]];
+        }
+        return $this->sendNotificationToAdmin($text, $keyboard);
+    }
+
     public function isAdminChat(int|string $chatId): bool
     {
         return (string) $this->adminChatId === (string) $chatId;
