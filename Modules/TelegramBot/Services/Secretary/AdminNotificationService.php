@@ -118,13 +118,13 @@ class AdminNotificationService
 
         $text .= "\n🤖 <i>فرایدی تا پایان پاسخ انسانی در این گفتگو ساکت است.</i>";
 
-        $pvUrl = !empty($username) ? "https://t.me/" . ltrim($username, '@') : "tg://user?id={$customerChatId}";
-        $keyboard = [
-            [['text' => '💬 ورود به پی‌وی کاربر', 'url' => $pvUrl]],
-            [
-                ['text' => '🤖 بازگرداندن به فرایدی', 'callback_data' => "sec_admin_resume_{$customerChatId}"],
-                ['text' => '✅ پایان پشتیبانی', 'callback_data' => "sec_admin_resolve_{$customerChatId}"]
-            ]
+        $keyboard = [];
+        if (!empty($username)) {
+            $keyboard[] = [['text' => '💬 ورود به پی‌وی کاربر', 'url' => "https://t.me/" . ltrim($username, '@')]];
+        }
+        $keyboard[] = [
+            ['text' => '🤖 بازگرداندن به فرایدی', 'callback_data' => "sec_admin_resume_{$customerChatId}"],
+            ['text' => '✅ پایان پشتیبانی', 'callback_data' => "sec_admin_resolve_{$customerChatId}"]
         ];
 
         return $this->sendNotificationToAdmin($text, $keyboard);
@@ -205,10 +205,10 @@ class AdminNotificationService
                 "🆔 <code>{$customerChatId}</code> (<a href=\"tg://user?id={$customerChatId}\">مشاهده پروفایل</a>)\n" .
                 "📸 لطفاً جهت بررسی فیش و صدور کانفیگ، پی‌وی مشتری را چک کنید.";
 
-        $pvUrl = !empty($username) ? "https://t.me/" . ltrim($username, '@') : "tg://user?id={$customerChatId}";
-        $keyboard = [
-            [['text' => '💬 ورود به پی‌وی کاربر', 'url' => $pvUrl]]
-        ];
+        $keyboard = [];
+        if (!empty($username)) {
+            $keyboard[] = [['text' => '💬 ورود به پی‌وی کاربر', 'url' => "https://t.me/" . ltrim($username, '@')]];
+        }
 
         return $this->sendNotificationToAdmin($text, $keyboard);
     }

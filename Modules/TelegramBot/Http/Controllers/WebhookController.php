@@ -140,21 +140,6 @@ class WebhookController extends Controller
 
             Telegram::setAccessToken(trim($botToken, '"\' '));
 
-            // اگر شناسه کاربر در متن موجود باشد، دکمه ورود به پی‌وی را اضافه می‌کنیم
-            if (preg_match('/tg:\/\/user\?id=(\d+)/', $message, $matches) || preg_match('/(?:آیدی تلگرام|شناسه|کاربر|chat_id)[^0-9]*([0-9]{6,12})/u', $message, $matches)) {
-                $extractedChatId = $matches[1];
-                $pvButton = $this->makeInlineButton([
-                    'text' => '💬 ورود به پی‌وی کاربر',
-                    'url' => "tg://user?id={$extractedChatId}"
-                ]);
-
-                if (!$replyMarkup) {
-                    $replyMarkup = Keyboard::make()->inline()->row([$pvButton]);
-                } elseif ($replyMarkup instanceof \Telegram\Bot\Keyboard\Keyboard) {
-                    $replyMarkup->row([$pvButton]);
-                }
-            }
-
             $params = [
                 'chat_id' => $logChannelId,
                 'text' => $message,
@@ -1086,7 +1071,7 @@ class WebhookController extends Controller
                     $destinations = array_filter([$targetChatId]);
 
                     $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
-                    $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
+                    $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " (لمس برای ورود به پی‌وی)</a>";
 
                     $adminCaption = "🧾 <b>رسید پرداخت جدید برای سفارش #{$orderId}</b>\n\n";
                     $adminCaption .= "👤 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n";
@@ -1094,14 +1079,21 @@ class WebhookController extends Controller
                     $adminCaption .= "📦 <b>نوع سفارش:</b> {$orderType}\n\n";
                     $adminCaption .= "👇 <i>جهت بررسی فیش از دکمه‌های زیر استفاده کنید:</i>";
 
-                    $keyboard = Keyboard::make()->inline()
-                        ->row([
+                    $keyboardRows = [
+                        [
                             $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
                             $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
-                        ])
-                        ->row([
-                            $this->makeInlineButton(['text' => '💬 ورود به پی‌وی کاربر', 'url' => "tg://user?id={$user->telegram_chat_id}"])
-                        ]);
+                        ]
+                    ];
+                    if (!empty($user->username)) {
+                        $keyboardRows[] = [
+                            $this->makeInlineButton(['text' => '💬 پی‌وی کاربر (@' . ltrim($user->username, '@') . ')', 'url' => 'https://t.me/' . ltrim($user->username, '@')])
+                        ];
+                    }
+                    $keyboard = Keyboard::make()->inline();
+                    foreach ($keyboardRows as $r) {
+                        $keyboard->row($r);
+                    }
 
                     $photoPath = Storage::disk('public')->path($fileName);
 
@@ -1190,6 +1182,7 @@ class WebhookController extends Controller
 
                 $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
 
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " (لمس برای ورود به پی‌وی)</a>";
                 $adminMessage = "🧾 <b>رسید متنی جدید برای سفارش #{$orderId}</b>\n\n";
                 $adminMessage .= "👤 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n";
                 $adminMessage .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
@@ -1197,14 +1190,21 @@ class WebhookController extends Controller
                 $adminMessage .= "📝 <b>متن فیش:</b> <code>" . htmlspecialchars($text) . "</code>\n\n";
                 $adminMessage .= "👇 <i>جهت بررسی فیش از دکمه‌های زیر استفاده کنید:</i>";
 
-                $keyboard = Keyboard::make()->inline()
-                    ->row([
+                $keyboardRows = [
+                    [
                         $this->makeInlineButton(['text' => '✅ تایید پرداخت', 'callback_data' => "admin_approve_order_{$orderId}"]),
                         $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
-                    ])
-                    ->row([
-                        $this->makeInlineButton(['text' => '💬 ورود به پی‌وی کاربر', 'url' => "tg://user?id={$user->telegram_chat_id}"])
-                    ]);
+                    ]
+                ];
+                if (!empty($user->username)) {
+                    $keyboardRows[] = [
+                        $this->makeInlineButton(['text' => '💬 پی‌وی کاربر (@' . ltrim($user->username, '@') . ')', 'url' => 'https://t.me/' . ltrim($user->username, '@')])
+                    ];
+                }
+                $keyboard = Keyboard::make()->inline();
+                foreach ($keyboardRows as $r) {
+                    $keyboard->row($r);
+                }
 
                 foreach ($destinations as $targetChatId) {
                     if (!is_numeric($targetChatId)) continue;
@@ -1916,22 +1916,22 @@ class WebhookController extends Controller
         $cardHolder = $this->settings->get('payment_card_holder_name', 'صاحب حسابی تنظیم نشده');
         $amountToPay = number_format($order->amount);
 
-        $message = "💳 *" . $this->escape("پرداخت به صورت کارت به کارت") . "*\n\n";
-        $message .= "👇 " . $this->escape("لطفاً مبلغ مشخص شده را به شماره کارت زیر واریز نمایید:") . "\n\n";
-        $message .= "💵 *" . $this->escape("مبلغ دقیق واریزی:") . "* `" . $this->escape($amountToPay) . " " . $this->escape("تومان") . "`\n";
-        $message .= "👤 *" . $this->escape("به نام:") . "* " . $this->escape($cardHolder) . "\n";
-        $message .= "💳 *" . $this->escape("شماره کارت (برای کپی لمس کنید):") . "*\n`" . $this->escape($cardNumber) . "`\n\n";
+        $message = "💳 <b>پرداخت به صورت کارت به کارت</b>\n\n";
+        $message .= "👇 لطفاً مبلغ مشخص شده را به شماره کارت زیر واریز نمایید:\n\n";
+        $message .= "💵 <b>مبلغ دقیق واریزی:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+        $message .= "👤 <b>به نام:</b> " . htmlspecialchars($cardHolder) . "\n";
+        $message .= "💳 <b>شماره کارت (برای کپی لمس کنید):</b>\n<code>" . htmlspecialchars($cardNumber) . "</code>\n\n";
         $message .= "───────────────────\n";
         $cardNotice = \App\Services\ShiftScheduleService::getCardNotice();
-        $message .= "🔔 *" . $this->escape("راهنمای ارسال رسید:") . "*\n";
-        $message .= "👉 _" . $this->escape("پس از انجام تراکنش، لطفاً تصویر فیش واریزی (اسکرین‌شات) یا اطلاعات متنی رسید خود (مانند شماره پیگیری، تاریخ و نام واریزکننده) را در همین چت ارسال نمایید تا سفارش شما بررسی و فعال گردد.") . "_\n\n";
-        $message .= "⏱ _" . $this->escape($cardNotice) . "_";
+        $message .= "🔔 <b>راهنمای ارسال رسید:</b>\n";
+        $message .= "👉 <i>پس از انجام تراکنش، لطفاً تصویر فیش واریزی (اسکرین‌شات) یا اطلاعات متنی رسید خود (مانند شماره پیگیری، تاریخ و نام واریزکننده) را در همین چت ارسال نمایید تا سفارش شما بررسی و فعال گردد.</i>\n\n";
+        $message .= "⏱ <i>" . htmlspecialchars($cardNotice) . "</i>";
 
         $keyboard = Keyboard::make()->inline()
             ->row([$this->makeInlineButton(['text' => '⬅️ تغییر درگاه پرداخت', 'callback_data' => "pay_methods_{$orderId}", 'style' => 'primary'])])
             ->row([$this->makeInlineButton(['text' => '❌ انصراف از سفارش', 'callback_data' => '/cancel_action', 'style' => 'danger'])]);
 
-        $this->sendRawMarkdownMessage($chatId, $message, $keyboard, $messageId);
+        $this->sendOrEditMessage($chatId, $message, $keyboard, $messageId);
     }
 
     // ========================================================================
