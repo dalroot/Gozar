@@ -153,12 +153,20 @@ class ConversationStateService
      */
     public function isIntroduced(int|string $chatId): bool
     {
-        return Cache::has("sec_introduced_{$chatId}");
+        if (Cache::has("sec_introduced_{$chatId}")) {
+            return true;
+        }
+        $user = \App\Models\User::where('telegram_chat_id', (string) $chatId)->first();
+        if ($user && ($user->orders()->exists() || !empty($user->first_name))) {
+            Cache::put("sec_introduced_{$chatId}", true, now()->addDays(30));
+            return true;
+        }
+        return false;
     }
 
     public function markAsIntroduced(int|string $chatId): void
     {
-        Cache::put("sec_introduced_{$chatId}", true, now()->addDays(7));
+        Cache::put("sec_introduced_{$chatId}", true, now()->addDays(30));
     }
 
     public function getLastIntent(int|string $chatId): ?string

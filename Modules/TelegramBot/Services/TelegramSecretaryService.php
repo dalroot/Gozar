@@ -808,7 +808,8 @@ class TelegramSecretaryService
                           "جهت دریافت آنی کانفیگ، لطفاً وارد ربات فروشگاه شوید 🌿",
                 'buttons' => [
                     [['text' => '🎁 دریافت تست در ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
-                    [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']]
+                    [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                    [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
                 ]
             ];
             $sent = $messageId ? $this->editBusinessMessage($businessConnectionId, $chatId, $messageId, $trialReply['text'], $trialReply['buttons']) : false;
@@ -824,7 +825,8 @@ class TelegramSecretaryService
                           "جهت مشاهده تعرفه‌ها و ثبت سفارش، دکمهٔ زیر را لمس فرمایید 🌿",
                 'buttons' => [
                     [['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
-                    [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']]
+                    [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                    [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
                 ]
             ];
         } elseif (str_starts_with($data, 'sec_renew_service_')) {
@@ -889,17 +891,11 @@ class TelegramSecretaryService
         $supportActions += $diagnosisActions;
         if (isset($supportActions[$data])) {
             $this->answerCallbackQuery($callbackId, 'در حال بررسی…');
-            if (isset($diagnosisActions[$data])) {
-                $this->deleteInteractiveMessage($businessConnectionId, $chatId, $messageId);
-            } else {
-                // منوی معرفی فرایدی باید در تاریخچه بماند؛ فقط دکمه‌هایش غیرفعال می‌شوند.
-                $this->clearInteractiveKeyboard($businessConnectionId, $chatId, $messageId);
-            }
             if ($chatId) {
                 $reply = $this->processIncomingMessage($supportActions[$data], $chatId);
                 if ($reply) {
                     $sent = false;
-                    if ($data === 'sec_human' && $messageId) {
+                    if ($messageId) {
                         $sent = $this->editBusinessMessage(
                             $businessConnectionId,
                             $chatId,

@@ -27,12 +27,10 @@ class AdminNotificationService
     }
 
     /**
-     * ارسال پیام مستقیم به پی‌وی ادمین و هم‌زمان به کانال گزارش‌ها
+     * ارسال پیام مستقیم منحصراً به پی‌وی ادمین در ربات پشتیبانی
      */
     public function sendNotificationToAdmin(string $message, ?array $keyboard = null): bool
     {
-        $sentSuccessfully = false;
-
         $payload = [
             'text' => $message,
             'parse_mode' => 'HTML',
@@ -41,46 +39,28 @@ class AdminNotificationService
             $payload['reply_markup'] = json_encode(['inline_keyboard' => $keyboard]);
         }
 
-        // ۱. ارسال مستقیم به پی‌وی ادمین
-        if (!empty($this->adminChatId) && !empty($this->botToken)) {
-            try {
-                $payload['chat_id'] = $this->adminChatId;
-                $response = Http::timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/sendMessage", $payload);
-                if ($response->successful()) {
-                    $sentSuccessfully = true;
-                } else {
-                    Log::error("Failed to send notification to admin PV", [
-                        'admin_chat_id' => $this->adminChatId,
-                        'status' => $response->status(),
-                        'response' => $response->json(),
-                    ]);
-                }
-            } catch (\Exception $e) {
-                Log::error("Exception sending notification to admin PV: " . $e->getMessage());
-            }
+        if (empty($this->adminChatId) || empty($this->botToken)) {
+            Log::warning('Admin chat ID or Secretary bot token is not set for admin notifications');
+            return false;
         }
 
-        // ۲. ارسال به کانال اختصاصی گزارش‌ها
-        if (!empty($this->logChannelId)) {
-            $channelToken = !empty($this->salesBotToken) ? $this->salesBotToken : $this->botToken;
-            try {
-                $payload['chat_id'] = $this->logChannelId;
-                $response = Http::timeout(10)->post("https://api.telegram.org/bot{$channelToken}/sendMessage", $payload);
-                if ($response->successful()) {
-                    $sentSuccessfully = true;
-                } else {
-                    Log::error("Failed to send notification to report channel", [
-                        'channel_id' => $this->logChannelId,
-                        'status' => $response->status(),
-                        'response' => $response->json(),
-                    ]);
-                }
-            } catch (\Exception $e) {
-                Log::error("Exception sending notification to report channel: " . $e->getMessage());
+        try {
+            $payload['chat_id'] = $this->adminChatId;
+            $response = Http::timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/sendMessage", $payload);
+            if ($response->successful()) {
+                return true;
             }
-        }
 
-        return $sentSuccessfully;
+            Log::error("Failed to send notification to admin PV", [
+                'admin_chat_id' => $this->adminChatId,
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ]);
+            return false;
+        } catch (\Exception $e) {
+            Log::error("Exception sending notification to admin PV: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**

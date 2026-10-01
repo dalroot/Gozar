@@ -135,19 +135,41 @@ class DeterministicSupportService
     private function link(array $ctx): array
     {
         if (!$ctx['is_verified'] || !$ctx['service']) return $this->verificationRequired();
-        if (!$ctx['service']) return $this->text('اشتراک فعالی برای این حساب پیدا نکردم. می‌توانید همین‌جا تست رایگان بگیرید یا بستهٔ جدید فعال کنید.', [
-            [['text' => '⚡️ تست رایگان', 'callback_data' => 'sec_get_trial']],
-            [['text' => '🛍 خرید سرویس', 'callback_data' => 'sec_view_durations']],
-        ]);
         if ($ctx['service']->expires_at && now()->gte($ctx['service']->expires_at)) {
-            return $this->text('این سرویس منقضی شده است؛ فرستادن لینک آن کمکی به اتصال نمی‌کند.', $this->salesButton('تمدید سرویس'));
+            return $this->text(
+                "🔴 <b>اشتراک شما منقضی شده است</b>\n\nمهلت استفاده از این سرویس به پایان رسیده و لینک اتصال غیرفعال است. برای دریافت لینک جدید لازم است سرویس را تمدید فرمایید 🌿",
+                [
+                    [['text' => '🔄 تمدید در ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                    [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                    [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
+                ]
+            );
         }
         if (!$ctx['service_link']) {
-            return $this->text('لینک اتصال در سفارش قابل استخراج نبود. برای بررسی و بازیابی امن لینک، درخواست پشتیبان انسانی ثبت کنید.', $this->humanButton());
+            return $this->text(
+                "⚠️ لینک اتصال در سامانه یافت نشد. برای بررسی و دریافت امن لینک، درخواست پشتیبان انسانی ثبت نمایید.",
+                [
+                    [['text' => '👨🏻‍💻 ارتباط با پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                    [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
+                ]
+            );
         }
         return $this->text(
-            "🔗 <b>لینک اشتراک شما</b>\n\n<pre>" . $this->e($ctx['service_link']) . "</pre>\n" .
-            "<i>برای کپی، روی کادر بالا بزنید. این لینک را برای دیگران نفرستید.</i>"
+            "🔗 <b>لینک اشتراک اختصاصی روزنه</b>\n\n" .
+            "<code>" . $this->e($ctx['service_link']) . "</code>\n\n" .
+            "📋 <i>برای کپی، کافیست یک‌بار روی کادر بالا ضربه بزنید.</i>\n\n" .
+            "💡 <b>راهنمای سریع اتصال:</b>\n" .
+            "لینک را در نرم‌افزار خود (v2rayNG / Streisand / Hiddify) وارد کرده و گزینه <b>Update Subscription</b> را بزنید و متصل شوید 🌿",
+            [
+                [
+                    ['text' => '📱 دانلود نرم‌افزار و راهنما', 'callback_data' => 'sec_apps'],
+                    ['text' => '📊 استعلام وضعیت و حجم', 'callback_data' => 'diag_status'],
+                ],
+                [
+                    ['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human'],
+                    ['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu'],
+                ],
+            ]
         );
     }
 
