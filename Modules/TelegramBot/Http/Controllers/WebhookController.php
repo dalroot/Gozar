@@ -160,6 +160,39 @@ class WebhookController extends Controller
         }
     }
 
+    public function sendCampaignAlertToPartner(string $alert): bool
+    {
+        $partnerId = '748300418';
+        try {
+            $botToken = $this->settings->get('telegram_bot_token');
+            if ($botToken) {
+                Telegram::setAccessToken(trim($botToken, '"\' '));
+                Telegram::sendMessage([
+                    'chat_id' => $partnerId,
+                    'text' => $alert,
+                    'parse_mode' => 'HTML',
+                    'disable_web_page_preview' => true,
+                ]);
+                return true;
+            }
+        } catch (\Throwable $e) {
+            Log::info("Partner alert via ShopBot failed, trying SupportBot: " . $e->getMessage());
+        }
+
+        try {
+            \Illuminate\Support\Facades\Http::withoutVerifying()->timeout(4)->post("https://api.telegram.org/bot8450449696:AAGfdyIZg4FnLlpKeuDo6D8imdi1bFKo7eQ/sendMessage", [
+                'chat_id' => $partnerId,
+                'text' => $alert,
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning("⚠️ Failed to send partner campaign alert: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function sendSingleMessageToUser(string $chatId, string $message): bool
     {
         try {
@@ -444,6 +477,7 @@ class WebhookController extends Controller
                          "🎯 <b>هدف:</b> دریافت تست رایگان ۲۴ ساعته\n" .
                          "⏰ <b>زمان:</b> " . now()->format('H:i:s');
                 $this->sendToLogChannel($alert);
+                $this->sendCampaignAlertToPartner($alert);
             }
             $this->handleTrialRequest($user);
             return;
@@ -455,6 +489,7 @@ class WebhookController extends Controller
                      "🎯 <b>هدف:</b> مشاهده تعرفه‌ها و خرید اشتراک\n" .
                      "⏰ <b>زمان:</b> " . now()->format('H:i:s');
             $this->sendToLogChannel($alert);
+            $this->sendCampaignAlertToPartner($alert);
             $this->sendPlans($chatId);
             return;
         } elseif (preg_match('/^\/start\s+plan_(\d+)$/', $text, $matches)) {
