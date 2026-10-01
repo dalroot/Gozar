@@ -61,13 +61,25 @@ class DeterministicSupportService
     private function status(string $message, array $ctx): array
     {
         $name = $this->e($ctx['name'] ?? 'کاربر گرامی');
-        if (!$ctx['is_verified']) {
-            return $this->verificationRequired();
-        }
         $order = $ctx['service'];
-        if (!$order) {
-            return $this->text('اشتراک فعالی برای این حساب پیدا نکردم.', $this->salesButton('مشاهده پلن‌ها'));
+
+        if (!$ctx['is_verified'] || !$order) {
+            return $this->text(
+                "🔍 <b>استعلام وضعیت سرویس روزنه</b>\n\n" .
+                "کاربر گرامی ({$name})، در حال حاضر هیچ اشتراک فعال یا پرداخت‌شده‌ای روی این حساب ثبت نشده است.\n\n" .
+                "▫️ <b>خرید جدید:</b> جهت خرید اشتراک اختصاصی با تحویل آنی به ربات فروشگاه مراجعه فرمایید.\n" .
+                "▫️ <b>پیگیری سفارش:</b> اگر به تازگی در ربات فروشگاه پرداخت کرده‌اید، سفارش شما در صف بررسی مالی است.\n" .
+                "▫️ <b>پشتیبانی انسانی:</b> اگر سوالی دارید یا می‌خواهید سفارشتان دستی بررسی شود، پیام خود را بنویسید یا دکمه زیر را لمس کنید 🌿",
+                [
+                    [['text' => '🛍️ ورود به ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
+                    [['text' => '🎁 دریافت تست رایگان', 'url' => 'https://t.me/RoozanehNetBot']],
+                    [['text' => '⚡ بررسی مشکل اتصال', 'callback_data' => 'diag_start']],
+                    [['text' => '👨🏻‍💻 ارتباط با پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                    [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
+                ]
+            );
         }
+
         $expired = $order->expires_at && now()->gte($order->expires_at);
         $expiry = $order->expires_at ? Carbon::parse($order->expires_at)->format('Y/m/d H:i') : 'نامشخص';
         $plan = $this->e($order->plan?->name ?: 'اشتراک');
@@ -89,8 +101,9 @@ class DeterministicSupportService
                 "وضعیت: <b>امکان اتصال ندارد</b>\n\n" .
                 "{$reason} و به همین دلیل امکان اتصال برای شما وجود ندارد. برای اتصال مجدد لازم است پلن فعلی را تمدید کنید یا بستهٔ جدیدی فعال نمایید.",
                 [
-                    [['text' => '🔄 تمدید یا خرید سرویس', 'callback_data' => 'sec_view_durations']],
+                    [['text' => '🔄 تمدید در ربات فروشگاه (@RoozanehNetBot)', 'url' => 'https://t.me/RoozanehNetBot']],
                     [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
+                    [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
                 ]
             );
         }
@@ -116,13 +129,16 @@ class DeterministicSupportService
         $lines[] = 'اشتراک شما از نظر زمان و حجم فعال است. اگر در اتصال مشکل دارید، می‌تونم مرحله‌به‌مرحله بررسی کنم.';
         return $this->text(implode("\n", $lines), [
             [['text' => '🔍 بررسی مشکل اتصال', 'callback_data' => 'diag_start']],
+            [['text' => '🔗 دریافت لینک اشتراک', 'callback_data' => 'sec_get_link']],
+            [['text' => '🔄 تمدید در ربات فروشگاه', 'url' => 'https://t.me/RoozanehNetBot']],
             [['text' => '👨🏻‍💻 پشتیبان انسانی', 'callback_data' => 'sec_human']],
+            [['text' => '🔙 بازگشت به منوی اصلی', 'callback_data' => 'sec_main_menu']],
         ]);
     }
 
     private function link(array $ctx): array
     {
-        if (!$ctx['is_verified']) return $this->verificationRequired();
+        if (!$ctx['is_verified'] || !$ctx['service']) return $this->verificationRequired();
         if (!$ctx['service']) return $this->text('اشتراک فعالی برای این حساب پیدا نکردم. می‌توانید همین‌جا تست رایگان بگیرید یا بستهٔ جدید فعال کنید.', [
             [['text' => '⚡️ تست رایگان', 'callback_data' => 'sec_get_trial']],
             [['text' => '🛍 خرید سرویس', 'callback_data' => 'sec_view_durations']],

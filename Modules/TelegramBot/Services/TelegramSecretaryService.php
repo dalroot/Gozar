@@ -768,6 +768,16 @@ class TelegramSecretaryService
             return;
         }
 
+        // ۱-۲. بازگشت به منوی اصلی
+        if ($data === 'sec_main_menu') {
+            $this->answerCallbackQuery($callbackId, "منوی اصلی");
+            $menuText = $this->experience->assistantIntroduction($fullName);
+            $menuButtons = $this->experience->assistantMenu();
+            $sent = $messageId ? $this->editBusinessMessage($businessConnectionId, $chatId, $messageId, $menuText, $menuButtons) : false;
+            if (!$sent) $this->sendBusinessMessage($businessConnectionId, $chatId, $menuText, $menuButtons);
+            return;
+        }
+
         if ($data === 'sec_get_trial') {
             $this->answerCallbackQuery($callbackId, 'انجام شد');
             $trialReply = [
