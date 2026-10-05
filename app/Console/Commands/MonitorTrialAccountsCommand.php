@@ -24,7 +24,7 @@ class MonitorTrialAccountsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Monitor trial accounts lifecycle and send smart notifications for 80% usage, 100% exhaustion, and 12h idle.';
+    protected $description = 'Monitor trial accounts lifecycle and send smart notifications for 80% usage and 100% exhaustion.';
 
     /**
      * Execute the console command.
@@ -90,17 +90,6 @@ class MonitorTrialAccountsCommand extends Command
                 ],
                 [
                     ['text' => '👨‍💻 پشتیبانی و راهنمایی', 'url' => $supportUrl]
-                ]
-            ]
-        ];
-
-        $keyboardIdle = [
-            'inline_keyboard' => [
-                [
-                    ['text' => '📚 راهنمای آموزش اتصال', 'callback_data' => '/tutorials']
-                ],
-                [
-                    ['text' => '👨‍💻 پیام به پشتیبان انسانی', 'url' => $supportUrl]
                 ]
             ]
         ];
@@ -203,33 +192,7 @@ class MonitorTrialAccountsCommand extends Command
                 continue;
             }
 
-            // سناریو ۳: عدم اتصال پس از ۱۲ ساعت (مصرف صفر بایت)
-            if ($usedBytes == 0 && $order->created_at <= now()->subHours(12) && !$order->trial_notified_idle_at && !$order->trial_notified_80_at && !$order->trial_notified_100_at) {
-                $text = "👋 <b>همراه گرامی روزنه، وقتتون بخیر</b>\n\n" .
-                        "سلام {$userName} عزیز 🌸\n" .
-                        "متوجه شدیم بیش از ۱۲ ساعت از دریافت لینک تست اختصاصی شما گذشته، اما هنوز اتصالی به شبکه برقرار نکرده‌اید!\n\n" .
-                        "آیا در کپی کردن لینک، راه‌اندازی یا نصب نرم‌افزار اتصال (مانند V2rayNG یا Streisand) به راهنمایی نیاز دارید؟\n" .
-                        "تیم پشتیبانی ما آماده است تا گام‌به‌گام شما را راهنمایی کند تا بدون دغدغه متصل شوید ✨";
-
-                $this->info("[12h Idle Rescue] Triggered for {$user->name} ({$user->telegram_chat_id})");
-
-                if (!$isDryRun) {
-                    try {
-                        Telegram::sendMessage([
-                            'chat_id' => $user->telegram_chat_id,
-                            'text' => $text,
-                            'parse_mode' => 'HTML',
-                            'reply_markup' => json_encode($keyboardIdle)
-                        ]);
-                        $order->update(['trial_notified_idle_at' => now()]);
-                        $sentCount++;
-                    } catch (\Throwable $e) {
-                        Log::warning("Failed to send 12h idle trial alert to {$user->telegram_chat_id}: " . $e->getMessage());
-                    }
-                    usleep(300000);
-                }
-                continue;
-            }
+            // طبق دستور کاربر: برای کاربرانی که متصل نشده‌اند یا مصرف نداشته‌اند اقدامی انجام نمی‌شود.
         }
 
         $this->info("Trial monitoring completed. Sent {$sentCount} notifications.");
