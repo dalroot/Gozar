@@ -21,6 +21,9 @@ class Order extends Model
         'source',
         'panel_username',
         'reserved_slot',
+        'trial_notified_80_at',
+        'trial_notified_100_at',
+        'trial_notified_idle_at',
     ];
 
     public function user()

@@ -159,3 +159,4 @@ Artisan::command('vpnmarket:send-campaign-report', function () {
 
 Schedule::command('vpnmarket:send-daily-report')->dailyAt('23:59');
 Schedule::command('vpnmarket:send-backup')->hourly();
+Schedule::command('vpnmarket:monitor-trials')->everyFifteenMinutes();
