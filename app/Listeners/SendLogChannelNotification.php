@@ -26,6 +26,11 @@ class SendLogChannelNotification
     {
         try {
             $order = $event->order;
+            // اکانت‌های تست نوتیفیکیشن اختصاصی دارند؛ نیاز به ثبت مجدد در این بخش نیست
+            if ($order->payment_method === 'trial' || (int)$order->amount === 0) {
+                return;
+            }
+
             $user = $order->user;
             $plan = $order->plan;
 
@@ -43,26 +48,32 @@ class SendLogChannelNotification
             $planName = $plan ? $plan->name : 'شارژ کیف پول';
             $paymentMethod = $order->payment_method ?? 'نامشخص';
             $source = $order->source === 'telegram' ? '🤖 ربات تلگرام' : '🌐 وب‌سایت';
+            $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
 
-            $msg = "💰 *خرید/شارژ جدید ثبت شد*\n\n";
-            $msg .= "🔸 *سفارش:* \\#{$order->id}\n";
-            $msg .= "🔸 *نوع:* " . $this->escape($orderType) . "\n";
-            $msg .= "🔸 *پلن:* " . $this->escape($planName) . "\n";
-            $msg .= "🔸 *مبلغ:* " . $this->escape(number_format($order->amount) . ' تومان') . "\n";
-            $msg .= "🔸 *روش پرداخت:* " . $this->escape($paymentMethod) . "\n";
-            $msg .= "🔸 *منبع:* " . $this->escape($source) . "\n";
-            
-            $msg .= "\n👤 *مشخصات خریدار:*\n";
-            $msg .= "🔸 *نام:* " . $this->escape($user->name) . "\n";
+            $msg = "💰 <b>ثبت پرداخت موفق جدید</b>\n\n";
+            $msg .= "🧾 <b>شماره سفارش:</b> #{$order->id}\n";
+            $msg .= "📦 <b>نوع:</b> " . htmlspecialchars($orderType) . "\n";
+            $msg .= "💎 <b>پلن:</b> " . htmlspecialchars($planName) . "\n";
+            $msg .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+            $msg .= "💳 <b>روش پرداخت:</b> " . htmlspecialchars($paymentMethod) . "\n";
+            $msg .= "🌐 <b>منبع:</b> " . htmlspecialchars($source) . "\n\n";
+
+            $msg .= "👤 <b>مشخصات خریدار:</b>\n";
+            $msg .= "▪️ <b>نام:</b> {$userLink}\n";
             if ($user->telegram_chat_id) {
-                $msg .= "🔸 *آیدی تلگرام:* [{$user->telegram_chat_id}](tg://user?id={$user->telegram_chat_id})\n";
+                $msg .= "▪️ <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n";
             }
-            $msg .= "🔸 *شناسه کاربر در سیستم:* `{$user->id}`\n";
+            if (!empty($user->username)) {
+                $msg .= "▪️ <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n";
+            }
+            $msg .= "▪️ <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n";
+            $msg .= "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s');
 
             Telegram::sendMessage([
                 'chat_id' => $logChannelId,
                 'text' => $msg,
-                'parse_mode' => 'MarkdownV2',
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
             ]);
 
             Log::info("Purchase notification sent to log channel for order {$order->id}");
@@ -97,27 +108,33 @@ class SendLogChannelNotification
             ];
             $priority = $priorityMap[$ticket->priority] ?? $ticket->priority;
             $source = $ticket->source === 'telegram' ? '🤖 ربات تلگرام' : '🌐 وب‌سایت';
+            $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
 
-            $msg = "📩 *تیکت پشتیبانی جدید*\n\n";
-            $msg .= "🔸 *تیکت:* \\#{$ticket->id}\n";
-            $msg .= "🔸 *موضوع:* " . $this->escape($ticket->subject) . "\n";
-            $msg .= "🔸 *اولویت:* " . $this->escape($priority) . "\n";
-            $msg .= "🔸 *منبع:* " . $this->escape($source) . "\n";
-            
-            $msg .= "\n👤 *مشخصات کاربر:*\n";
-            $msg .= "🔸 *نام:* " . $this->escape($user->name) . "\n";
+            $msg = "📩 <b>تیکت پشتیبانی جدید</b>\n\n";
+            $msg .= "🎫 <b>شماره تیکت:</b> #{$ticket->id}\n";
+            $msg .= "📌 <b>موضوع:</b> " . htmlspecialchars($ticket->subject) . "\n";
+            $msg .= "⚡️ <b>اولویت:</b> " . htmlspecialchars($priority) . "\n";
+            $msg .= "🌐 <b>منبع:</b> " . htmlspecialchars($source) . "\n\n";
+
+            $msg .= "👤 <b>مشخصات کاربر:</b>\n";
+            $msg .= "▪️ <b>نام:</b> {$userLink}\n";
             if ($user->telegram_chat_id) {
-                $msg .= "🔸 *آیدی تلگرام:* [{$user->telegram_chat_id}](tg://user?id={$user->telegram_chat_id})\n";
+                $msg .= "▪️ <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n";
             }
-            $msg .= "🔸 *شناسه کاربر در سیستم:* `{$user->id}`\n";
+            if (!empty($user->username)) {
+                $msg .= "▪️ <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n";
+            }
+            $msg .= "▪️ <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n\n";
 
-            $msg .= "\n📄 *متن پیام:*\n";
-            $msg .= "_" . $this->escape(mb_substr($ticket->message, 0, 300)) . (mb_strlen($ticket->message) > 300 ? '...' : '') . "_";
+            $msg .= "📄 <b>متن پیام:</b>\n";
+            $msg .= "<blockquote>" . htmlspecialchars(mb_substr($ticket->message, 0, 300)) . (mb_strlen($ticket->message) > 300 ? '...' : '') . "</blockquote>\n";
+            $msg .= "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s');
 
             Telegram::sendMessage([
                 'chat_id' => $logChannelId,
                 'text' => $msg,
-                'parse_mode' => 'MarkdownV2',
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
             ]);
 
             Log::info("Ticket notification sent to log channel for ticket {$ticket->id}");

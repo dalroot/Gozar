@@ -22,7 +22,21 @@ Artisan::command('vpnmarket:send-daily-report', function () {
 
         // Stats queries
         $newUsersCount = \App\Models\User::whereDate('created_at', today())->count();
-        $paidOrders = \App\Models\Order::whereDate('updated_at', today())->where('status', 'paid')->get();
+
+        // اکانت‌های تست رایگان امروز
+        $trialOrdersCount = \App\Models\Order::whereDate('created_at', today())
+            ->where(function($q) {
+                $q->where('payment_method', 'trial')
+                  ->orWhere('amount', 0);
+            })->count();
+
+        // سفارش‌های نقدی موفق (جدا از تست‌های رایگان)
+        $paidOrders = \App\Models\Order::whereDate('updated_at', today())
+            ->where('status', 'paid')
+            ->where('payment_method', '!=', 'trial')
+            ->where('amount', '>', 0)
+            ->get();
+
         $paidOrdersCount = $paidOrders->count();
         $totalSales = $paidOrders->sum('amount');
 
@@ -39,25 +53,23 @@ Artisan::command('vpnmarket:send-daily-report', function () {
             $newTicketsCount = \Modules\Ticketing\Models\Ticket::whereDate('created_at', today())->count();
         }
 
-        $esc = function (string $text): string {
-            $chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-            return str_replace($chars, array_map(fn($char) => '\\' . $char, $chars), $text);
-        };
+        $dateStr = now()->format('Y/m/d');
 
-        $msg = "📊 *گزارش آماری روزانه ربات* \\(تاریخ: " . $esc(now()->format('Y/m/d')) . "\\)\n\n";
-        $msg .= "👤 *کاربران جدید:* `{$newUsersCount}` نفر\n";
-        $msg .= "🛒 *کل سفارشات موفق امروز:* `{$paidOrdersCount}` عدد\n";
-        $msg .= "💰 *مجموع فروش امروز:* `" . number_format($totalSales) . "` تومان\n\n";
+        $msg = "📊 <b>گزارش آماری روزانه ربات</b> (تاریخ: {$dateStr})\n\n";
+        $msg .= "👤 <b>کاربران جدید امروز:</b> <code>{$newUsersCount}</code> نفر\n";
+        $msg .= "🧪 <b>اکانت‌های تست رایگان:</b> <code>{$trialOrdersCount}</code> عدد\n";
+        $msg .= "🛒 <b>کل سفارشات نقدی موفق:</b> <code>{$paidOrdersCount}</code> عدد\n";
+        $msg .= "💰 <b>مجموع فروش نقدی:</b> <code>" . number_format($totalSales) . "</code> تومان\n\n";
         $msg .= "───────────────\n";
-        $msg .= "💳 *شارژ کیف پول:* `{$walletChargesCount}` عدد \\(جمعاً `" . number_format($walletChargesSum) . "` تومان\\)\n";
-        $msg .= "📦 *خرید/تمدید سرویس:* `{$planPurchasesCount}` عدد \\(جمعاً `" . number_format($planPurchasesSum) . "` تومان\\)\n";
-        $msg .= "👨🏻‍💻 *تیکت‌های جدید پشتیبانی:* `{$newTicketsCount}` عدد\n";
+        $msg .= "💳 <b>شارژ کیف پول:</b> <code>{$walletChargesCount}</code> عدد (جمعاً <code>" . number_format($walletChargesSum) . "</code> تومان)\n";
+        $msg .= "📦 <b>خرید/تمدید سرویس:</b> <code>{$planPurchasesCount}</code> عدد (جمعاً <code>" . number_format($planPurchasesSum) . "</code> تومان)\n";
+        $msg .= "👨🏻‍💻 <b>تیکت‌های جدید پشتیبانی:</b> <code>{$newTicketsCount}</code> عدد\n";
 
         \Telegram\Bot\Laravel\Facades\Telegram::setAccessToken($botToken);
         \Telegram\Bot\Laravel\Facades\Telegram::sendMessage([
             'chat_id' => $logChannelId,
             'text' => $msg,
-            'parse_mode' => 'MarkdownV2',
+            'parse_mode' => 'HTML',
         ]);
 
         $this->info('Daily report sent successfully!');

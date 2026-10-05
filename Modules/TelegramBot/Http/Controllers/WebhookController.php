@@ -1137,13 +1137,20 @@ class WebhookController extends Controller
                     $this->sendUserReceiptConfirmation($chatId, $orderId);
 
                     $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " ({$user->telegram_chat_id})</a>";
+                    $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
+                    $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
+                    $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
+
                     $this->sendToLogChannel(
                         "🧾 <b>ثبت فیش واریزی جدید (تصویر فیش)</b>\n\n" .
                         "🔹 <b>شماره سفارش:</b> #{$orderId}\n" .
-                        "🔹 <b>کاربر:</b> {$userLink}\n" .
-                        "🔹 <b>مبلغ:</b> " . number_format($order->amount) . " تومان\n" .
-                        "🔹 <b>نوع:</b> " . ($order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول')) . "\n" .
-                        "🔹 <b>وضعیت:</b> ⏳ ارسال شد به کانال تایید فیش‌ها برای تایید مدیریت\n" .
+                        "👤 <b>نام کاربر:</b> {$userLink}\n" .
+                        "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n" .
+                        $usernameLine .
+                        "🔢 <b>کد کاربری در سیستم:</b> <code>{$user->id}</code>\n" .
+                        "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n" .
+                        "📦 <b>نوع:</b> {$orderType}\n" .
+                        "⏳ <b>وضعیت:</b> ارسال شد به کانال فیش‌ها جهت بررسی\n" .
                         "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                     );
 
@@ -1153,14 +1160,17 @@ class WebhookController extends Controller
                     $targetChatId = !empty($receiptChannelId) ? $receiptChannelId : $adminChatId;
                     $destinations = array_filter([$targetChatId]);
 
-                    $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
-                    $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " (لمس برای ورود به پی‌وی)</a>";
-
-                    $adminCaption = "🧾 <b>رسید پرداخت جدید برای سفارش #{$orderId}</b>\n\n";
-                    $adminCaption .= "👤 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n";
-                    $adminCaption .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
-                    $adminCaption .= "📦 <b>نوع سفارش:</b> {$orderType}\n\n";
-                    $adminCaption .= "👇 <i>جهت بررسی فیش از دکمه‌های زیر استفاده کنید:</i>";
+                    $adminCaption = "🧾 <b>رسید پرداخت جدید (سفارش #{$orderId})</b>\n\n";
+                    $adminCaption .= "👤 <b>نام کاربر:</b> {$userLink}\n";
+                    $adminCaption .= "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n";
+                    if (!empty($user->username)) {
+                        $adminCaption .= "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n";
+                    }
+                    $adminCaption .= "🔢 <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n";
+                    $adminCaption .= "💵 <b>مبلغ فیش:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+                    $adminCaption .= "📦 <b>نوع سفارش:</b> {$orderType}\n";
+                    $adminCaption .= "⏰ <b>زمان ثبت:</b> " . now()->format('Y-m-d H:i:s') . "\n\n";
+                    $adminCaption .= "👇 <i>جهت بررسی و تایید فیش از دکمه‌های زیر استفاده کنید:</i>";
 
                     $keyboardRows = [
                         [
@@ -1246,14 +1256,19 @@ class WebhookController extends Controller
 
                 $this->sendUserReceiptConfirmation($chatId, $orderId);
 
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " ({$user->telegram_chat_id})</a>";
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
+                $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
+
                 $this->sendToLogChannel(
                     "🧾 <b>ثبت فیش واریزی جدید (متنی / شماره پیگیری)</b>\n\n" .
                     "🔹 <b>شماره سفارش:</b> #{$orderId}\n" .
-                    "🔹 <b>کاربر:</b> {$userLink}\n" .
-                    "🔹 <b>مبلغ:</b> " . number_format($order->amount) . " تومان\n" .
-                    "🔹 <b>متن/کد پیگیری:</b> <code>" . htmlspecialchars($text) . "</code>\n" .
-                    "🔹 <b>وضعیت:</b> ⏳ در انتظار تایید مدیریت\n" .
+                    "👤 <b>نام کاربر:</b> {$userLink}\n" .
+                    "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n" .
+                    $usernameLine .
+                    "🔢 <b>کد کاربری در سیستم:</b> <code>{$user->id}</code>\n" .
+                    "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n" .
+                    "📝 <b>متن/کد پیگیری:</b> <code>" . htmlspecialchars($text) . "</code>\n" .
+                    "⏳ <b>وضعیت:</b> در انتظار بررسی مدیریت\n" .
                     "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                 );
 
@@ -1265,13 +1280,18 @@ class WebhookController extends Controller
 
                 $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
 
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " (لمس برای ورود به پی‌وی)</a>";
-                $adminMessage = "🧾 <b>رسید متنی جدید برای سفارش #{$orderId}</b>\n\n";
-                $adminMessage .= "👤 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n";
-                $adminMessage .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+                $adminMessage = "🧾 <b>رسید متنی جدید (سفارش #{$orderId})</b>\n\n";
+                $adminMessage .= "👤 <b>نام کاربر:</b> {$userLink}\n";
+                $adminMessage .= "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n";
+                if (!empty($user->username)) {
+                    $adminMessage .= "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n";
+                }
+                $adminMessage .= "🔢 <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n";
+                $adminMessage .= "💵 <b>مبلغ فیش:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
                 $adminMessage .= "📦 <b>نوع سفارش:</b> {$orderType}\n";
-                $adminMessage .= "📝 <b>متن فیش:</b> <code>" . htmlspecialchars($text) . "</code>\n\n";
-                $adminMessage .= "👇 <i>جهت بررسی فیش از دکمه‌های زیر استفاده کنید:</i>";
+                $adminMessage .= "📝 <b>متن فیش:</b> <code>" . htmlspecialchars($text) . "</code>\n";
+                $adminMessage .= "⏰ <b>زمان ثبت:</b> " . now()->format('Y-m-d H:i:s') . "\n\n";
+                $adminMessage .= "👇 <i>جهت بررسی و تایید فیش از دکمه‌های زیر استفاده کنید:</i>";
 
                 $keyboardRows = [
                     [
@@ -4612,8 +4632,10 @@ class WebhookController extends Controller
             $volumeMB = (int) $settings->get('trial_volume_mb', 1024);
             $durationHours = 0; // تست حجمی است و محدودیت زمانی ندارد.
 
-            // ایجاد نام کاربری استاندارد و تمیز روزنه (بدون افشای نام کاربری یا آیدی شخصی تلگرام)
-            $uniqueUsername = "rz_test_" . $user->id . "_" . Str::lower(Str::random(4));
+            // نام کاربری اکانت تست شامل شناسه تلگرام و نام کاربر جهت شناسایی آسان در پنل
+            $cleanName = preg_replace('/[^a-zA-Z0-9]/', '', $user->first_name ?: $user->name ?: '');
+            $namePart = !empty($cleanName) ? '_' . substr($cleanName, 0, 10) : '';
+            $uniqueUsername = "test_" . ($user->telegram_chat_id ?: $user->id) . $namePart;
 
             $expiresAt = null;
             $dataLimitBytes = $volumeMB * 1024 * 1024;
@@ -4630,15 +4652,19 @@ class WebhookController extends Controller
                 $user->increment('trial_accounts_taken');
                 \Illuminate\Support\Facades\Cache::put("trial_link_{$user->id}", $configLink, now()->addMinutes(10));
 
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name) . "</a>";
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
+                $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
+
                 $this->sendToLogChannel(
-                    "🧪 <b>اکانت تست رایگان جدید فعال شد</b>\n\n" .
-                    "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
-                    "🔹 <b>نام کاربری کانفیگ:</b> <code>{$uniqueUsername}</code>\n" .
-                    "🔹 <b>حجم:</b> {$volumeMB} مگابایت\n" .
-                    "🔹 <b>اعتبار زمانی:</b> بدون محدودیت\n" .
-                    "🔹 <b>سرور:</b> {$locationFlag} {$locationName}\n" .
-                    "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                    "🧪 <b>اکانت تست رایگان فعال شد</b>\n\n" .
+                    "👤 <b>نام کاربر:</b> {$userLink}\n" .
+                    "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n" .
+                    $usernameLine .
+                    "🔢 <b>کد کاربری در سیستم:</b> <code>{$user->id}</code>\n" .
+                    "👤 <b>نام اکانت در پنل:</b> <code>{$uniqueUsername}</code>\n" .
+                    "📊 <b>حجم:</b> {$volumeMB} مگابایت (بدون انقضا)\n" .
+                    "🌐 <b>سرور:</b> {$locationFlag} {$locationName}\n" .
+                    "⏰ <b>زمان فعال‌سازی:</b> " . now()->format('Y-m-d H:i:s')
                 );
 
                 // ثبت سرویس تست/هدیه در سفارش‌های کاربر جهت امکان مشاهده در بخش «سرویس‌های من»
@@ -5968,40 +5994,43 @@ I am here to build the most secure and stable connection path for you.
                 ]);
 
                 $user = $order->user;
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name) . "</a>";
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
                 $adminName = $adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminUser->getFirstName();
+                $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
+                $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
+
                 $this->sendToLogChannel(
                     "❌ <b>فیش سفارش #{$orderId} توسط ادمین رد شد</b>\n\n" .
-                    "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
-                    "🔹 <b>مبلغ:</b> " . number_format($order->amount) . " تومان\n" .
-                    "🔹 <b>دلیل رد:</b> " . htmlspecialchars($reasonText) . "\n" .
-                    "🔹 <b>ادمین بررسی‌کننده:</b> " . htmlspecialchars($adminName) . "\n" .
+                    "👤 <b>نام کاربر:</b> {$userLink}\n" .
+                    "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n" .
+                    $usernameLine .
+                    "🔢 <b>کد کاربری در سیستم:</b> <code>{$user->id}</code>\n" .
+                    "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n" .
+                    "📦 <b>نوع:</b> {$orderType}\n" .
+                    "⚠️ <b>علت رد:</b> " . htmlspecialchars($reasonText) . "\n" .
+                    "👨🏻‍💻 <b>ادمین بررسی‌کننده:</b> " . htmlspecialchars($adminName) . "\n" .
                     "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                 );
 
-                // Update Admin message in channel
-                $adminName = $adminUser->getFirstName() . ($adminUser->getLastName() ? ' ' . $adminUser->getLastName() : '');
-                $adminUsername = $adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminName;
-                
-                $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
-                $user = $order->user;
-                $userPvLink = $user->telegram_chat_id 
-                    ? "[{$this->escape($user->name)}](tg://user?id={$user->telegram_chat_id})" 
-                    : $this->escape($user->name);
-
-                $updatedMessage = "🧾 *سفارش \\#{$orderId} رد شد\\.*\n\n";
-                $updatedMessage .= "*کاربر:* {$userPvLink} \\(ID: `{$user->id}`\\)\n";
-                $updatedMessage .= "*مبلغ:* " . $this->escape(number_format($order->amount) . ' تومان') . "\n";
-                $updatedMessage .= "*نوع سفارش:* " . $this->escape($orderType) . "\n\n";
-                $updatedMessage .= "🔴 *وضعیت:* `رد شد توسط ادمین {$this->escape($adminUsername)}`\n";
-                $updatedMessage .= "⚠️ *علت رد:* `{$this->escape($reasonText)}`";
+                $updatedMessage = "🧾 <b>سفارش #{$orderId} رد شد</b>\n\n";
+                $updatedMessage .= "👤 <b>نام کاربر:</b> {$userLink}\n";
+                $updatedMessage .= "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n";
+                if (!empty($user->username)) {
+                    $updatedMessage .= "💬 <b>یوزرنیم:</b> @{$user->username}\n";
+                }
+                $updatedMessage .= "🔢 <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n";
+                $updatedMessage .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+                $updatedMessage .= "📦 <b>نوع سفارش:</b> " . htmlspecialchars($orderType) . "\n\n";
+                $updatedMessage .= "🔴 <b>وضعیت:</b> رد شد توسط " . htmlspecialchars($adminName) . "\n";
+                $updatedMessage .= "⚠️ <b>علت رد:</b> " . htmlspecialchars($reasonText) . "\n";
+                $updatedMessage .= "⏰ <b>زمان ثبت:</b> " . now()->format('Y-m-d H:i:s');
 
                 if ($order->card_payment_receipt && !str_starts_with($order->card_payment_receipt, 'text_receipt:')) {
                     Telegram::editMessageCaption([
                         'chat_id' => $adminChatId,
                         'message_id' => $messageId,
                         'caption' => $updatedMessage,
-                        'parse_mode' => 'MarkdownV2',
+                        'parse_mode' => 'HTML',
                         'reply_markup' => json_encode(['inline_keyboard' => []])
                     ]);
                 } else {
@@ -6009,7 +6038,7 @@ I am here to build the most secure and stable connection path for you.
                         'chat_id' => $adminChatId,
                         'message_id' => $messageId,
                         'text' => $updatedMessage,
-                        'parse_mode' => 'MarkdownV2',
+                        'parse_mode' => 'HTML',
                         'reply_markup' => json_encode(['inline_keyboard' => []])
                     ]);
                 }
@@ -6343,27 +6372,51 @@ I am here to build the most secure and stable connection path for you.
                 ]);
 
                 $user = $order->user;
-                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . " ({$user->telegram_chat_id})</a>";
+                $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
                 $adminName = $adminUser ? ($adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminUser->getFirstName()) : 'مدیریت';
                 $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
+                $panelUsername = $order->panel_username ?: ($order->user ? $order->user->email : null);
+
+                $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
 
                 $this->sendToLogChannel(
                     "✅ <b>فیش سفارش #{$orderId} توسط ادمین تایید و فعال شد</b>\n\n" .
-                    "🔹 <b>کاربر:</b> {$userLink}\n" .
-                    "🔹 <b>مبلغ:</b> " . number_format($order->amount) . " تومان\n" .
-                    "🔹 <b>نوع:</b> {$orderType}\n" .
-                    "🔹 <b>ادمین تاییدکننده:</b> " . htmlspecialchars($adminName) . "\n" .
+                    "👤 <b>نام کاربر:</b> {$userLink}\n" .
+                    "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n" .
+                    $usernameLine .
+                    "🔢 <b>کد کاربری در سیستم:</b> <code>{$user->id}</code>\n" .
+                    "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n" .
+                    "📦 <b>نوع:</b> {$orderType}\n" .
+                    (!empty($panelUsername) ? "👤 <b>نام کاربری در پنل:</b> <code>{$panelUsername}</code>\n" : "") .
+                    "🟢 <b>ادمین تاییدکننده:</b> " . htmlspecialchars($adminName) . "\n" .
                     "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
                 );
 
-                // ویرایش پیام رسید با فرمت HTML استاندارد و غیرشکننده
-                $adminString = " توسط " . htmlspecialchars($adminName);
-
-                $updatedMessage = "🧾 <b>سفارش #{$orderId} تایید شد.</b>\n\n";
-                $updatedMessage .= "👤 <b>کاربر:</b> {$userLink} (ID: <code>{$user->id}</code>)\n";
+                // ویرایش پیام رسید با فرمت HTML استاندارد و مرتب
+                $updatedMessage = "🧾 <b>سفارش #{$orderId} تایید و فعال شد</b>\n\n";
+                $updatedMessage .= "👤 <b>نام کاربر:</b> {$userLink}\n";
+                $updatedMessage .= "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n";
+                if (!empty($user->username)) {
+                    $updatedMessage .= "💬 <b>یوزرنیم:</b> @{$user->username}\n";
+                }
+                $updatedMessage .= "🔢 <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n";
                 $updatedMessage .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
-                $updatedMessage .= "📦 <b>نوع سفارش:</b> " . htmlspecialchars($orderType) . "\n\n";
-                $updatedMessage .= "🟢 <b>وضعیت:</b> <code>تایید شد{$adminString}</code>";
+                $updatedMessage .= "📦 <b>نوع سفارش:</b> " . htmlspecialchars($orderType) . "\n";
+                if (!empty($panelUsername)) {
+                    $updatedMessage .= "👤 <b>نام کاربری در پنل:</b> <code>{$panelUsername}</code>\n";
+                }
+                $updatedMessage .= "🟢 <b>وضعیت:</b> تایید شد توسط " . htmlspecialchars($adminName) . "\n";
+                $updatedMessage .= "⏰ <b>زمان تایید:</b> " . now()->format('Y-m-d H:i:s');
+
+                $approvedKeyboardRows = [];
+                if (!empty($user->username)) {
+                    $approvedKeyboardRows[] = [
+                        $this->makeInlineButton(['text' => '💬 پی‌وی کاربر (@' . ltrim($user->username, '@') . ')', 'url' => 'https://t.me/' . ltrim($user->username, '@')])
+                    ];
+                }
+                $approvedMarkup = !empty($approvedKeyboardRows)
+                    ? json_encode(['inline_keyboard' => $approvedKeyboardRows])
+                    : json_encode(['inline_keyboard' => []]);
 
                 if ($order->card_payment_receipt && !str_starts_with($order->card_payment_receipt, 'text_receipt:')) {
                     Telegram::editMessageCaption([
@@ -6371,7 +6424,7 @@ I am here to build the most secure and stable connection path for you.
                         'message_id' => $messageId,
                         'caption' => $updatedMessage,
                         'parse_mode' => 'HTML',
-                        'reply_markup' => json_encode(['inline_keyboard' => []])
+                        'reply_markup' => $approvedMarkup
                     ]);
                 } else {
                     Telegram::editMessageText([
@@ -6379,7 +6432,7 @@ I am here to build the most secure and stable connection path for you.
                         'message_id' => $messageId,
                         'text' => $updatedMessage,
                         'parse_mode' => 'HTML',
-                        'reply_markup' => json_encode(['inline_keyboard' => []])
+                        'reply_markup' => $approvedMarkup
                     ]);
                 }
             } else {
