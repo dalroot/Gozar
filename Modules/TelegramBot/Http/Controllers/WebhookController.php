@@ -33,9 +33,12 @@ use Carbon\Carbon;
 use Telegram\Bot\FileUpload\InputFile;
 use Modules\TelegramBot\Services\RozanehExperience;
 use Modules\TelegramBot\Services\PlanCatalogService;
+use Modules\TelegramBot\Traits\TroubleshootingWizardTrait;
 
 class WebhookController extends Controller
 {
+    use TroubleshootingWizardTrait;
+
     protected $settings;
 
     /**
@@ -456,6 +459,11 @@ class WebhookController extends Controller
             $this->sendWalletMenu($user);
         } elseif (str_contains($normalizedText, 'تراکنش') || $text === '/transactions') {
             $this->sendTransactions($user);
+        } elseif ($text === '/troubleshoot' || $text === '/debug_wizard') {
+            if ($this->isAdminChat($chatId, $user)) {
+                $this->showTroubleshootWelcome($chatId, null, $user);
+                return;
+            }
         } elseif (str_contains($normalizedText, 'پشتیبانی') || $text === '/support') {
             $this->showSupportMenu($user);
         } elseif (str_contains($normalizedText, 'کسبدرآمد') || str_contains($normalizedText, 'دعوتازدوس') || $text === '/referral') {
@@ -742,6 +750,17 @@ class WebhookController extends Controller
             $orderId = Str::before($payload, '_');
             $reasonKey = Str::after($payload, '_');
             $this->handleAdminReasonSelection($chatId, $orderId, $reasonKey, $callbackQuery->getId(), $messageId, $callbackQuery->getFrom());
+            return;
+        }
+
+        if (Str::startsWith($data, 'ts_')) {
+            $user = User::where('telegram_chat_id', $chatId)->first();
+            if ($this->isAdminChat($chatId, $user)) {
+                try {
+                    Telegram::answerCallbackQuery(['callback_query_id' => $callbackQuery->getId()]);
+                } catch (\Exception $e) {}
+                $this->handleTroubleshootingCallback($chatId, $data, $messageId, $user);
+            }
             return;
         }
 
@@ -1113,6 +1132,11 @@ class WebhookController extends Controller
 
         if (!$user || !$user->bot_state) {
             $this->sendOrEditMainMenu($chatId, "❌ لطفاً ابتدا یک عملیات (مانند ثبت تیکت یا رسید) را شروع کنید.");
+            return;
+        }
+
+        if ($user->bot_state === 'awaiting_troubleshoot_screenshot') {
+            $this->handleTroubleshootPhoto($chatId, $message, $user);
             return;
         }
 
@@ -4151,6 +4175,15 @@ class WebhookController extends Controller
                 $this->makeInlineButton(['text' => '📝 ثبت تیکت جدید', 'callback_data' => '/support_new', 'style' => 'primary']),
                 $this->makeInlineButton(['text' => '📖 راهنما و آموزش‌ها', 'callback_data' => '/tutorials', 'style' => 'primary'])
             ]);
+        if ($this->isAdminChat($user->telegram_chat_id, $user)) {
+            $keyboard->row([
+                $this->makeInlineButton([
+                    'text' => '🧪 تست سامانه هوشمند عیب‌یابی (مخصوص ادمین)',
+                    'callback_data' => 'ts_start',
+                    'style' => 'warning'
+                ])
+            ]);
+        }
         foreach ($tickets as $ticket) {
             if ($ticket->status !== 'closed') {
                 $keyboard->row([
