@@ -3,6 +3,8 @@
 namespace Modules\TelegramBot\Traits;
 
 use App\Models\User;
+use App\Models\Setting;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Keyboard\Keyboard;
 use Telegram\Bot\Laravel\Facades\Telegram;
@@ -25,6 +27,26 @@ trait TroubleshootingWizardTrait
     }
 
     /**
+     * ذخیره‌سازی داده‌های پاسخ‌های عیب‌یابی کاربر در کش
+     */
+    protected function setTsData($chatId, string $key, $value): void
+    {
+        $data = Cache::get("ts_data_{$chatId}", []);
+        $data[$key] = $value;
+        Cache::put("ts_data_{$chatId}", $data, now()->addHours(2));
+    }
+
+    protected function getTsData($chatId): array
+    {
+        return Cache::get("ts_data_{$chatId}", []);
+    }
+
+    protected function clearTsData($chatId): void
+    {
+        Cache::forget("ts_data_{$chatId}");
+    }
+
+    /**
      * گام ۱: منوی شروع عیب‌یابی هوشمند (انتخاب سیستم‌عامل)
      */
     protected function showTroubleshootWelcome($chatId, $messageId = null, $user = null)
@@ -32,11 +54,12 @@ trait TroubleshootingWizardTrait
         if ($user) {
             $user->update(["bot_state" => null]);
         }
+        $this->clearTsData($chatId);
 
         $userName = htmlspecialchars($user?->name ?: "کاربر گرامی");
         $text = "🔧 <b>سامانه هوشمند عیب‌یابی و رفع قطعی روزنه</b>\n\n" .
                 "سلام <b>{$userName}</b> عزیز وقتتون بخیر 🌸\n\n" .
-                "⚠️ <b>کاربر گرامی:</b> جهت بررسی دقیق و برای اینکه راحت‌تر بتونیم عیب‌یابی کنیم و مشکل اتصال شما رو سریع برطرف کنیم، لطفاً به این چند پرسش کوتاه گام‌به‌گام پاسخ دهید:\n\n" .
+                "⚠️ <b>کاربر گرامی:</b> جهت بررسی دقیق و برای اینکه راحت‌تر بتونیم مشکل اتصالتان را عیب‌یابی کنیم و سریعاً مشکل را حل کنیم، لطفاً به این چند پرسش کوتاه و گام‌به‌گام پاسخ دهید:\n\n" .
                 "📱 <b>پرسش اول:</b> در حال حاضر از کدام سیستم‌عامل استفاده می‌کنید؟";
 
         $keyboard = Keyboard::make()->inline()
@@ -64,45 +87,118 @@ trait TroubleshootingWizardTrait
                 $this->showTroubleshootWelcome($chatId, $messageId, $user);
                 break;
             case "ts_os_android":
+                $this->setTsData($chatId, 'os', 'اندروید (Android)');
                 $this->showTroubleshootAndroidApps($chatId, $messageId);
                 break;
             case "ts_os_ios":
+                $this->setTsData($chatId, 'os', 'iOS (آیفون / آیپد)');
                 $this->showTroubleshootIosApps($chatId, $messageId);
                 break;
             case "ts_os_windows":
+                $this->setTsData($chatId, 'os', 'ویندوز (Windows)');
                 $this->showTroubleshootWindowsApps($chatId, $messageId);
                 break;
-            case "ts_app_fake":
+
+            // انتخاب نرم‌افزار اندروید
+            case "ts_app_v2rayng":
+                $this->setTsData($chatId, 'app', 'v2rayNG');
+                $this->showTroubleshootVersionCheck($chatId, $messageId, 'v2rayng');
+                break;
+            case "ts_app_hiddify":
+                $this->setTsData($chatId, 'app', 'Hiddify');
+                $this->showTroubleshootVersionCheck($chatId, $messageId, 'hiddify');
+                break;
+            case "ts_app_other_valid":
+                $this->setTsData($chatId, 'app', 'سایر کلاینت‌های استاندارد');
+                $this->showTroubleshootVersionCheck($chatId, $messageId, 'v2rayng');
+                break;
+            case "ts_app_fake_android":
+                $this->setTsData($chatId, 'app', 'نرم‌افزار متفرقه / نامشخص');
                 $this->showTroubleshootFakeAppWarning($chatId, $messageId, "android");
                 break;
+
+            // انتخاب نرم‌افزار iOS
+            case "ts_app_streisand":
+                $this->setTsData($chatId, 'app', 'Streisand');
+                $this->showTroubleshootVersionCheck($chatId, $messageId, 'streisand');
+                break;
+            case "ts_app_ios_valid":
+                $this->setTsData($chatId, 'app', 'V2Box / FoXray / Hiddify');
+                $this->showTroubleshootVersionCheck($chatId, $messageId, 'streisand');
+                break;
             case "ts_app_fake_ios":
+                $this->setTsData($chatId, 'app', 'نرم‌افزار متفرقه در iOS');
                 $this->showTroubleshootFakeAppWarning($chatId, $messageId, "ios");
                 break;
+
+            // انتخاب نرم‌افزار ویندوز
+            case "ts_app_v2rayn":
+                $this->setTsData($chatId, 'app', 'v2rayN');
+                $this->showTroubleshootVersionCheck($chatId, $messageId, 'v2rayn');
+                break;
+            case "ts_app_hiddify_win":
+                $this->setTsData($chatId, 'app', 'Hiddify Windows');
+                $this->showTroubleshootVersionCheck($chatId, $messageId, 'hiddify_win');
+                break;
             case "ts_app_fake_win":
+                $this->setTsData($chatId, 'app', 'نرم‌افزار متفرقه در ویندوز');
                 $this->showTroubleshootFakeAppWarning($chatId, $messageId, "windows");
                 break;
-            case "ts_app_v2rayng":
-            case "ts_app_other_valid":
+
+            // بررسی نسخه
+            case "ts_version_yes":
+                $this->setTsData($chatId, 'has_latest_version', 'بله (آخرین نسخه)');
                 $this->showTroubleshootUpdateSub($chatId, $messageId);
                 break;
+            case "ts_version_dl_v2rayng":
+                $this->setTsData($chatId, 'has_latest_version', 'خیر (نیاز به دانلود نسخه جدید داشت)');
+                $this->showTroubleshootDownloadLinks($chatId, $messageId, 'v2rayng');
+                break;
+            case "ts_version_dl_hiddify":
+                $this->setTsData($chatId, 'has_latest_version', 'خیر (نیاز به دانلود نسخه جدید داشت)');
+                $this->showTroubleshootDownloadLinks($chatId, $messageId, 'hiddify');
+                break;
+            case "ts_version_dl_streisand":
+                $this->setTsData($chatId, 'has_latest_version', 'خیر (نیاز به دانلود نسخه جدید داشت)');
+                $this->showTroubleshootDownloadLinks($chatId, $messageId, 'streisand');
+                break;
+            case "ts_version_dl_v2rayn":
+                $this->setTsData($chatId, 'has_latest_version', 'خیر (نیاز به دانلود نسخه جدید داشت)');
+                $this->showTroubleshootDownloadLinks($chatId, $messageId, 'v2rayn');
+                break;
+            case "ts_version_dl_hiddify_win":
+                $this->setTsData($chatId, 'has_latest_version', 'خیر (نیاز به دانلود نسخه جدید داشت)');
+                $this->showTroubleshootDownloadLinks($chatId, $messageId, 'hiddify_win');
+                break;
+
+            // مرحله بروزرسانی اشتراک
             case "ts_help_import":
                 $this->showTroubleshootHelpImport($chatId, $messageId);
                 break;
             case "ts_step_isp":
+                $this->setTsData($chatId, 'sub_updated', 'بله (بروزرسانی شد)');
                 $this->showTroubleshootIspSelection($chatId, $messageId);
                 break;
+
+            // اپراتورها
             case "ts_isp_mci":
+                $this->setTsData($chatId, 'isp', 'همراه اول (MCI)');
                 $this->showTroubleshootIspGuide($chatId, $messageId, "همراه اول (MCI)");
                 break;
             case "ts_isp_mtn":
+                $this->setTsData($chatId, 'isp', 'ایرانسل (Irancell)');
                 $this->showTroubleshootIspGuide($chatId, $messageId, "ایرانسل (Irancell)");
                 break;
             case "ts_isp_rightel":
+                $this->setTsData($chatId, 'isp', 'رایتل (RighTel)');
                 $this->showTroubleshootIspGuide($chatId, $messageId, "رایتل (RighTel)");
                 break;
             case "ts_isp_wifi":
+                $this->setTsData($chatId, 'isp', 'وای‌فای و اینترنت ثابت (Wi-Fi)');
                 $this->showTroubleshootIspGuide($chatId, $messageId, "وای‌فای و اینترنت ثابت (Wi-Fi)");
                 break;
+
+            // نتیجه نهایی
             case "ts_resolved":
                 $this->showTroubleshootResolved($chatId, $messageId);
                 break;
@@ -122,13 +218,16 @@ trait TroubleshootingWizardTrait
 
         $keyboard = Keyboard::make()->inline()
             ->row([
-                $this->makeInlineButton(["text" => "🟢 v2rayNG (نرم‌افزار رسمی روزنه)", "callback_data" => "ts_app_v2rayng", "style" => "success"]),
+                $this->makeInlineButton(["text" => "🟢 v2rayNG (پیشنهادی روزنه)", "callback_data" => "ts_app_v2rayng", "style" => "success"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔵 Hiddify / Streisand / V2Box", "callback_data" => "ts_app_other_valid", "style" => "primary"]),
+                $this->makeInlineButton(["text" => "🔵 Hiddify (پیشنهادی روزنه)", "callback_data" => "ts_app_hiddify", "style" => "primary"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "⚠️ برنامه متفرقه یا نمی‌دانم", "callback_data" => "ts_app_fake", "style" => "danger"]),
+                $this->makeInlineButton(["text" => "🟡 V2Box / سایر برنامه‌ها", "callback_data" => "ts_app_other_valid", "style" => "default"]),
+            ])
+            ->row([
+                $this->makeInlineButton(["text" => "⚠️ برنامه متفرقه یا نمی‌دانم", "callback_data" => "ts_app_fake_android", "style" => "danger"]),
             ])
             ->row([
                 $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
@@ -147,11 +246,13 @@ trait TroubleshootingWizardTrait
 
         $keyboard = Keyboard::make()->inline()
             ->row([
-                $this->makeInlineButton(["text" => "🟢 Streisand (رسمی و پیشنهادی)", "callback_data" => "ts_app_v2rayng", "style" => "success"]),
-                $this->makeInlineButton(["text" => "🔵 V2Box / FoXray / Sing-box", "callback_data" => "ts_app_other_valid", "style" => "primary"]),
+                $this->makeInlineButton(["text" => "🟢 Streisand (پیشنهادی روزنه)", "callback_data" => "ts_app_streisand", "style" => "success"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "⚠️ برنامه دیگر / نمی‌دانم", "callback_data" => "ts_app_fake_ios", "style" => "danger"]),
+                $this->makeInlineButton(["text" => "🔵 Hiddify / V2Box / FoXray", "callback_data" => "ts_app_ios_valid", "style" => "primary"]),
+            ])
+            ->row([
+                $this->makeInlineButton(["text" => "⚠️ برنامه متفرقه یا نمی‌دانم", "callback_data" => "ts_app_fake_ios", "style" => "danger"]),
             ])
             ->row([
                 $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
@@ -166,15 +267,95 @@ trait TroubleshootingWizardTrait
     protected function showTroubleshootWindowsApps($chatId, $messageId)
     {
         $text = "💻 <b>عیب‌یابی ویندوز — انتخاب نرم‌افزار</b>\n\n" .
-                "از کدام نرم‌افزار در ویندوز استفاده می‌کنید؟";
+                "از کدام نرم‌افزار در سیستم خود استفاده می‌کنید؟";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
-                $this->makeInlineButton(["text" => "🟢 v2rayN (رسمی)", "callback_data" => "ts_app_v2rayng", "style" => "success"]),
-                $this->makeInlineButton(["text" => "🔵 Hiddify Next / Nekoray", "callback_data" => "ts_app_other_valid", "style" => "primary"]),
+                $this->makeInlineButton(["text" => "🟢 v2rayN (پیشنهادی روزنه)", "callback_data" => "ts_app_v2rayn", "style" => "success"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "⚠️ برنامه دیگر", "callback_data" => "ts_app_fake_win", "style" => "danger"]),
+                $this->makeInlineButton(["text" => "🔵 Hiddify Next (پیشنهادی روزنه)", "callback_data" => "ts_app_hiddify_win", "style" => "primary"]),
+            ])
+            ->row([
+                $this->makeInlineButton(["text" => "⚠️ برنامه متفرقه یا نمی‌دانم", "callback_data" => "ts_app_fake_win", "style" => "danger"]),
+            ])
+            ->row([
+                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
+            ]);
+
+        $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
+    }
+
+    /**
+     * بررسی داشتن آخرین نسخه نرم‌افزار
+     */
+    protected function showTroubleshootVersionCheck($chatId, $messageId, string $appKey)
+    {
+        $appNames = [
+            'v2rayng' => 'v2rayNG',
+            'hiddify' => 'Hiddify',
+            'streisand' => 'Streisand',
+            'v2rayn' => 'v2rayN',
+            'hiddify_win' => 'Hiddify Windows',
+        ];
+        $appName = $appNames[$appKey] ?? 'نرم‌افزار انتخابی';
+
+        $text = "📲 <b>پرسش مهم: بررسی نسخه {$appName}</b>\n\n" .
+                "آیا مطمئن هستید که <b>آخرین نسخه</b> این برنامه را نصب دارید؟\n\n" .
+                "💡 به دلیل ارتقای مداوم فیلترینگ و پروتکل‌های ضد فیلتر روزنه (مانند Reality و XHTTP)، در صورتی که نسخه برنامه‌تان قدیمی باشد، اتصال شما برقرار نخواهد شد.";
+
+        $keyboard = Keyboard::make()->inline()
+            ->row([
+                $this->makeInlineButton(["text" => "✅ بله، آخرین نسخه رو دارم", "callback_data" => "ts_version_yes", "style" => "success"]),
+            ])
+            ->row([
+                $this->makeInlineButton(["text" => "⬇️ خیر / دریافت لینک دانلود آخرین نسخه", "callback_data" => "ts_version_dl_{$appKey}", "style" => "primary"]),
+            ])
+            ->row([
+                $this->makeInlineButton(["text" => "🔙 انتخاب برنامه دیگر", "callback_data" => "ts_start", "style" => "default"]),
+            ]);
+
+        $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
+    }
+
+    /**
+     * ارائه لینک‌های دقیق و تست‌شده دانلود آخرین نسخه
+     */
+    protected function showTroubleshootDownloadLinks($chatId, $messageId, string $appKey)
+    {
+        $tsData = $this->getTsData($chatId);
+        $os = $tsData['os'] ?? 'اندروید (Android)';
+
+        $text = "📥 <b>دانلود آخرین نسخه رسمی نرم‌افزار</b>\n\n" .
+                "برای دریافت نسخه کاملاً بروز، از لینک‌های رسمی و مستقیم زیر استفاده کنید:\n\n";
+
+        if ($appKey === 'v2rayng') {
+            $text .= "📱 <b>برنامه v2rayNG (مخصوص اندروید):</b>\n" .
+                     "▫️ <a href=\"https://play.google.com/store/apps/details?id=com.v2ray.ang\">📲 دریافت مستقیم از Google Play</a>\n" .
+                     "▫️ <a href=\"https://github.com/2dust/v2rayNG/releases/latest\">📦 دانلود فایل مستقیم از GitHub Releases</a>\n\n";
+        } elseif ($appKey === 'hiddify') {
+            $text .= "📱 <b>برنامه Hiddify (مخصوص اندروید):</b>\n" .
+                     "▫️ <a href=\"https://play.google.com/store/apps/details?id=app.hiddify.com\">📲 دریافت مستقیم از Google Play</a>\n" .
+                     "▫️ <a href=\"https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Android-universal.apk\">📦 دانلود مستقیم فایل Universal APK</a>\n\n";
+        } elseif ($appKey === 'streisand') {
+            $text .= "🍏 <b>برنامه‌های پیشنهادی iOS (آیفون / آیپد):</b>\n" .
+                     "▫️ <a href=\"https://apps.apple.com/app/streisand/id6450534064\">📥 دانلود Streisand از App Store</a>\n" .
+                     "▫️ <a href=\"https://apps.apple.com/app/v2box-v2ray-client/id6446814690\">📥 دانلود V2Box از App Store</a>\n" .
+                     "▫️ <a href=\"https://apps.apple.com/app/hiddify-proxy-vpn/id6596777532\">📥 دانلود Hiddify از App Store</a>\n\n";
+        } elseif ($appKey === 'v2rayn') {
+            $text .= "💻 <b>برنامه v2rayN (مخصوص ویندوز):</b>\n" .
+                     "▫️ <a href=\"https://github.com/2dust/v2rayN/releases/latest/download/v2rayN-With-Core.zip\">📦 دانلود مستقیم فایل زیپ کامل با Core (نسخه 64bit)</a>\n" .
+                     "▫️ <a href=\"https://github.com/2dust/v2rayN/releases/latest\">🌐 صفحه تمام نسخه‌ها در GitHub</a>\n\n";
+        } elseif ($appKey === 'hiddify_win') {
+            $text .= "💻 <b>برنامه Hiddify (مخصوص ویندوز):</b>\n" .
+                     "▫️ <a href=\"https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Windows-Setup-x64.exe\">📦 دانلود مستقیم فایل Setup ویندوز (x64)</a>\n\n";
+        }
+
+        $text .= "<i>(پس از دانلود و نصب، روی دکمه زیر بزنید تا عیب‌یابی را ادامه دهیم).</i>";
+
+        $keyboard = Keyboard::make()->inline()
+            ->row([
+                $this->makeInlineButton(["text" => "✅ نصب / بروزرسانی کردم؛ رفتن به گام بعد", "callback_data" => "ts_version_yes", "style" => "success"]),
             ])
             ->row([
                 $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
@@ -188,33 +369,27 @@ trait TroubleshootingWizardTrait
      */
     protected function showTroubleshootFakeAppWarning($chatId, $messageId, $os = "android")
     {
-        $text = "🛑 <b>علت اصلی قطعی: استفاده از نرم‌افزار نامعتبر</b>\n\n" .
-                "کانفیگ‌های نسل جدید روزنه (پروتکل‌های ضد فیلتر Reality و TLS و XHTTP) فقط روی نرم‌افزارهای رسمی هسته Xray کار می‌کنند و برنامه‌های متفرقه توانایی اتصال آن‌ها را ندارند!\n\n" .
-                "🚀 <b>راهکار فوری (حل مشکل در ۱ دقیقه):</b>\n";
+        $text = "🛑 <b>علت اصلی قطعی: استفاده از نرم‌افزار نامعتبر یا متفرقه</b>\n\n" .
+                "کانفیگ‌های نسل جدید روزنه با پروتکل‌های پیشرفته ضد فیلتر (مانند Reality و TLS و XHTTP) پیکربندی شده‌اند. نرم‌افزارهای متفرقه یا کلاینت‌های غیررسمی توانایی هندل این پروتکل‌ها را ندارند و فوراً قطع می‌شوند!\n\n" .
+                "🚀 <b>راهکار فوری:</b> لطفاً نرم‌افزار پیشنهادی را از لینک‌های رسمی زیر دریافت و نصب فرمایید:\n\n";
 
         if ($os === "android") {
-            $text .= "۱. آخرین نسخه رسمی <b>v2rayNG</b> را از لینک مستقیم زیر نصب کنید:\n" .
-                     "📥 <a href=\"https://github.com/2dust/v2rayNG/releases\">دانلود مستقیم نسخه رسمی از GitHub</a>\n" .
-                     "یا از گوگل‌پلی:\n" .
-                     "📥 <a href=\"https://play.google.com/store/apps/details?id=com.v2ray.ang\">دریافت از Google Play</a>\n\n" .
-                     "۲. پس از نصب، لینک اشتراک خود را در برنامه اضافه کنید.";
+            $text .= "▫️ <a href=\"https://play.google.com/store/apps/details?id=com.v2ray.ang\">📲 دانلود v2rayNG از Google Play</a>\n" .
+                     "▫️ <a href=\"https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Android-universal.apk\">📦 دانلود مستقیم فایل APK یونیورسال Hiddify</a>\n";
             $backCallback = "ts_os_android";
         } elseif ($os === "ios") {
-            $text .= "۱. نرم‌افزار رسمی و رایگان <b>Streisand</b> یا <b>V2Box</b> را از اپ‌استور نصب کنید:\n" .
-                     "📥 <a href=\"https://apps.apple.com/us/app/streisand/id6450534064\">دانلود Streisand از App Store</a>\n" .
-                     "📥 <a href=\"https://apps.apple.com/us/app/v2box-v2ray-client/id6446814690\">دانلود V2Box از App Store</a>\n\n" .
-                     "۲. پس از نصب، لینک اشتراک خود را اضافه کنید.";
+            $text .= "▫️ <a href=\"https://apps.apple.com/app/streisand/id6450534064\">🍏 دانلود Streisand از App Store</a>\n" .
+                     "▫️ <a href=\"https://apps.apple.com/app/v2box-v2ray-client/id6446814690\">🍏 دانلود V2Box از App Store</a>\n";
             $backCallback = "ts_os_ios";
         } else {
-            $text .= "۱. آخرین نسخه رسمی <b>v2rayN</b> را از گیت‌هاب دانلود و اجرا کنید:\n" .
-                     "📥 <a href=\"https://github.com/2dust/v2rayN/releases\">دانلود v2rayN برای ویندوز</a>\n\n" .
-                     "۲. لینک اشتراک را در برنامه وارد کنید.";
+            $text .= "▫️ <a href=\"https://github.com/2dust/v2rayN/releases/latest/download/v2rayN-With-Core.zip\">💻 دانلود مستقیم v2rayN با هسته کامل</a>\n" .
+                     "▫️ <a href=\"https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Windows-Setup-x64.exe\">💻 دانلود مستقیم برنامه Hiddify ویندوز</a>\n";
             $backCallback = "ts_os_windows";
         }
 
         $keyboard = Keyboard::make()->inline()
             ->row([
-                $this->makeInlineButton(["text" => "✅ نصب کردم؛ رفتن به مرحله بعد", "callback_data" => "ts_app_v2rayng", "style" => "success"]),
+                $this->makeInlineButton(["text" => "✅ نصب کردم؛ رفتن به مرحله بعد", "callback_data" => "ts_version_yes", "style" => "success"]),
             ])
             ->row([
                 $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => $backCallback, "style" => "default"]),
@@ -224,18 +399,24 @@ trait TroubleshootingWizardTrait
     }
 
     /**
-     * گام ۳: آموزش الزام‌آور بروزرسانی سابسکریپشن
+     * گام ۳: آموزش الزام‌آور بروزرسانی سابسکریپشن + معرفی لوکیشن‌ها و اینباندها
      */
     protected function showTroubleshootUpdateSub($chatId, $messageId)
     {
         $text = "🔄 <b>گام دوم: بروزرسانی لینک اشتراک (Update Subscription)</b>\n\n" .
                 "در بیش از ۸۰٪ مواقع، علت قطعی این است که سرورهای جدید را در برنامه‌تان بروزرسانی نکرده‌اید!\n\n" .
-                "📋 <b>روش انجام در ۲ ثانیه (برنامه v2rayNG):</b>\n" .
-                "۱. وارد برنامه شوید.\n" .
-                "۲. روی <b>منوی سه‌نقطه (⋮) در گوشه بالای صفحه</b> بزنید.\n" .
-                "۳. گزینه <b>«Update subscription»</b> (بروزرسانی اشتراک) را انتخاب کنید تا لیست سرورها بروز و تازه شود.\n\n" .
-                "<i>(در آیفون / Streisand: وارد تب Subscription شوید و دکمه فلش چرخان Update را لمس کنید).</i>\n\n" .
-                "آیا بروزرسانی را انجام دادید؟";
+                "📋 <b>روش انجام در ۲ ثانیه:</b>\n" .
+                "▫️ <b>v2rayNG:</b> وارد برنامه شوید > منوی سه‌نقطه (⋮) بالای صفحه > گزینه <b>Update subscription</b> را بزنید.\n" .
+                "▫️ <b>Streisand / Hiddify:</b> آیکون فلش چرخان 🔄 (Update) را در تب سرورها لمس کنید.\n\n" .
+                "🌐 <b>لوکیشن‌ها و کانفیگ‌های فعال روزنه پس از آپدیت:</b>\n" .
+                "🇩🇪 <b>آلمان:</b> کانفیگ‌های تانل ملی و ضد فیلتر (پایدارترین)\n" .
+                "🇳🇱 <b>هلند:</b> کانفیگ‌های مستقیم، تانل و مخصوص مودم (HTTP)\n" .
+                "🇬🇧 <b>انگلیس:</b> سرورهای پاسارگاد (پینگ پایین و مناسب وبگردی)\n\n" .
+                "💡 <b>پیشنهاد اتصال سریع:</b>\n" .
+                "▫️ همراه اول: آلمان ضد فیلتر یا انگلیس\n" .
+                "▫️ ایرانسل: هلند مستقیم یا تانل ملی\n" .
+                "▫️ وای‌فای خانگی: هلند مودم (HTTP) یا آلمان\n\n" .
+                "آیا بروزرسانی اشتراک را در برنامه انجام دادید؟";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
@@ -245,7 +426,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "❓ بلد نیستم لینک رو وارد کنم", "callback_data" => "ts_help_import", "style" => "primary"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_os_android", "style" => "default"]),
+                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -256,17 +437,17 @@ trait TroubleshootingWizardTrait
      */
     protected function showTroubleshootHelpImport($chatId, $messageId)
     {
-        $text = "📥 <b>راهنمای سریع کپی و افزودن لینک اشتراک:</b>\n\n" .
+        $text = "📥 <b>راهنمای سریع افزودن لینک اشتراک به برنامه:</b>\n\n" .
                 "۱. در همین ربات، از بخش «سرویس‌های من» لینک اختصاصی اشتراک خود را کپی کنید.\n" .
                 "۲. وارد برنامه v2rayNG شوید.\n" .
                 "۳. روی <b>علامت مثبت (+) بالای صفحه</b> بزنید.\n" .
-                "۴. گزینه <b>«Import config from clipboard»</b> (وارد کردن از کلیپ‌بورد) را انتخاب کنید.\n" .
-                "۵. پس از اضافه شدن، از منوی سه‌نقطه (⋮) گزینه <b>Update subscription</b> را لمس کنید.";
+                "۴. گزینه <b>«Import config from clipboard»</b> را انتخاب کنید.\n" .
+                "۵. پس از اضافه شدن، از منوی سه‌نقطه (⋮) گزینه <b>Update subscription</b> را لمس نمایید.";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton(["text" => "✅ انجام دادم؛ گام بعدی", "callback_data" => "ts_step_isp", "style" => "success"]),
-                $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => "ts_app_v2rayng", "style" => "default"]),
+                $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => "ts_version_yes", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -277,8 +458,8 @@ trait TroubleshootingWizardTrait
      */
     protected function showTroubleshootIspSelection($chatId, $messageId)
     {
-        $text = "📶 <b>گام سوم: انتخاب اپراتور و تست پینگ (Real Delay)</b>\n\n" .
-                "اینترنت دستگاه شما در این لحظه متعلق به کدام اپراتور است؟";
+        $text = "📶 <b>گام سوم: انتخاب اینترنت فعال دستگاه</b>\n\n" .
+                "در این لحظه، اینترنت گوشی یا دستگاه شما متعلق به کدام اپراتور است؟";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
@@ -290,7 +471,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "🏠 وای‌فای / مخابرات / شاتل", "callback_data" => "ts_isp_wifi", "style" => "primary"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_app_v2rayng", "style" => "default"]),
+                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_version_yes", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -303,9 +484,9 @@ trait TroubleshootingWizardTrait
     {
         $text = "📊 <b>تنظیم اتصال برای اینترنت {$ispName}:</b>\n\n" .
                 "۱. وارد برنامه شوید و روی گزینه <b>«تست پینگ واقعی (Real delay / Ping)»</b> بزنید.\n" .
-                "۲. برای اپراتور شما، سرورهایی که با عنوان <b>TLS</b> یا <b>XHTTP</b> یا <b>Reality</b> مشخص شده‌اند بهترین عملکرد را دارند.\n" .
-                "۳. کانفیگی که عدد پینگ سبز یا زرد (مثلاً <code>140ms</code>) نشان می‌دهد را انتخاب و دکمه اتصال (دایره V) را بزنید.\n\n" .
-                "💡 <i>نکته مهم: حتماً فیلترشکن قبلی یا پروکسی داخلی تلگرام را خاموش کنید تا تداخل نداشته باشند.</i>\n\n" .
+                "۲. برای اپراتور شما، کانفیگ‌های مرتبط با <b>{$ispName}</b> یا سرورهای <b>آلمان ضد فیلتر / انگلیس</b> بهترین عملکرد را دارند.\n" .
+                "۳. کانفیگی که عدد پینگ سبز یا زرد نشان می‌دهد را انتخاب کرده و دکمه اتصال (دایره V) را لمس کنید.\n\n" .
+                "💡 <i>نکته: حتماً فیلترشکن قبلی یا پروکسی داخلی تلگرام را خاموش کنید تا اختلال ایجاد نشود.</i>\n\n" .
                 "آیا اکنون متصل شدید؟";
 
         $keyboard = Keyboard::make()->inline()
@@ -313,7 +494,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "🚀 بله متصل شدم! مشکل حل شد", "callback_data" => "ts_resolved", "style" => "success"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "❌ هنوز متصل نمی‌شود (بررسی کارشناس)", "callback_data" => "ts_require_screenshot", "style" => "danger"]),
+                $this->makeInlineButton(["text" => "❌ هنوز متصل نمی‌شود (ارسال اسکرین‌شات)", "callback_data" => "ts_require_screenshot", "style" => "danger"]),
             ])
             ->row([
                 $this->makeInlineButton(["text" => "🔙 انتخاب اپراتور دیگر", "callback_data" => "ts_step_isp", "style" => "default"]),
@@ -327,9 +508,11 @@ trait TroubleshootingWizardTrait
      */
     protected function showTroubleshootResolved($chatId, $messageId)
     {
+        $this->clearTsData($chatId);
+
         $text = "🎉 <b>بسیار عالی! خوشحالیم که مشکل اتصال شما برطرف شد.</b>\n\n" .
-                "هر زمان در آینده احساس افت سرعت یا قطعی داشتید، کافیست طبق همین آموزش یک‌بار منوی سه‌نقطه برنامه را زده و <b>Update subscription</b> را لمس کنید تا به تازه‌ترین سرورهای روز وصل شوید ✨\n\n" .
-                "از اینکه با روزنه همراه هستید سپاسگزاریم 🌸";
+                "هر زمان احساس کندی یا قطعی داشتید، کافیست یک‌بار طبق همین راهنما گزینه <b>Update subscription</b> را بزنید تا تازه‌ترین سرورهای روز بارگذاری شوند ✨\n\n" .
+                "از همراهی صمیمانه شما با روزنه سپاسگزاریم 🌸";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
@@ -349,9 +532,9 @@ trait TroubleshootingWizardTrait
         }
 
         $text = "📸 <b>گام نهایی: ارسال اسکرین‌شات از صفحه برنامه (الزامی)</b>\n\n" .
-                "کاربر گرامی، برای اینکه کارشناس فنی بتواند در سریع‌ترین زمان علت دقیق اختلال را بررسی کند:\n\n" .
-                "⚠️ <b>لطفاً یک اسکرین‌شات از صفحه اصلی برنامه‌تان (جایی که نام کانفیگ‌ها و نتیجه تست پینگ مشخص است) همینجا در ربات ارسال فرمایید.</b>\n\n" .
-                "<i>(به محض ارسال اسکرین‌شات، تیکت پشتیبانی شما همراه با تصویر مستقیماً برای کارشناس ارشد ارسال خواهد شد).</i>";
+                "کاربر گرامی، جهت بررسی تخصصی توسط کارشناسان فنی روزنه:\n\n" .
+                "⚠️ <b>لطفاً همین حالا یک اسکرین‌شات از صفحه اصلی برنامه‌تان (جایی که لیست کانفیگ‌ها و نتیجه تست پینگ مشخص است) در همین چت ارسال نمایید.</b>\n\n" .
+                "<i>(پس از ارسال تصویر، گزارش کامل فنی همراه با اسکرین‌شات مستقیماً برای کارشناس ارشد ارسال و تیکت پیگیری برای شما صادر خواهد شد).</i>";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
@@ -362,33 +545,156 @@ trait TroubleshootingWizardTrait
     }
 
     /**
-     * پردازش اسکرین‌شات ارسالی توسط کاربر در گام نهایی عیب‌یابی
+     * پردازش اسکرین‌شات ارسالی توسط کاربر، ایجاد تیکت رسمی و ارسال مستقیم به پی‌وی ادمین
      */
-    protected function handleTroubleshootPhoto($chatId, $message, $user)
+    protected function handleTroubleshootPhoto($chatId, $message, $user, $update = null)
     {
         $user->update(["bot_state" => null]);
 
+        $photoList = $message->getPhoto();
+        $largestPhoto = is_array($photoList) ? end($photoList) : null;
+        $fileId = $largestPhoto ? ($largestPhoto['file_id'] ?? $largestPhoto->getFileId()) : null;
+
+        $tsData = $this->getTsData($chatId);
+        $os = $tsData['os'] ?? 'مشخص نشده';
+        $app = $tsData['app'] ?? 'مشخص نشده';
+        $version = $tsData['has_latest_version'] ?? 'بررسی نشده';
+        $sub = $tsData['sub_updated'] ?? 'انجام نشده';
+        $isp = $tsData['isp'] ?? 'مشخص نشده';
+
+        // اطلاعات سرویس کاربر
+        $activeOrder = $user->orders()->whereIn('status', ['completed', 'active'])->latest()->first()
+            ?: $user->orders()->latest()->first();
+
+        $planTitle = $activeOrder?->plan?->title ?: 'بدون پلن فعال';
+        $orderSub = $activeOrder?->config_details ?: 'ندارد';
+        if (mb_strlen($orderSub) > 60) {
+            $orderSub = mb_substr($orderSub, 0, 57) . '...';
+        }
+
         $userName = htmlspecialchars($user->name ?: "کاربر گرامی");
-        $userLink = "<a href=\"tg://user?id={$chatId}\">{$userName}</a> (<code>{$chatId}</code>)";
+        $userUsername = !empty($user->username) ? "@" . ltrim($user->username, '@') : 'ندارد';
+        $userLink = "<a href=\"tg://user?id={$chatId}\">{$userName}</a> ({$userUsername})";
 
-        // ارسال هشدار به کانال لاگ / ادمین
-        $logAlert = "🚨 <b>گزارش قطعی جدید (سامانه عیب‌یابی)</b>\n\n" .
-                    "👤 <b>کاربر:</b> {$userLink}\n" .
-                    "📸 کاربر تمام مراحل عیب‌یابی را طی کرده و اسکرین‌شات پیوست را ارسال نموده است.\n" .
-                    "⏰ <b>زمان:</b> " . now()->format("Y-m-d H:i:s");
+        // ۱. ایجاد تیکت رسمی در سیستم
+        $ticketMessage = "گزارش عیب‌یابی خودکار:\n" .
+                         "- سیستم‌عامل: {$os}\n" .
+                         "- نرم‌افزار: {$app}\n" .
+                         "- وضعیت نسخه: {$version}\n" .
+                         "- وضعیت آپدیت ساب: {$sub}\n" .
+                         "- اپراتور اینترنت: {$isp}\n" .
+                         "- پلن کاربری: {$planTitle}\n" .
+                         "- لینک اشتراک: {$orderSub}";
 
-        $this->sendToLogChannel($logAlert);
+        $ticket = null;
+        try {
+            $ticket = $user->tickets()->create([
+                'subject' => "🚨 گزارش عیب‌یابی و قطعی ({$isp} | {$app})",
+                'message' => $ticketMessage,
+                'priority' => 'high',
+                'status' => 'open',
+                'source' => 'telegram',
+                'user_id' => $user->id,
+            ]);
 
-        // پیام تایید به کاربر
-        $replyText = "✅ <b>اسکرین‌شات شما با موفقیت دریافت و تحویل کارشناس شد.</b>\n\n" .
-                     "هم‌اکنون اطلاعات دستگاه و تصویر ارسالی شما در صف بررسی کارشناسان فنی قرار گرفت و در سریع‌ترین زمان پاسخ را همینجا دریافت خواهید کرد 🌸\n\n" .
-                     "از صبر و شکیبایی شما سپاسگزاریم ✨";
+            $replyData = ['user_id' => $user->id, 'message' => '[📎 اسکرین‌شات پیوست عیب‌یابی]'];
+            if ($update) {
+                try {
+                    $replyData['attachment_path'] = $this->savePhotoAttachment($update, 'ticket_attachments');
+                } catch (\Throwable $e) {}
+            }
+            $ticket->replies()->create($replyData);
+        } catch (\Throwable $e) {
+            Log::error("Failed to create troubleshoot ticket: " . $e->getMessage());
+        }
 
-        $keyboard = Keyboard::make()->inline()
+        $ticketIdStr = $ticket ? "#{$ticket->id}" : "نامشخص";
+
+        // ۲. متن گزارش کامل برای ادمین
+        $adminReport = "🚨 <b>گزارش قطعی و عیب‌یابی هوشمند روزنه</b>\n\n" .
+                       "👤 <b>کاربر:</b> {$userLink}\n" .
+                       "🆔 <b>چت‌آیدی:</b> <code>{$chatId}</code>\n" .
+                       "🎫 <b>شماره تیکت:</b> <b>{$ticketIdStr}</b>\n\n" .
+                       "📋 <b>نتایج عیب‌یابی کاربر:</b>\n" .
+                       "▫️ <b>سیستم‌عامل:</b> {$os}\n" .
+                       "▫️ <b>نرم‌افزار:</b> {$app}\n" .
+                       "▫️ <b>وضعیت نسخه:</b> {$version}\n" .
+                       "▫️ <b>بروزرسانی اشتراک:</b> {$sub}\n" .
+                       "▫️ <b>اپراتور اینترنت:</b> <b>{$isp}</b>\n\n" .
+                       "📦 <b>وضعیت اشتراک:</b>\n" .
+                       "▫️ <b>پلن:</b> {$planTitle}\n" .
+                       "▫️ <b>لینک ساب:</b> <code>{$orderSub}</code>\n\n" .
+                       "⏰ <b>زمان ثبت:</b> " . now()->format("Y-m-d H:i:s");
+
+        $adminChatId = $this->settings->get("telegram_admin_chat_id", "8629398713");
+
+        $adminKeyboard = Keyboard::make()->inline();
+        if ($ticket) {
+            $adminKeyboard->row([
+                $this->makeInlineButton(["text" => "✏️ پاسخ به تیکت {$ticketIdStr}", "callback_data" => "reply_ticket_{$ticket->id}", "style" => "primary"]),
+            ]);
+        }
+        if (!empty($user->username)) {
+            $adminKeyboard->row([
+                $this->makeInlineButton(["text" => "💬 ارسال پیام مستقیم در تلگرام", "url" => "https://t.me/" . ltrim($user->username, '@'), "style" => "default"]),
+            ]);
+        }
+
+        // ۳. ارسال مستقیم اسکرین‌شات و گزارش به پی‌وی ادمین
+        if ($adminChatId) {
+            try {
+                if ($fileId) {
+                    Telegram::sendPhoto([
+                        'chat_id' => $adminChatId,
+                        'photo' => $fileId,
+                        'caption' => $adminReport,
+                        'parse_mode' => 'HTML',
+                        'reply_markup' => $adminKeyboard,
+                    ]);
+                } else {
+                    Telegram::sendMessage([
+                        'chat_id' => $adminChatId,
+                        'text' => $adminReport,
+                        'parse_mode' => 'HTML',
+                        'reply_markup' => $adminKeyboard,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::error("Failed to send troubleshoot report to admin PV {$adminChatId}: " . $e->getMessage());
+            }
+        }
+
+        // ۴. ارسال به کانال لاگ (در صورت تنظیم بودن)
+        $logChannelId = $this->settings->get('telegram_log_channel_id');
+        if ($logChannelId && (string)$logChannelId !== (string)$adminChatId) {
+            try {
+                if ($fileId) {
+                    Telegram::sendPhoto([
+                        'chat_id' => $logChannelId,
+                        'photo' => $fileId,
+                        'caption' => $adminReport,
+                        'parse_mode' => 'HTML',
+                    ]);
+                } else {
+                    $this->sendToLogChannel($adminReport);
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // پاکسازی کش عیب‌یابی این سشن
+        $this->clearTsData($chatId);
+
+        // ۵. پیام تایید به کاربر
+        $userReply = "✅ <b>اسکرین‌شات و گزارش عیب‌یابی شما با موفقیت ثبت شد (تیکت {$ticketIdStr})</b>\n\n" .
+                     "اطلاعات دستگاه، اپراتور و تصویر ارسالی شما مستقیماً برای کارشناس ارشد فنی ارسال شد.\n" .
+                     "به زودی پس از بررسی صفحه برنامه شما، راهنمایی اختصاصی همینجا برای شما ارسال خواهد شد 🌸\n\n" .
+                     "از صبر و همراهی شما سپاسگزاریم ✨";
+
+        $userKeyboard = Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton(["text" => "🏠 بازگشت به منوی اصلی", "callback_data" => "/start", "style" => "primary"]),
             ]);
 
-        $this->sendOrEditMessage($chatId, $replyText, $keyboard);
+        $this->sendOrEditMessage($chatId, $userReply, $userKeyboard);
     }
 }

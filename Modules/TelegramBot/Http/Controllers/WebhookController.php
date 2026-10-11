@@ -1136,7 +1136,7 @@ class WebhookController extends Controller
         }
 
         if ($user->bot_state === 'awaiting_troubleshoot_screenshot') {
-            $this->handleTroubleshootPhoto($chatId, $message, $user);
+            $this->handleTroubleshootPhoto($chatId, $message, $user, $update);
             return;
         }
 
