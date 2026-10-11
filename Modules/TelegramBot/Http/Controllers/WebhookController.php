@@ -5317,6 +5317,10 @@ class WebhookController extends Controller
             }
         }
 
+        if (!empty($params['style']) && !in_array($params['style'], ['primary', 'danger', 'success', 'default'])) {
+            $params['style'] = ($params['style'] === 'secondary') ? 'default' : 'primary';
+        }
+
         // جلوگیری از ارسال ایموجی کاستوم برای حفظ حداکثر سازگاری در تمامی دستگاه‌ها
         unset($params['icon_custom_emoji_id']);
 

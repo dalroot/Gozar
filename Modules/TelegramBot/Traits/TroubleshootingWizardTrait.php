@@ -35,8 +35,9 @@ trait TroubleshootingWizardTrait
 
         $userName = htmlspecialchars($user?->name ?: "کاربر گرامی");
         $text = "🔧 <b>سامانه هوشمند عیب‌یابی و رفع قطعی روزنه</b>\n\n" .
-                "سلام <b>{$userName}</b> عزیز وقتتون بخیر 🌸\n" .
-                "برای اینکه در کمتر از ۲ دقیقه مشکل اتصالتان را شناسایی و برطرف کنیم، لطفاً نوع سیستم‌عامل دستگاهتان را انتخاب نمایید:";
+                "سلام <b>{$userName}</b> عزیز وقتتون بخیر 🌸\n\n" .
+                "⚠️ <b>کاربر گرامی:</b> جهت بررسی دقیق و برای اینکه راحت‌تر بتونیم عیب‌یابی کنیم و مشکل اتصال شما رو سریع برطرف کنیم، لطفاً به این چند پرسش کوتاه گام‌به‌گام پاسخ دهید:\n\n" .
+                "📱 <b>پرسش اول:</b> در حال حاضر از کدام سیستم‌عامل استفاده می‌کنید؟";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
@@ -130,7 +131,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "⚠️ برنامه متفرقه یا نمی‌دانم", "callback_data" => "ts_app_fake", "style" => "danger"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "secondary"]),
+                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -153,7 +154,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "⚠️ برنامه دیگر / نمی‌دانم", "callback_data" => "ts_app_fake_ios", "style" => "danger"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "secondary"]),
+                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -176,7 +177,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "⚠️ برنامه دیگر", "callback_data" => "ts_app_fake_win", "style" => "danger"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "secondary"]),
+                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -216,7 +217,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "✅ نصب کردم؛ رفتن به مرحله بعد", "callback_data" => "ts_app_v2rayng", "style" => "success"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => $backCallback, "style" => "secondary"]),
+                $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => $backCallback, "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -244,7 +245,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "❓ بلد نیستم لینک رو وارد کنم", "callback_data" => "ts_help_import", "style" => "primary"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_os_android", "style" => "secondary"]),
+                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_os_android", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -265,7 +266,7 @@ trait TroubleshootingWizardTrait
         $keyboard = Keyboard::make()->inline()
             ->row([
                 $this->makeInlineButton(["text" => "✅ انجام دادم؛ گام بعدی", "callback_data" => "ts_step_isp", "style" => "success"]),
-                $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => "ts_app_v2rayng", "style" => "secondary"]),
+                $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => "ts_app_v2rayng", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -289,7 +290,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "🏠 وای‌فای / مخابرات / شاتل", "callback_data" => "ts_isp_wifi", "style" => "primary"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_app_v2rayng", "style" => "secondary"]),
+                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_app_v2rayng", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
@@ -315,7 +316,7 @@ trait TroubleshootingWizardTrait
                 $this->makeInlineButton(["text" => "❌ هنوز متصل نمی‌شود (بررسی کارشناس)", "callback_data" => "ts_require_screenshot", "style" => "danger"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 انتخاب اپراتور دیگر", "callback_data" => "ts_step_isp", "style" => "secondary"]),
+                $this->makeInlineButton(["text" => "🔙 انتخاب اپراتور دیگر", "callback_data" => "ts_step_isp", "style" => "default"]),
             ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
