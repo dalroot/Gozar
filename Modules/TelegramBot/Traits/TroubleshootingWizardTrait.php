@@ -154,6 +154,9 @@ trait TroubleshootingWizardTrait
                 $this->setTsData($chatId, 'has_latest_version', 'خیر (نیاز به دانلود نسخه جدید داشت)');
                 $this->showTroubleshootDownloadLinks($chatId, $messageId, 'v2rayng');
                 break;
+            case "ts_send_apk_v2rayng":
+                $this->sendTroubleshootApk($chatId, 'v2rayng');
+                break;
             case "ts_version_dl_hiddify":
                 $this->setTsData($chatId, 'has_latest_version', 'خیر (نیاز به دانلود نسخه جدید داشت)');
                 $this->showTroubleshootDownloadLinks($chatId, $messageId, 'hiddify');
@@ -323,45 +326,82 @@ trait TroubleshootingWizardTrait
      */
     protected function showTroubleshootDownloadLinks($chatId, $messageId, string $appKey)
     {
-        $tsData = $this->getTsData($chatId);
-        $os = $tsData['os'] ?? 'اندروید (Android)';
-
-        $text = "📥 <b>دانلود آخرین نسخه رسمی نرم‌افزار</b>\n\n" .
-                "برای دریافت نسخه کاملاً بروز، از لینک‌های رسمی و مستقیم زیر استفاده کنید:\n\n";
+        $text = "📥 <b>دانلود آخرین نسخه رسمی نرم‌افزار</b>\n\n";
 
         if ($appKey === 'v2rayng') {
-            $text .= "📱 <b>برنامه v2rayNG (مخصوص اندروید):</b>\n" .
-                     "▫️ <a href=\"https://play.google.com/store/apps/details?id=com.v2ray.ang\">📲 دریافت مستقیم از Google Play</a>\n" .
-                     "▫️ <a href=\"https://github.com/2dust/v2rayNG/releases/latest\">📦 دانلود فایل مستقیم از GitHub Releases</a>\n\n";
+            $text .= "📱 <b>برنامه v2rayNG (مخصوص اندروید):</b>\n\n" .
+                     "⚠️ <i>توجه: به دلیل محدودیت‌ها، این برنامه موقتاً از گوگل‌پلی در دسترس نیست.</i>\n\n" .
+                     "🚀 <b>روش‌های دریافت نسخه رسمی (v2.2.6):</b>\n" .
+                     "۱. <b>ارسال مستقیم در تلگرام:</b> روی دکمه آبی زیر بزنید تا فایل APK فوراً همینجا در چت برایتان فرستاده شود.\n" .
+                     "۲. <b>دانلود مستقیم از سرور روزنه:</b> <a href=\"https://bot.cinemapluss.ir:88/downloads/v2rayNG.apk\">کلیک جهت دانلود سریع APK</a>\n" .
+                     "۳. <b>دانلود مستقیم از گیت‌هاب رسمی:</b> <a href=\"https://github.com/2dust/v2rayNG/releases/download/2.2.6/v2rayNG_2.2.6_arm64-v8a.apk\">دانلود فایل نسخه ۶۴بیتی</a>\n\n";
         } elseif ($appKey === 'hiddify') {
-            $text .= "📱 <b>برنامه Hiddify (مخصوص اندروید):</b>\n" .
+            $text .= "📱 <b>برنامه Hiddify (مخصوص اندروید):</b>\n\n" .
                      "▫️ <a href=\"https://play.google.com/store/apps/details?id=app.hiddify.com\">📲 دریافت مستقیم از Google Play</a>\n" .
-                     "▫️ <a href=\"https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Android-universal.apk\">📦 دانلود مستقیم فایل Universal APK</a>\n\n";
+                     "▫️ <a href=\"https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Android-universal.apk\">📦 دانلود مستقیم فایل Universal APK از GitHub</a>\n\n";
         } elseif ($appKey === 'streisand') {
-            $text .= "🍏 <b>برنامه‌های پیشنهادی iOS (آیفون / آیپد):</b>\n" .
+            $text .= "🍏 <b>برنامه‌های پیشنهادی iOS (آیفون / آیپد):</b>\n\n" .
                      "▫️ <a href=\"https://apps.apple.com/app/streisand/id6450534064\">📥 دانلود Streisand از App Store</a>\n" .
                      "▫️ <a href=\"https://apps.apple.com/app/v2box-v2ray-client/id6446814690\">📥 دانلود V2Box از App Store</a>\n" .
                      "▫️ <a href=\"https://apps.apple.com/app/hiddify-proxy-vpn/id6596777532\">📥 دانلود Hiddify از App Store</a>\n\n";
         } elseif ($appKey === 'v2rayn') {
-            $text .= "💻 <b>برنامه v2rayN (مخصوص ویندوز):</b>\n" .
+            $text .= "💻 <b>برنامه v2rayN (مخصوص ویندوز):</b>\n\n" .
                      "▫️ <a href=\"https://github.com/2dust/v2rayN/releases/latest/download/v2rayN-With-Core.zip\">📦 دانلود مستقیم فایل زیپ کامل با Core (نسخه 64bit)</a>\n" .
                      "▫️ <a href=\"https://github.com/2dust/v2rayN/releases/latest\">🌐 صفحه تمام نسخه‌ها در GitHub</a>\n\n";
         } elseif ($appKey === 'hiddify_win') {
-            $text .= "💻 <b>برنامه Hiddify (مخصوص ویندوز):</b>\n" .
+            $text .= "💻 <b>برنامه Hiddify (مخصوص ویندوز):</b>\n\n" .
                      "▫️ <a href=\"https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Windows-Setup-x64.exe\">📦 دانلود مستقیم فایل Setup ویندوز (x64)</a>\n\n";
         }
 
-        $text .= "<i>(پس از دانلود و نصب، روی دکمه زیر بزنید تا عیب‌یابی را ادامه دهیم).</i>";
+        $text .= "<i>(پس از دانلود و نصب، روی دکمه «نصب کردم» بزنید تا عیب‌یابی را ادامه دهیم).</i>";
+
+        $keyboard = Keyboard::make()->inline();
+        if ($appKey === 'v2rayng') {
+            $keyboard->row([
+                $this->makeInlineButton(["text" => "📥 ارسال مستقیم فایل نصبی v2rayNG در تلگرام", "callback_data" => "ts_send_apk_v2rayng", "style" => "primary"]),
+            ]);
+        }
+        $keyboard->row([
+            $this->makeInlineButton(["text" => "✅ نصب / بروزرسانی کردم؛ رفتن به گام بعد", "callback_data" => "ts_version_yes", "style" => "success"]),
+        ])
+        ->row([
+            $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
+        ]);
+
+        $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
+    }
+
+    /**
+     * ارسال مستقیم فایل APK داخل تلگرام بدون نیاز به خروج از ربات
+     */
+    protected function sendTroubleshootApk($chatId, $appKey = 'v2rayng')
+    {
+        $fileId = 'BQACAgEAAxkDAAIDi2rMG9tQvRS9QRGlAxjeMiqhGgbMAAJfBwACbRtpRnKG0QABhEKb7z0E';
+
+        $caption = "📦 <b>فایل نصبی آخرین نسخه رسمی v2rayNG (نسخه ۲.۲.۶)</b>\n\n" .
+                   "▫️ سازگار با تمام گوشی‌های اندروید (arm64)\n" .
+                   "▫️ بدون فیلتر و بدون نیاز به ورود به سایت یا فروشگاه\n\n" .
+                   "کافیست روی فایل بالا لمس کنید تا نصب شود ✨";
 
         $keyboard = Keyboard::make()->inline()
             ->row([
-                $this->makeInlineButton(["text" => "✅ نصب / بروزرسانی کردم؛ رفتن به گام بعد", "callback_data" => "ts_version_yes", "style" => "success"]),
+                $this->makeInlineButton(["text" => "✅ نصب کردم؛ ادامه عیب‌یابی", "callback_data" => "ts_version_yes", "style" => "success"]),
             ])
             ->row([
-                $this->makeInlineButton(["text" => "🔙 مرحله قبل", "callback_data" => "ts_start", "style" => "default"]),
+                $this->makeInlineButton(["text" => "🔙 بازگشت به مراحل", "callback_data" => "ts_os_android", "style" => "default"]),
             ]);
 
-        $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
+        try {
+            Telegram::sendDocument([
+                'chat_id' => $chatId,
+                'document' => $fileId,
+                'caption' => $caption,
+                'parse_mode' => 'HTML',
+                'reply_markup' => $keyboard,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Failed to send APK file via file_id: " . $e->getMessage());
+        }
     }
 
     /**
@@ -371,12 +411,17 @@ trait TroubleshootingWizardTrait
     {
         $text = "🛑 <b>علت اصلی قطعی: استفاده از نرم‌افزار نامعتبر یا متفرقه</b>\n\n" .
                 "کانفیگ‌های نسل جدید روزنه با پروتکل‌های پیشرفته ضد فیلتر (مانند Reality و TLS و XHTTP) پیکربندی شده‌اند. نرم‌افزارهای متفرقه یا کلاینت‌های غیررسمی توانایی هندل این پروتکل‌ها را ندارند و فوراً قطع می‌شوند!\n\n" .
-                "🚀 <b>راهکار فوری:</b> لطفاً نرم‌افزار پیشنهادی را از لینک‌های رسمی زیر دریافت و نصب فرمایید:\n\n";
+                "🚀 <b>راهکار فوری:</b> لطفاً نرم‌افزار پیشنهادی را از روش‌های مستقیم زیر دریافت و نصب فرمایید:\n\n";
+
+        $keyboard = Keyboard::make()->inline();
 
         if ($os === "android") {
-            $text .= "▫️ <a href=\"https://play.google.com/store/apps/details?id=com.v2ray.ang\">📲 دانلود v2rayNG از Google Play</a>\n" .
-                     "▫️ <a href=\"https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Android-universal.apk\">📦 دانلود مستقیم فایل APK یونیورسال Hiddify</a>\n";
+            $text .= "▫️ <b>v2rayNG:</b> نسخه رسمی ۲.۲.۶ (پیشنهاد اول ما)\n" .
+                     "▫️ <b>Hiddify:</b> <a href=\"https://play.google.com/store/apps/details?id=app.hiddify.com\">دریافت از گوگل‌پلی</a>\n";
             $backCallback = "ts_os_android";
+            $keyboard->row([
+                $this->makeInlineButton(["text" => "📥 دریافت مستقیم فایل v2rayNG در تلگرام", "callback_data" => "ts_send_apk_v2rayng", "style" => "primary"]),
+            ]);
         } elseif ($os === "ios") {
             $text .= "▫️ <a href=\"https://apps.apple.com/app/streisand/id6450534064\">🍏 دانلود Streisand از App Store</a>\n" .
                      "▫️ <a href=\"https://apps.apple.com/app/v2box-v2ray-client/id6446814690\">🍏 دانلود V2Box از App Store</a>\n";
@@ -387,13 +432,12 @@ trait TroubleshootingWizardTrait
             $backCallback = "ts_os_windows";
         }
 
-        $keyboard = Keyboard::make()->inline()
-            ->row([
-                $this->makeInlineButton(["text" => "✅ نصب کردم؛ رفتن به مرحله بعد", "callback_data" => "ts_version_yes", "style" => "success"]),
-            ])
-            ->row([
-                $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => $backCallback, "style" => "default"]),
-            ]);
+        $keyboard->row([
+            $this->makeInlineButton(["text" => "✅ نصب کردم؛ رفتن به مرحله بعد", "callback_data" => "ts_version_yes", "style" => "success"]),
+        ])
+        ->row([
+            $this->makeInlineButton(["text" => "🔙 بازگشت", "callback_data" => $backCallback, "style" => "default"]),
+        ]);
 
         $this->sendOrEditMessage($chatId, $text, $keyboard, $messageId);
     }
