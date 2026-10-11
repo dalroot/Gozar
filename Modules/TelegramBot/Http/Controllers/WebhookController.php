@@ -4663,21 +4663,26 @@ class WebhookController extends Controller
 
         try {
             $volumeMB = (int) $settings->get('trial_volume_mb', 1024);
-            $durationHours = 0; // تست حجمی است و محدودیت زمانی ندارد.
+            $durationHours = (int) $settings->get('trial_duration_hours', 72);
+            if ($durationHours <= 0) {
+                $durationHours = 72; // پیش‌فرض تست ۷۲ ساعته (۳ روزه)
+            }
 
-            // نام کاربری اکانت تست شامل شناسه تلگرام و نام کاربر جهت شناسایی آسان در پنل
-            $cleanName = preg_replace('/[^a-zA-Z0-9]/', '', $user->first_name ?: $user->name ?: '');
-            $namePart = !empty($cleanName) ? '_' . substr($cleanName, 0, 10) : '';
-            $uniqueUsername = "test_" . ($user->telegram_chat_id ?: $user->id) . $namePart;
+            // ساخت نام کاربری تست به فرمت تمیز و ساده TEST<شماره> (مانند TEST159)
+            $seedNum = $user->id > 0 ? (100 + ($user->id % 900)) : rand(100, 999);
+            $uniqueUsername = "TEST" . $seedNum;
+            if (\App\Models\Order::where('panel_username', $uniqueUsername)->exists()) {
+                $uniqueUsername = "TEST" . rand(100, 999);
+            }
 
-            $expiresAt = null;
+            $expiresAt = now()->addHours($durationHours);
             $dataLimitBytes = $volumeMB * 1024 * 1024;
 
             $configLink = null;
-            $locationFlag = '🇩🇪🇳🇱';
-            $locationName = '🇩🇪 آلمان و 🇳🇱 هلند';
+            $locationFlag = '🇬🇧🇩🇪🇳🇱';
+            $locationName = '🇬🇧 انگلیس، 🇩🇪 آلمان و 🇳🇱 هلند';
 
-            $this->updateProgressMessage($chatId, $loadingMsgId, 40, 'اتصال به پنل X-UI و ثبت کاربر...');
+            $this->updateProgressMessage($chatId, $loadingMsgId, 40, 'اتصال به پنل روزنه و ثبت کاربر...');
 
             $configLink = $this->createVpnAccount($uniqueUsername, $volumeMB, $durationHours, $locationName, $locationFlag);
 
@@ -4687,6 +4692,8 @@ class WebhookController extends Controller
 
                 $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
                 $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
+                $durationDays = round($durationHours / 24);
+                $durationText = $durationDays > 0 ? "{$durationHours} ساعت ({$durationDays} روز)" : "{$durationHours} ساعت";
 
                 $this->sendToLogChannel(
                     "🧪 <b>اکانت تست رایگان فعال شد</b>\n\n" .
@@ -4695,7 +4702,7 @@ class WebhookController extends Controller
                     $usernameLine .
                     "🔢 <b>کد کاربری در سیستم:</b> <code>{$user->id}</code>\n" .
                     "👤 <b>نام اکانت در پنل:</b> <code>{$uniqueUsername}</code>\n" .
-                    "📊 <b>حجم:</b> {$volumeMB} مگابایت (بدون انقضا)\n" .
+                    "📊 <b>حجم:</b> {$volumeMB} مگابایت ({$durationText})\n" .
                     "🌐 <b>سرور:</b> {$locationFlag} {$locationName}\n" .
                     "⏰ <b>زمان فعال‌سازی:</b> " . now()->format('Y-m-d H:i:s')
                 );
@@ -4707,7 +4714,7 @@ class WebhookController extends Controller
                         [
                             'price' => 0,
                             'volume_gb' => (int) ceil($volumeMB / 1024),
-                            'duration_days' => 0,
+                            'duration_days' => (int) ceil($durationHours / 24),
                             'features' => 'اکانت هدیه روزنه',
                             'is_active' => false,
                         ]
@@ -4738,8 +4745,8 @@ class WebhookController extends Controller
                     $message .= "🎁 *" . $this->escape("سرویس هدیه و تست اختصاصی شما متصل شد!") . "*\n\n";
                     $message .= "👤 *نام کاربری:* `" . $this->escapeCode($uniqueUsername) . "`\n";
                     $message .= "🌍 *موقعیت سرور:* {$locationFlag} " . $this->escape($locationName) . "\n";
-                    $message .= "📦 *حجم مجاز:* `" . $this->escape($volumeMB) . "` " . $this->escape("مگابایت") . "\n";
-                    $message .= "⏳ *زمان اعتبار:* " . $this->escape("بدون محدودیت زمانی") . "\n";
+                    $message .= "📦 *حجم مجاز:* `" . $this->escape($volumeMB) . "` " . $this->escape("مگابایت (۱ گیگابایت)") . "\n";
+                    $message .= "⏳ *زمان اعتبار:* " . $this->escape($durationText) . "\n";
                     $message .= "\n\n";
                     $message .= "🎯 *لینک اتصال یک‌بار مصرف \\(کپی با یک لمس\\):*\n";
                     $message .= "`" . $this->escapeCode($pureUrl) . "`\n\n";

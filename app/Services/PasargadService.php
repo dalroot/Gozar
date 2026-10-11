@@ -18,14 +18,34 @@ class PasargadService
     protected string $password;
     protected ?string $nodeHostname;
     protected ?string $accessToken = null;
+    protected ?string $apiKey = null;
 
-    public function __construct(?string $baseUrl, ?string $username, ?string $password, ?string $nodeHostname = null)
+    public function __construct(?string $baseUrl, ?string $username, ?string $password, ?string $nodeHostname = null, ?string $apiKey = null)
     {
         // پاکسازی آدرس از کوتیشن‌ها و فاصله‌های احتمالی و اسلش انتها
         $this->baseUrl = rtrim(trim((string)$baseUrl, " '\"\t\n\r\0\x0B"), '/');
         $this->username = trim((string)$username);
         $this->password = trim((string)$password);
         $this->nodeHostname = $nodeHostname ? trim((string)$nodeHostname) : null;
+        $this->apiKey = $apiKey ? trim((string)$apiKey) : (string) (\App\Models\Setting::where('key', 'pasargad_api_key')->value('value') ?: 'pg_key_0349b929-0f74-41b2-a21c-b842e16d6f19');
+    }
+
+    /**
+     * ایجاد کلاینت HTTP با هدر استاندارد API Key یا Bearer Token
+     */
+    protected function request(): \Illuminate\Http\Client\PendingRequest
+    {
+        $client = Http::withOptions(['verify' => false])->withHeaders(['Accept' => 'application/json']);
+
+        if (!empty($this->apiKey)) {
+            return $client->withHeaders(['X-API-Key' => $this->apiKey]);
+        }
+
+        if (!$this->accessToken) {
+            $this->login();
+        }
+
+        return $client->withToken($this->accessToken);
     }
 
     /**
@@ -72,7 +92,7 @@ class PasargadService
      */
     public function createUser(array $userData): ?array
     {
-        if (!$this->accessToken) {
+        if (!$this->accessToken && empty($this->apiKey)) {
             if (!$this->login()) {
                 return ['detail' => 'Authentication failed'];
             }
@@ -98,10 +118,7 @@ class PasargadService
                 'group_ids' => $userData['group_ids'] ?? [1],
             ];
 
-            $response = Http::withOptions(['verify' => false])
-                ->withToken($this->accessToken)
-                ->withHeaders(['Accept' => 'application/json'])
-                ->post($this->baseUrl . '/api/user', $payload);
+            $response = $this->request()->post($this->baseUrl . '/api/user', $payload);
 
             $result = $response->json();
             
@@ -162,7 +179,7 @@ class PasargadService
      */
     public function updateUser(string $username, array $userData): ?array
     {
-        if (!$this->accessToken) {
+        if (!$this->accessToken && empty($this->apiKey)) {
             if (!$this->login()) return null;
         }
 
@@ -179,10 +196,7 @@ class PasargadService
                 $payload['status'] = $userData['status'];
             }
 
-            $response = Http::withOptions(['verify' => false])
-                ->withToken($this->accessToken)
-                ->withHeaders(['Accept' => 'application/json'])
-                ->put($this->baseUrl . "/api/user/{$username}", $payload);
+            $response = $this->request()->put($this->baseUrl . "/api/user/{$username}", $payload);
 
             Log::info('Pasargad Update User Response:', $response->json() ?? ['raw' => $response->body()]);
             return $response->json();
@@ -198,14 +212,12 @@ class PasargadService
      */
     public function deleteUser(string $username): bool
     {
-        if (!$this->accessToken) {
+        if (!$this->accessToken && empty($this->apiKey)) {
             if (!$this->login()) return false;
         }
 
         try {
-            $response = Http::withOptions(['verify' => false])
-                ->withToken($this->accessToken)
-                ->delete($this->baseUrl . "/api/user/{$username}");
+            $response = $this->request()->delete($this->baseUrl . "/api/user/{$username}");
 
             return $response->successful();
 
@@ -220,14 +232,12 @@ class PasargadService
      */
     public function getUser(string $username): ?array
     {
-        if (!$this->accessToken) {
+        if (!$this->accessToken && empty($this->apiKey)) {
             if (!$this->login()) return null;
         }
 
         try {
-            $response = Http::withOptions(['verify' => false])
-                ->withToken($this->accessToken)
-                ->get($this->baseUrl . "/api/user/{$username}");
+            $response = $this->request()->get($this->baseUrl . "/api/user/{$username}");
 
             if ($response->successful()) {
                 return $response->json();
@@ -245,14 +255,12 @@ class PasargadService
      */
     public function resetUserTraffic(string $username): bool
     {
-        if (!$this->accessToken) {
+        if (!$this->accessToken && empty($this->apiKey)) {
             if (!$this->login()) return false;
         }
 
         try {
-            $response = Http::withOptions(['verify' => false])
-                ->withToken($this->accessToken)
-                ->post($this->baseUrl . "/api/user/{$username}/reset");
+            $response = $this->request()->post($this->baseUrl . "/api/user/{$username}/reset");
 
             Log::info('Pasargad Reset Traffic Response:', ['username' => $username, 'status' => $response->status()]);
             return $response->successful();
@@ -268,14 +276,12 @@ class PasargadService
      */
     public function getGroups(): array
     {
-        if (!$this->accessToken) {
+        if (!$this->accessToken && empty($this->apiKey)) {
             if (!$this->login()) return [];
         }
 
         try {
-            $response = Http::withOptions(['verify' => false])
-                ->withToken($this->accessToken)
-                ->get($this->baseUrl . '/api/groups');
+            $response = $this->request()->get($this->baseUrl . '/api/groups');
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -335,14 +341,12 @@ class PasargadService
      */
     public function getSystemStats(): ?array
     {
-        if (!$this->accessToken) {
+        if (!$this->accessToken && empty($this->apiKey)) {
             if (!$this->login()) return null;
         }
 
         try {
-            $response = Http::withOptions(['verify' => false])
-                ->withToken($this->accessToken)
-                ->get($this->baseUrl . '/api/system');
+            $response = $this->request()->get($this->baseUrl . '/api/system');
 
             if ($response->successful()) {
                 return $response->json();
