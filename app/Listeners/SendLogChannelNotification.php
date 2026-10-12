@@ -31,6 +31,11 @@ class SendLogChannelNotification
                 return;
             }
 
+            // سفارش‌های کارت‌به‌کارت توسط هندلر تایید فیش با جزئیات کامل و نام ادمین تاییدکننده لاگ می‌شوند
+            if (!empty($order->card_payment_receipt)) {
+                return;
+            }
+
             $user = $order->user;
             $plan = $order->plan;
 
@@ -69,12 +74,24 @@ class SendLogChannelNotification
             $msg .= "▪️ <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n";
             $msg .= "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s');
 
-            Telegram::sendMessage([
+            $params = [
                 'chat_id' => $logChannelId,
                 'text' => $msg,
                 'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,
-            ]);
+            ];
+
+            if ($user->telegram_chat_id) {
+                $btnUrl = !empty($user->username) ? 'https://t.me/' . ltrim($user->username, '@') : 'tg://openmessage?user_id=' . $user->telegram_chat_id;
+                $btnText = !empty($user->username) ? '👤 ورود به پی‌وی (@' . ltrim($user->username, '@') . ')' : '👤 ورود به پی‌وی کاربر (ارسال پیام)';
+                $params['reply_markup'] = json_encode([
+                    'inline_keyboard' => [
+                        [['text' => $btnText, 'url' => $btnUrl]]
+                    ]
+                ]);
+            }
+
+            Telegram::sendMessage($params);
 
             Log::info("Purchase notification sent to log channel for order {$order->id}");
         } catch (\Exception $e) {
@@ -130,12 +147,24 @@ class SendLogChannelNotification
             $msg .= "<blockquote>" . htmlspecialchars(mb_substr($ticket->message, 0, 300)) . (mb_strlen($ticket->message) > 300 ? '...' : '') . "</blockquote>\n";
             $msg .= "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s');
 
-            Telegram::sendMessage([
+            $params = [
                 'chat_id' => $logChannelId,
                 'text' => $msg,
                 'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,
-            ]);
+            ];
+
+            if ($user->telegram_chat_id) {
+                $btnUrl = !empty($user->username) ? 'https://t.me/' . ltrim($user->username, '@') : 'tg://openmessage?user_id=' . $user->telegram_chat_id;
+                $btnText = !empty($user->username) ? '👤 ورود به پی‌وی (@' . ltrim($user->username, '@') . ')' : '👤 ورود به پی‌وی کاربر (ارسال پیام)';
+                $params['reply_markup'] = json_encode([
+                    'inline_keyboard' => [
+                        [['text' => $btnText, 'url' => $btnUrl]]
+                    ]
+                ]);
+            }
+
+            Telegram::sendMessage($params);
 
             Log::info("Ticket notification sent to log channel for ticket {$ticket->id}");
         } catch (\Exception $e) {

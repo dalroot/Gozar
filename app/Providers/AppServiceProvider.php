@@ -31,37 +31,34 @@ class AppServiceProvider extends ServiceProvider
 
         User::created(function ($user) {
             try {
+                // کاربران ربات تلگرام در کنترلر اختصاصی ربات با دکمه شیشه‌ای و جزئیات کامل لاگ می‌شوند
+                if ($user->telegram_chat_id) {
+                    return;
+                }
+
                 $settings = \App\Models\Setting::all()->pluck('value', 'key');
                 $logChannelId = $settings->get('telegram_log_channel_id');
                 $botToken = $settings->get('telegram_bot_token');
 
                 if ($logChannelId && $botToken) {
                     \Telegram\Bot\Laravel\Facades\Telegram::setAccessToken($botToken);
-                    
-                    $userType = $user->telegram_chat_id ? "🤖 ربات تلگرام" : "🌐 وب‌سایت";
-                    $esc = function (string $text): string {
-                        $chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-                        return str_replace($chars, array_map(fn($char) => '\\' . $char, $chars), $text);
-                    };
 
-                    $msg = "👤 *کاربر جدید ثبت‌نام کرد*\n\n";
-                    $msg .= "🔸 *نام:* " . $esc($user->name) . "\n";
-                    $msg .= "🔸 *منبع:* {$userType}\n";
-                    if ($user->telegram_chat_id) {
-                        $msg .= "🔸 *آیدی تلگرام:* [{$user->telegram_chat_id}](tg://user?id={$user->telegram_chat_id})\n";
-                    }
-                    $msg .= "🔸 *شناسه کاربر در سیستم:* `{$user->id}`\n";
+                    $msg = "👤 <b>ثبت‌نام کاربر جدید در وب‌سایت</b>\n\n";
+                    $msg .= "🔸 <b>نام:</b> " . htmlspecialchars($user->name ?: 'کاربر') . "\n";
+                    $msg .= "🔸 <b>منبع:</b> 🌐 وب‌سایت\n";
+                    $msg .= "🔸 <b>شناسه کاربر در سیستم:</b> <code>#{$user->id}</code>\n";
                     if ($user->referrer_id) {
                         $referrer = User::find($user->referrer_id);
                         if ($referrer) {
-                            $msg .= "🔸 *معرف:* " . $esc($referrer->name) . " \\(ID: `{$referrer->id}`\\)\n";
+                            $msg .= "🔸 <b>معرف:</b> " . htmlspecialchars($referrer->name) . " (ID: <code>{$referrer->id}</code>)\n";
                         }
                     }
+                    $msg .= "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s');
 
                     \Telegram\Bot\Laravel\Facades\Telegram::sendMessage([
                         'chat_id' => $logChannelId,
                         'text' => $msg,
-                        'parse_mode' => 'MarkdownV2',
+                        'parse_mode' => 'HTML',
                     ]);
                 }
             } catch (\Exception $e) {

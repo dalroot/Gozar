@@ -687,7 +687,11 @@ trait TroubleshootingWizardTrait
         }
         if (!empty($user->username)) {
             $adminKeyboard->row([
-                $this->makeInlineButton(["text" => "💬 ارسال پیام مستقیم در تلگرام", "url" => "https://t.me/" . ltrim($user->username, '@'), "style" => "default"]),
+                $this->makeInlineButton(["text" => "👤 ورود به پی‌وی (@" . ltrim($user->username, '@') . ")", "url" => "https://t.me/" . ltrim($user->username, '@'), "style" => "default"]),
+            ]);
+        } elseif ($user->telegram_chat_id) {
+            $adminKeyboard->row([
+                $this->makeInlineButton(["text" => "👤 ورود به پی‌وی کاربر (ارسال پیام)", "url" => "tg://openmessage?user_id=" . $user->telegram_chat_id, "style" => "default"]),
             ]);
         }
 
@@ -725,9 +729,10 @@ trait TroubleshootingWizardTrait
                         'photo' => $fileId,
                         'caption' => $adminReport,
                         'parse_mode' => 'HTML',
+                        'reply_markup' => $adminKeyboard,
                     ]);
                 } else {
-                    $this->sendToLogChannel($adminReport);
+                    $this->sendToLogChannel($adminReport, 'HTML', $adminKeyboard);
                 }
             } catch (\Throwable $e) {}
         }

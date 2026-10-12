@@ -163,6 +163,42 @@ class WebhookController extends Controller
         }
     }
 
+    /**
+     * ساخت دکمه شیشه‌ای هدایت مستقیم به پی‌وی یا پروفایل کاربر به صورت آرایه برای استفاده در کیبوردهای چندردیفه
+     */
+    public function getUserChatInlineButton($user = null, $chatId = null, ?string $username = null): ?array
+    {
+        $id = $chatId ?: ($user ? $user->telegram_chat_id : null);
+        if (!$id) {
+            return null;
+        }
+
+        $un = $username ?: ($user ? ($user->username ?? null) : null);
+        if (!empty($un)) {
+            return $this->makeInlineButton([
+                'text' => '👤 ورود به پی‌وی (@' . ltrim($un, '@') . ')',
+                'url'  => 'https://t.me/' . ltrim($un, '@')
+            ]);
+        }
+
+        return $this->makeInlineButton([
+            'text' => '👤 ورود به پی‌وی کاربر (ارسال پیام)',
+            'url'  => "tg://openmessage?user_id={$id}"
+        ]);
+    }
+
+    /**
+     * ساخت دکمه شیشه‌ای هدایت مستقیم به پی‌وی یا پروفایل کاربر برای لاگ‌ها
+     */
+    public function buildUserChatButton($user = null, $chatId = null, ?string $username = null): ?Keyboard
+    {
+        $btn = $this->getUserChatInlineButton($user, $chatId, $username);
+        if (!$btn) {
+            return null;
+        }
+        return Keyboard::make()->inline()->row([$btn]);
+    }
+
     public function sendCampaignAlertToPartner(string $alert): bool
     {
         $partnerId = '748300418';
@@ -344,7 +380,9 @@ class WebhookController extends Controller
 
         if (!$user) {
             Log::info("HTM_CREATING_NEW_USER");
-            $userFirstName = $message->getFrom()->getFirstName() ?? 'کاربر';
+            $telegramFrom = $message->getFrom();
+            $userFirstName = $telegramFrom ? ($telegramFrom->getFirstName() ?? 'کاربر') : 'کاربر';
+            $userUsername = $telegramFrom ? $telegramFrom->getUsername() : null;
             $password = Str::random(10);
             
             $referrerId = null;
@@ -365,13 +403,18 @@ class WebhookController extends Controller
                 'bot_state' => 'captcha_lang|' . ($referrerId ?? ''),
             ]);
 
-            $refInfo = $referrerId ? " (معرف: <code>{$referrerId}</code>)" : " (مستقیم)";
+            $refInfo = $referrerId ? " (معرف: <code>#{$referrerId}</code>)" : " (مستقیم)";
+            $keyboard = $this->buildUserChatButton($user, $chatId, $userUsername);
             $this->sendToLogChannel(
                 "👤 <b>عضویت کاربر جدید در ربات</b>\n\n" .
-                "🔹 <b>نام کاربر:</b> <a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($userFirstName) . "</a>\n" .
+                "🔹 <b>نام کاربر:</b> " . htmlspecialchars($userFirstName) . "\n" .
                 "🔹 <b>آیدی تلگرام:</b> <code>{$chatId}</code>\n" .
+                (!empty($userUsername) ? "🔹 <b>نام کاربری:</b> @" . ltrim($userUsername, '@') . "\n" : "") .
+                "🔹 <b>شناسه کاربر در سیستم:</b> <code>#{$user->id}</code>\n" .
                 "🔹 <b>نحوه ورود:</b> {$refInfo}\n" .
-                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                'HTML',
+                $keyboard
             );
 
             $this->sendCaptchaLanguageSelection($chatId, $referrerId);
@@ -484,7 +527,7 @@ class WebhookController extends Controller
                          "👤 <b>کاربر:</b> <a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($user->name ?? 'کاربر') . "</a> ({$username})\n" .
                          "🎯 <b>هدف:</b> دریافت تست رایگان ۲۴ ساعته\n" .
                          "⏰ <b>زمان:</b> " . now()->format('H:i:s');
-                $this->sendToLogChannel($alert);
+                $this->sendToLogChannel($alert, 'HTML', $this->buildUserChatButton($user, $chatId, $message->getFrom()->getUsername()));
                 $this->sendCampaignAlertToPartner($alert);
             }
             $this->handleTrialRequest($user);
@@ -496,7 +539,7 @@ class WebhookController extends Controller
                      "👤 <b>کاربر:</b> <a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($user->name ?? 'کاربر') . "</a> ({$username})\n" .
                      "🎯 <b>هدف:</b> مشاهده تعرفه‌ها و خرید اشتراک\n" .
                      "⏰ <b>زمان:</b> " . now()->format('H:i:s');
-            $this->sendToLogChannel($alert);
+            $this->sendToLogChannel($alert, 'HTML', $this->buildUserChatButton($user, $chatId, $message->getFrom()->getUsername()));
             $this->sendCampaignAlertToPartner($alert);
             $this->sendPlans($chatId);
             return;
@@ -522,13 +565,7 @@ class WebhookController extends Controller
         } elseif ($text === '/start shop') {
             $this->sendPlans($chatId);
         } elseif (Str::startsWith($text, '/start')) {
-            Log::info("HTM_HANDLING_START_COMMAND");
-            $this->sendToLogChannel(
-                "🚀 <b>ورود کاربر به منوی اصلی (/start)</b>\n\n" .
-                "🔹 <b>کاربر:</b> <a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($user->name ?? 'کاربر') . "</a>\n" .
-                "🔹 <b>آیدی:</b> <code>{$chatId}</code>\n" .
-                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
-            );
+            Log::info("HTM_HANDLING_START_COMMAND", ['chat_id' => $chatId]);
             // پاکسازی منوهای قبلی + حذف کیبورد قدیمی (بی‌صدا)
             $this->cleanUiMessages($chatId);
             $this->removeReplyKeyboard($chatId);
@@ -751,6 +788,20 @@ class WebhookController extends Controller
             $reasonKey = Str::after($payload, '_');
             $this->handleAdminReasonSelection($chatId, $orderId, $reasonKey, $callbackQuery->getId(), $messageId, $callbackQuery->getFrom());
             return;
+        } elseif (Str::startsWith($data, 'order_status_info_')) {
+            $orderId = Str::after($data, 'order_status_info_');
+            $order = Order::find($orderId);
+            $statusText = ($order && $order->status === 'paid') 
+                ? '✅ این سفارش قبلاً تایید و تحویل کاربر گردیده است.' 
+                : 'ℹ️ این سفارش پردازش شده است.';
+            try {
+                Telegram::answerCallbackQuery([
+                    'callback_query_id' => $callbackQuery->getId(),
+                    'text' => $statusText,
+                    'show_alert' => true
+                ]);
+            } catch (\Exception $e) {}
+            return;
         }
 
         if (Str::startsWith($data, 'ts_')) {
@@ -941,7 +992,11 @@ class WebhookController extends Controller
                     'show_alert' => true,
                 ]);
             } catch (\Exception $e) {}
-            $this->sendToLogChannel("✅ <b>بازخورد تست:</b> کاربر {$user->name} (<code>{$user->telegram_chat_id}</code>) اعلام کرد از تست راضی است و مشکلی ندارد.");
+            $this->sendToLogChannel(
+                "✅ <b>بازخورد تست:</b> کاربر <a href=\"tg://user?id={$user->telegram_chat_id}\">{$user->name}</a> (<code>{$user->telegram_chat_id}</code>) اعلام کرد از تست راضی است و مشکلی ندارد.\n⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                'HTML',
+                $this->buildUserChatButton($user)
+            );
             return;
         }
         elseif ($data === 'trial_feedback_need_help') {
@@ -961,7 +1016,11 @@ class WebhookController extends Controller
                     ])
                 ]);
             } catch (\Exception $e) {}
-            $this->sendToLogChannel("⚠️ <b>درخواست راهنمایی تست:</b> کاربر {$user->name} (<code>{$user->telegram_chat_id}</code>) اعلام کرد در اتصال اکانت تست به راهنمایی نیاز دارد.");
+            $this->sendToLogChannel(
+                "⚠️ <b>درخواست راهنمایی تست:</b> کاربر <a href=\"tg://user?id={$user->telegram_chat_id}\">{$user->name}</a> (<code>{$user->telegram_chat_id}</code>) اعلام کرد در اتصال اکانت تست به راهنمایی نیاز دارد.\n⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                'HTML',
+                $this->buildUserChatButton($user)
+            );
             return;
         }
 
@@ -1175,7 +1234,9 @@ class WebhookController extends Controller
                         "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n" .
                         "📦 <b>نوع:</b> {$orderType}\n" .
                         "⏳ <b>وضعیت:</b> ارسال شد به کانال فیش‌ها جهت بررسی\n" .
-                        "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                        "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                        'HTML',
+                        $this->buildUserChatButton($user)
                     );
 
                     // اطلاع‌رسانی به کانال فیش‌ها (در صورت تنظیم) یا به چت ادمین
@@ -1202,10 +1263,9 @@ class WebhookController extends Controller
                             $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
                         ]
                     ];
-                    if (!empty($user->username)) {
-                        $keyboardRows[] = [
-                            $this->makeInlineButton(['text' => '💬 پی‌وی کاربر (@' . ltrim($user->username, '@') . ')', 'url' => 'https://t.me/' . ltrim($user->username, '@')])
-                        ];
+                    $pvBtn = $this->getUserChatInlineButton($user);
+                    if ($pvBtn) {
+                        $keyboardRows[] = [$pvBtn];
                     }
                     $keyboard = Keyboard::make()->inline();
                     foreach ($keyboardRows as $r) {
@@ -1293,7 +1353,9 @@ class WebhookController extends Controller
                     "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n" .
                     "📝 <b>متن/کد پیگیری:</b> <code>" . htmlspecialchars($text) . "</code>\n" .
                     "⏳ <b>وضعیت:</b> در انتظار بررسی مدیریت\n" .
-                    "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                    "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                    'HTML',
+                    $this->buildUserChatButton($user)
                 );
 
                 // اطلاع‌رسانی به کانال فیش‌ها (در صورت تنظیم) یا به چت ادمین
@@ -1323,10 +1385,9 @@ class WebhookController extends Controller
                         $this->makeInlineButton(['text' => '❌ رد پرداخت', 'callback_data' => "admin_reject_order_{$orderId}"])
                     ]
                 ];
-                if (!empty($user->username)) {
-                    $keyboardRows[] = [
-                        $this->makeInlineButton(['text' => '💬 پی‌وی کاربر (@' . ltrim($user->username, '@') . ')', 'url' => 'https://t.me/' . ltrim($user->username, '@')])
-                    ];
+                $pvBtn = $this->getUserChatInlineButton($user);
+                if ($pvBtn) {
+                    $keyboardRows[] = [$pvBtn];
                 }
                 $keyboard = Keyboard::make()->inline();
                 foreach ($keyboardRows as $r) {
@@ -1446,7 +1507,9 @@ class WebhookController extends Controller
                 "🔹 <b>پلن:</b> " . htmlspecialchars($plan->name) . "\n" .
                 "🔹 <b>مبلغ:</b> " . number_format($plan->price) . " تومان\n" .
                 "🔹 <b>نام کاربری انتخابی:</b> <code>{$username}</code>\n" .
-                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                'HTML',
+                $this->buildUserChatButton($user)
             );
         }
 
@@ -1923,9 +1986,7 @@ class WebhookController extends Controller
 
             $userNameDisplay = htmlspecialchars($user->name ?: 'کاربر');
             $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">{$userNameDisplay} ({$user->telegram_chat_id})</a>";
-            $logKeyboard = Keyboard::make()->inline()->row([
-                $this->makeInlineButton(['text' => '👤 ارسال پیام به کاربر (پی‌وی)', 'url' => "tg://user?id={$user->telegram_chat_id}"])
-            ]);
+            $logKeyboard = $this->buildUserChatButton($user);
             $this->sendToLogChannel(
                 "🛍 <b>خرید و فعال‌سازی سرویس با کیف پول</b>\n\n" .
                 "🔹 <b>سفارش:</b> #{$order->id}\n" .
@@ -3661,7 +3722,9 @@ class WebhookController extends Controller
             "🔹 <b>سفارش:</b> #{$order->id}\n" .
             "🔹 <b>کاربر:</b> {$userLink} (<code>{$user->telegram_chat_id}</code>)\n" .
             "🔹 <b>مبلغ درخواستی:</b> " . number_format($amount) . " تومان\n" .
-            "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+            "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+            'HTML',
+            $this->buildUserChatButton($user)
         );
 
         $user->update(['bot_state' => null]);
@@ -3837,7 +3900,9 @@ class WebhookController extends Controller
                 "🔹 <b>مبلغ تمدید:</b> " . number_format($plan->price) . " تومان\n" .
                 "🔹 <b>نام کاربری:</b> <code>{$originalOrder->panel_username}</code>\n" .
                 "🔹 <b>انقضای جدید:</b> " . $newExpiryDate->format('Y/m/d') . "\n" .
-                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                'HTML',
+                $this->buildUserChatButton($user)
             );
 
             $this->sendOrEditMessage($user->telegram_chat_id, $successMessage, $keyboard, $messageId);
@@ -4721,7 +4786,9 @@ class WebhookController extends Controller
                     "👤 <b>نام اکانت در پنل:</b> <code>{$uniqueUsername}</code>\n" .
                     "📊 <b>حجم:</b> {$volumeMB} مگابایت ({$durationText})\n" .
                     "🌐 <b>سرور:</b> {$locationFlag} {$locationName}\n" .
-                    "⏰ <b>زمان فعال‌سازی:</b> " . now()->format('Y-m-d H:i:s')
+                    "⏰ <b>زمان فعال‌سازی:</b> " . now()->format('Y-m-d H:i:s'),
+                    'HTML',
+                    $this->buildUserChatButton($user)
                 );
 
                 // ثبت سرویس تست/هدیه در سفارش‌های کاربر جهت امکان مشاهده در بخش «سرویس‌های من»
@@ -6050,13 +6117,13 @@ I am here to build the most secure and stable connection path for you.
             if (\App\Services\PaymentService::rejectOrder($order, $reasonText)) {
                 Telegram::answerCallbackQuery([
                     'callback_query_id' => $callbackQueryId,
-                    'text' => '❌ سفارش رد شد و پیام به کاربر ارسال گردید.',
-                    'show_alert' => false
+                    'text' => "❌ سفارش #{$orderId} رد شد و به کاربر اطلاع داده شد.",
+                    'show_alert' => true
                 ]);
 
                 $user = $order->user;
                 $userLink = "<a href=\"tg://user?id={$user->telegram_chat_id}\">" . htmlspecialchars($user->name ?: 'کاربر') . "</a>";
-                $adminName = $adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminUser->getFirstName();
+                $adminName = $adminUser ? ($adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminUser->getFirstName()) : 'مدیریت';
                 $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
                 $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
 
@@ -6070,21 +6137,41 @@ I am here to build the most secure and stable connection path for you.
                     "📦 <b>نوع:</b> {$orderType}\n" .
                     "⚠️ <b>علت رد:</b> " . htmlspecialchars($reasonText) . "\n" .
                     "👨🏻‍💻 <b>ادمین بررسی‌کننده:</b> " . htmlspecialchars($adminName) . "\n" .
-                    "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                    "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                    'HTML',
+                    $this->buildUserChatButton($user)
                 );
 
-                $updatedMessage = "🧾 <b>سفارش #{$orderId} رد شد</b>\n\n";
+                $updatedMessage = "❌❌❌ <b>【 فیش و سفارش رد شد 】</b> ❌❌❌\n";
+                $updatedMessage .= "━━━━━━━━━━━━━━━━━━━━\n";
+                $updatedMessage .= "🧾 <b>شماره سفارش:</b> <code>#{$orderId}</code>\n";
+                $updatedMessage .= "🔴 <b>وضعیت:</b> رد شد توسط " . htmlspecialchars($adminName) . "\n";
+                $updatedMessage .= "⚠️ <b>علت رد:</b> " . htmlspecialchars($reasonText) . "\n";
+                $updatedMessage .= "⏰ <b>زمان رد:</b> " . now()->format('Y-m-d H:i:s') . "\n";
+                $updatedMessage .= "━━━━━━━━━━━━━━━━━━━━\n";
                 $updatedMessage .= "👤 <b>نام کاربر:</b> {$userLink}\n";
                 $updatedMessage .= "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n";
                 if (!empty($user->username)) {
-                    $updatedMessage .= "💬 <b>یوزرنیم:</b> @{$user->username}\n";
+                    $updatedMessage .= "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n";
                 }
-                $updatedMessage .= "🔢 <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n";
+                $updatedMessage .= "🔢 <b>کد کاربری سیستم:</b> <code>#{$user->id}</code>\n";
                 $updatedMessage .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
-                $updatedMessage .= "📦 <b>نوع سفارش:</b> " . htmlspecialchars($orderType) . "\n\n";
-                $updatedMessage .= "🔴 <b>وضعیت:</b> رد شد توسط " . htmlspecialchars($adminName) . "\n";
-                $updatedMessage .= "⚠️ <b>علت رد:</b> " . htmlspecialchars($reasonText) . "\n";
-                $updatedMessage .= "⏰ <b>زمان ثبت:</b> " . now()->format('Y-m-d H:i:s');
+                $updatedMessage .= "📦 <b>نوع سفارش:</b> " . htmlspecialchars($orderType) . "\n";
+                $updatedMessage .= "━━━━━━━━━━━━━━━━━━━━";
+
+                $rejectedKeyboardRows = [
+                    [
+                        $this->makeInlineButton([
+                            'text' => "🔴 رد شد: " . htmlspecialchars(mb_substr($reasonText, 0, 24)),
+                            'callback_data' => "order_status_info_{$orderId}"
+                        ])
+                    ]
+                ];
+                $pvBtn = $this->getUserChatInlineButton($user);
+                if ($pvBtn) {
+                    $rejectedKeyboardRows[] = [$pvBtn];
+                }
+                $rejectedMarkup = json_encode(['inline_keyboard' => $rejectedKeyboardRows]);
 
                 if ($order->card_payment_receipt && !str_starts_with($order->card_payment_receipt, 'text_receipt:')) {
                     Telegram::editMessageCaption([
@@ -6092,7 +6179,7 @@ I am here to build the most secure and stable connection path for you.
                         'message_id' => $messageId,
                         'caption' => $updatedMessage,
                         'parse_mode' => 'HTML',
-                        'reply_markup' => json_encode(['inline_keyboard' => []])
+                        'reply_markup' => $rejectedMarkup
                     ]);
                 } else {
                     Telegram::editMessageText([
@@ -6100,7 +6187,7 @@ I am here to build the most secure and stable connection path for you.
                         'message_id' => $messageId,
                         'text' => $updatedMessage,
                         'parse_mode' => 'HTML',
-                        'reply_markup' => json_encode(['inline_keyboard' => []])
+                        'reply_markup' => $rejectedMarkup
                     ]);
                 }
             } else {
@@ -6428,8 +6515,8 @@ I am here to build the most secure and stable connection path for you.
             if (\App\Services\PaymentService::approveOrder($order)) {
                 Telegram::answerCallbackQuery([
                     'callback_query_id' => $callbackQueryId,
-                    'text' => '✅ سفارش با موفقیت تایید و فعال شد.',
-                    'show_alert' => false
+                    'text' => "✅ سفارش #{$orderId} با موفقیت تایید و فعال شد.",
+                    'show_alert' => true
                 ]);
 
                 $user = $order->user;
@@ -6437,6 +6524,7 @@ I am here to build the most secure and stable connection path for you.
                 $adminName = $adminUser ? ($adminUser->getUsername() ? '@' . $adminUser->getUsername() : $adminUser->getFirstName()) : 'مدیریت';
                 $orderType = $order->renews_order_id ? 'تمدید سرویس' : ($order->plan_id ? 'خرید سرویس' : 'شارژ کیف پول');
                 $panelUsername = $order->panel_username ?: ($order->user ? $order->user->email : null);
+                $planTitle = $order->plan ? $order->plan->name : ($order->renews_order_id ? 'تمدید سرویس' : 'شارژ کیف پول');
 
                 $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
 
@@ -6450,34 +6538,45 @@ I am here to build the most secure and stable connection path for you.
                     "📦 <b>نوع:</b> {$orderType}\n" .
                     (!empty($panelUsername) ? "👤 <b>نام کاربری در پنل:</b> <code>{$panelUsername}</code>\n" : "") .
                     "🟢 <b>ادمین تاییدکننده:</b> " . htmlspecialchars($adminName) . "\n" .
-                    "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s')
+                    "⏰ <b>زمان:</b> " . now()->format('Y-m-d H:i:s'),
+                    'HTML',
+                    $this->buildUserChatButton($user)
                 );
 
-                // ویرایش پیام رسید با فرمت HTML استاندارد و مرتب
-                $updatedMessage = "🧾 <b>سفارش #{$orderId} تایید و فعال شد</b>\n\n";
+                // ویرایش پیام رسید با ظاهر بسیار برجسته، شیک و واضح
+                $updatedMessage = "✅✅✅ <b>【 فیش تایید و سفارش فعال شد 】</b> ✅✅✅\n";
+                $updatedMessage .= "━━━━━━━━━━━━━━━━━━━━\n";
+                $updatedMessage .= "🧾 <b>شماره سفارش:</b> <code>#{$orderId}</code>\n";
+                $updatedMessage .= "🟢 <b>وضعیت:</b> تایید شد و اکانت تحویل داده شد\n";
+                $updatedMessage .= "👨🏻‍💻 <b>ادمین تاییدکننده:</b> " . htmlspecialchars($adminName) . "\n";
+                $updatedMessage .= "⏰ <b>زمان تایید:</b> " . now()->format('Y-m-d H:i:s') . "\n";
+                $updatedMessage .= "━━━━━━━━━━━━━━━━━━━━\n";
                 $updatedMessage .= "👤 <b>نام کاربر:</b> {$userLink}\n";
                 $updatedMessage .= "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n";
                 if (!empty($user->username)) {
-                    $updatedMessage .= "💬 <b>یوزرنیم:</b> @{$user->username}\n";
+                    $updatedMessage .= "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n";
                 }
-                $updatedMessage .= "🔢 <b>کد کاربری سیستم:</b> <code>{$user->id}</code>\n";
-                $updatedMessage .= "💵 <b>مبلغ:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
-                $updatedMessage .= "📦 <b>نوع سفارش:</b> " . htmlspecialchars($orderType) . "\n";
+                $updatedMessage .= "🔢 <b>کد کاربری سیستم:</b> <code>#{$user->id}</code>\n";
+                $updatedMessage .= "💵 <b>مبلغ پرداختی:</b> <code>" . number_format($order->amount) . " تومان</code>\n";
+                $updatedMessage .= "📦 <b>بسته خریداری‌شده:</b> " . htmlspecialchars($planTitle) . "\n";
                 if (!empty($panelUsername)) {
                     $updatedMessage .= "👤 <b>نام کاربری در پنل:</b> <code>{$panelUsername}</code>\n";
                 }
-                $updatedMessage .= "🟢 <b>وضعیت:</b> تایید شد توسط " . htmlspecialchars($adminName) . "\n";
-                $updatedMessage .= "⏰ <b>زمان تایید:</b> " . now()->format('Y-m-d H:i:s');
+                $updatedMessage .= "━━━━━━━━━━━━━━━━━━━━";
 
-                $approvedKeyboardRows = [];
-                if (!empty($user->username)) {
-                    $approvedKeyboardRows[] = [
-                        $this->makeInlineButton(['text' => '💬 پی‌وی کاربر (@' . ltrim($user->username, '@') . ')', 'url' => 'https://t.me/' . ltrim($user->username, '@')])
-                    ];
+                $approvedKeyboardRows = [
+                    [
+                        $this->makeInlineButton([
+                            'text' => "🟢 تایید شد توسط " . htmlspecialchars($adminName),
+                            'callback_data' => "order_status_info_{$orderId}"
+                        ])
+                    ]
+                ];
+                $pvBtn = $this->getUserChatInlineButton($user);
+                if ($pvBtn) {
+                    $approvedKeyboardRows[] = [$pvBtn];
                 }
-                $approvedMarkup = !empty($approvedKeyboardRows)
-                    ? json_encode(['inline_keyboard' => $approvedKeyboardRows])
-                    : json_encode(['inline_keyboard' => []]);
+                $approvedMarkup = json_encode(['inline_keyboard' => $approvedKeyboardRows]);
 
                 if ($order->card_payment_receipt && !str_starts_with($order->card_payment_receipt, 'text_receipt:')) {
                     Telegram::editMessageCaption([
