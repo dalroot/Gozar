@@ -4668,12 +4668,28 @@ class WebhookController extends Controller
                 $durationHours = 72; // پیش‌فرض تست ۷۲ ساعته (۳ روزه)
             }
 
-            // ساخت نام کاربری تست به فرمت تمیز و ترتیبی (test1, test2, ...)
+            // ساخت نام کاربری تست به فرمت تمیز و ترتیبی (test1, test2, ...) با بررسی عدم وجود در پنل و دیتابیس
             $trialCounter = (int) (\App\Models\Setting::where('key', 'trial_counter')->value('value') ?? 0);
+            $pasargadCheck = null;
+            if (($settings->get('panel_type') ?? 'marzban') === 'pasargad') {
+                $pasargadCheck = new \App\Services\PasargadService(
+                    $settings->get('pasargad_host'),
+                    $settings->get('pasargad_sudo_username'),
+                    $settings->get('pasargad_sudo_password'),
+                    $settings->get('pasargad_node_hostname')
+                );
+            }
+
             do {
                 $trialCounter++;
                 $uniqueUsername = "test" . $trialCounter;
-            } while (\App\Models\Order::where('panel_username', $uniqueUsername)->exists());
+                $existsInDb = \App\Models\Order::where('panel_username', $uniqueUsername)->exists();
+                $existsOnPanel = false;
+                if (!$existsInDb && $pasargadCheck) {
+                    $uInfo = $pasargadCheck->getUser($uniqueUsername);
+                    $existsOnPanel = ($uInfo && !empty($uInfo['username']));
+                }
+            } while ($existsInDb || $existsOnPanel);
             \App\Models\Setting::updateOrCreate(['key' => 'trial_counter'], ['value' => (string) $trialCounter]);
 
             $expiresAt = now()->addHours($durationHours);
