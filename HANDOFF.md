@@ -1,7 +1,7 @@
 # سند انتقال جامع پروژه (Comprehensive Handoff Document) · Gozar / Roozaneh Core
 
-**تاریخ آخرین بروزرسانی:** ۱ اکتبر ۲۰۲۶ (ساعت ۱۷:۱۵ به وقت ایران)  
-**نسخه:** آماده انتشار نهایی و شروع فروش رسمی (Production Ready - Clean Launch)  
+**تاریخ آخرین بروزرسانی:** ۱۳ اکتبر ۲۰۲۶ (ساعت ۰۰:۳۷ بامداد به وقت ایران)  
+**نسخه:** نسخه پایدار با زیرساخت پاسارگاد و کانفیگ‌های ملی‌نت (Production Active)  
 **مخزن گیت‌هاب:** `https://github.com/dalroot/Gozar.git` (برنچ `main`)  
 
 ---
@@ -14,12 +14,12 @@
 | **دسترسی سریع با REX** | پورت `7444` | توکن دسترسی: `09d917757914ab724ab77412ed47550f` |
 | **مسیر پروژه روی سرور** | `/var/www/gozar` | کاربر وب: `www-data` |
 | **پنل وب ادمین (فیلامنت)** | `https://bot.cinemapluss.ir/admin/login` | دارای گواهینامه SSL معتبر |
-| **وب‌هوک ربات فروش** | `https://bot.cinemapluss.ir/webhooks/telegram` | وضعیت `200 OK` و بدون خطای Pending |
+| **وب‌هوک ربات فروش** | `https://bot.cinemapluss.ir:88/webhooks/telegram` | پورت ۸۸ با گواهینامه SSL رسمی و بدون پندینگ |
 | **ربات فروش فعال** | `@RoozanehNetBot` | توکن: `8624342536:AAGUSggpF6Hfjz2C2PSOVBvZDGPbfEFCIWw` |
 | **ربات منشی هوشمند فرایدی** | `@RozanehaiSupportBot` | توکن: `8450449696:AAGfdyIZg4FnLlpKeuDo6D8imdi1bFKo7eQ` |
-| **پشتیبانی رسمی تلگرام** | `@RoozanehHelp` | تمام دکمه‌های راهنما و رسیدها به این آیدی متصل هستند |
+| **پشتیبانی رسمی تلگرام** | `@RoozanehHelp` | ارتباط مستقیم و رسیدگی به امور کاربران |
 | **کانال تایید فیش‌ها** | `-1004458721823` | اعلان رسیدهای کارت‌به‌کارت و دکمه‌های تایید/رد مدیریت و پی‌وی |
-| **کانال گزارش روزنه (لاگ‌ها)** | `-1004382000216` | ثبت گزارش عضویت‌ها، سفارشات، تمدیدها و ورود به پی‌وی |
+| **کانال گزارش روزنه (لاگ‌ها)** | `-1004382000216` | ثبت گزارش عضویت‌ها، سفارشات، تست‌ها و ورود به پی‌وی |
 | **کانال بکاپ خودکار** | `-1004246017791` | ارسال دوره‌ای فایل فشرده دیتابیس توسط کران‌جاب |
 | **شناسه تلگرام ادمین ارشد** | `8629398713` (`dalroot`) | دسترسی کامل مدیریتی در ربات و پنل |
 
@@ -27,24 +27,88 @@
 
 ## ۲. دستورالعمل سریع مدیریت سرور با REX
 
-به دلیل بسته بودن پورت‌های مستقیم SSH، تمام ارتباطات با ابزار `rex` صورت می‌پذیرد:
+به دلیل محدودیت‌های پورت‌های مستقیم SSH، تمام ارتباطات با سرور پروداکشن از طریق ابزار امن `rex` انجام می‌شود:
 
 ```bash
-# اجرای دستورات روی سرور پروداکشن
-rex exec 31.77.19.220:7444 -t 09d917757914ab724ab77412ed47550f "bash -c 'export HOME=/root; cd /var/www/gozar && <COMMAND>'"
+# اجرای دستور روی سرور بدون PTY (روش استاندارد و سریع)
+rex exec -r -t 09d917757914ab724ab77412ed47550f 31.77.19.220:7444 "export HOME=/root && cd /var/www/gozar && <COMMAND>"
 
 # دیپلوی و اعمال سریع تغییرات کد
-rex exec 31.77.19.220:7444 -t 09d917757914ab724ab77412ed47550f "bash -c 'export HOME=/root; cd /var/www/gozar && git pull origin main && php artisan optimize:clear && php artisan queue:restart'"
+rex exec -r -t 09d917757914ab724ab77412ed47550f 31.77.19.220:7444 "export HOME=/root && cd /var/www/gozar && git pull origin main && php artisan optimize:clear"
 
-# اتصال به ترمینال تعاملی زنده
+# اتصال به ترمینال زنده تعاملی
 rex connect 31.77.19.220:7444 -t 09d917757914ab724ab77412ed47550f
 ```
 
 ---
 
-## ۳. پلن‌های فروش رسمی فعال در دیتابیس (`plans`)
+## ۳. پنل مدیریت وی‌پی‌ان: پاسارگاد (PasarGuard)
 
-بسته‌های رسمی ۳۰ روزه در جدول دیتابیس `plans` ثبت و فعال هستند و قیمت‌ها/حجم‌ها مستقیماً از دیتابیس لود می‌شوند:
+سیستم به صورت کامل به پنل پاسارگاد متصل است:
+
+* **آدرس پنل:** `https://panel.cinemapluss.ir:2053`
+* **دامنه سابسکریپشن:** `https://sub.cinemapluss.ir`
+* **نوع احراز هویت:** کلید اختصاصی `X-API-Key` به مقدار `pg_key_0349b929-0f74-41b2-a21c-b842e16d6f19`
+* **نام کاربری و رمز پنل:** کاربر `admin`
+* **شناسه گروه کاربری تست/پیش‌فرض:** گروه شماره `1` (`pasargad_trial_group_id: 1`)
+* **سرویس لاراول:** `App\Services\PasargadService`
+
+---
+
+## ۴. مشخصات سرورها و کانفیگ‌های فعال شبکه (Active Configurations)
+
+**تاریخ و ساعت استخراج:** ۱۳ اکتبر ۲۰۲۶ - ۰۰:۳۷ بامداد  
+تمام کانفیگ‌ها بر روی پروتکل‌های مدرن VLESS Reality، VMess HiWeb MeliNet و VLESS Direct تنظیم شده‌اند:
+
+### ۱. کانفیگ‌های سرور انگلستان (UK):
+* **01 \| 🇬🇧 UK MeliNet (ملی‌نت - عبور از فیلترینگ شدید):**
+  ```text
+  vmess://ewogICJ2IjogIjIiLAogICJwcyI6ICIwMSB8IFx1RDgzQ1x1RERFQ1x1RDgzQ1x1RERFNyBVSyBNZWxpTmV0IiwKICAiYWRkIjogInBsYXkuY2luZW1hcGx1c3MuaXIiLAogICJwb3J0IjogIjIwODMiLAogICJpZCI6ICJlNmQ4ZGRkZC02YzA1LTQ5NjEtOTU0OS1jNzdmNmZlNzI3NjAiLAogICJhaWQiOiAiMCIsCiAgInNjeSI6ICJhdXRvIiwKICAibmV0IjogInRjcCIsCiAgInR5cGUiOiAiaHR0cCIsCiAgImhvc3QiOiAiaGl3ZWIuaXIiLAogICJwYXRoIjogIi8iLAogICJ0bHMiOiAiIiwKICAic25pIjogIiIsCiAgImFscG4iOiAiIiwKICAiZnAiOiAiIiwKICAiaW5zZWN1cmUiOiAiMCIsCiAgInZjbiI6ICIiLAogICJwY3MiOiAiIgp9
+  ```
+* **02 \| 🇬🇧 UK Direct (مستقیم پرسرعت پورت 8082):**
+  ```text
+  vless://439f1dac-bf54-4fb9-8c2f-69c27ab6fe47@play.cinemapluss.ir:8082?encryption=none&security=none&type=tcp&headerType=http&host=hiweb.ir&path=%2F#02%20%7C%20%F0%9F%87%AC%F0%9F%87%A7%20UK%20Direct
+  ```
+* **03 \| 🇬🇧 UK VIP (پروتکل Reality پورت 3045):**
+  ```text
+  vless://439f1dac-bf54-4fb9-8c2f-69c27ab6fe47@play.cinemapluss.ir:3045?encryption=none&flow=xtls-rprx-vision&security=reality&sni=gateway.icloud.com&fp=chrome&pbk=Kg77e_SIZX0TSJ2p6xs-xNrcjbsjJMXquQx0TvLklSU&sid=bd83b5da689e506e&type=tcp&headerType=none#03%20%7C%20%F0%9F%87%AC%F0%9F%87%A7%20UK%20VIP
+  ```
+
+### ۲. کانفیگ‌های سرور هلند (NL):
+* **04 \| 🇳🇱 NL MeliNet (ملی‌نت - پایداری روی تمام اپراتورها):**
+  ```text
+  vmess://ewogICJ2IjogIjIiLAogICJwcyI6ICIwNCB8IFx1RDgzQ1x1RERGM1x1RDgzQ1x1RERGMSBOTCBNZWxpTmV0IiwKICAiYWRkIjogIm5sLmNpbmVtYXBsdXNzLmlyIiwKICAicG9ydCI6ICIyMDgzIiwKICAiaWQiOiAiZTZkOGRkZGQtNmMwNS00OTYxLTk1NDktYzc3ZjZmZTcyNzYwIiwKICAiYWlkIjogIjAiLAogICJzY3kiOiAiYXV0byIsCiAgIm5ldCI6ICJ0Y3AiLAogICJ0eXBlIjogImh0dHAiLAogICJob3N0IjogImhpd2ViLmlyIiwKICAicGF0aCI6ICIvIiwKICAidGxzIjogIiIsCiAgInNuaSI6ICIiLAogICJhbHBuIjogIiIsCiAgImZwIjogIiIsCiAgImluc2VjdXJlIjogIjAiLAogICJ2Y24iOiAiIiwKICAicGNzIjogIiIKfQ==
+  ```
+* **05 \| 🇳🇱 NL Direct (مستقیم پورت 8082):**
+  ```text
+  vless://439f1dac-bf54-4fb9-8c2f-69c27ab6fe47@nl.cinemapluss.ir:8082?encryption=none&security=none&type=tcp&headerType=http&host=hiweb.ir&path=%2F#05%20%7C%20%F0%9F%87%B3%F0%9F%87%B1%20NL%20Direct
+  ```
+* **06 \| 🇳🇱 NL VIP (پروتکل Reality پورت 3045):**
+  ```text
+  vless://439f1dac-bf54-4fb9-8c2f-69c27ab6fe47@nl.cinemapluss.ir:3045?encryption=none&flow=xtls-rprx-vision&security=reality&sni=gateway.icloud.com&fp=chrome&pbk=Kg77e_SIZX0TSJ2p6xs-xNrcjbsjJMXquQx0TvLklSU&sid=bd83b5da689e506e&type=tcp&headerType=none#06%20%7C%20%F0%9F%87%B3%F0%9F%87%B1%20NL%20VIP
+  ```
+
+---
+
+## ۵. مکانیزم اکانت‌های تست رایگان (Trial Engine)
+
+* **حجم تست:** ۳۰۷۲ مگابایت (۳ گیگابایت کامل)
+* **مدت زمان اعتبار:** ۲۴ ساعت
+* **ساختار نام‌گذاری:** ترتیبی تمیز (`test1`، `test2`، `test3`، ...)
+* **محافظت از تداخل نام:** ربات در لحظه ساخت اکانت، همزمان دیتابیس و پنل پاسارگاد را استعلام گرفته و اولین نام کاربری کاملاً آزاد را انتخاب می‌کند تا هرگز خطای تکراری رخ ندهد.
+
+---
+
+## ۶. سامانه هوشمند عیب‌یابی (Troubleshooting Wizard)
+
+* **کنترلر:** `Modules/TelegramBot/Traits/TroubleshootingWizardTrait.php`
+* **فایل نصبی رسمی اندروید:** نسخه v2rayNG v2.2.6 بر روی سرور نگهداری شده و با فایل‌آیدی ابری تلگرام بدون تاخیر ارسال می‌شود:
+  * `file_id`: `BQACAgEAAxkDAAIDi2rMG9tQvRS9QRGlAxjeMiqhGgbMAAJfBwACbRtpRnKG0QABhEKb7z0E`
+* **ارسال اسکرین‌شات و تیکت:** کاربران در مرحله نهایی می‌توانند اسکرین‌شات اتصال خود را ارسال کنند که مستقیماً به پی‌وی ادمین ارسال شده و تیکت پشتیبانی باز می‌شود.
+
+---
+
+## ۷. پلن‌های فروش رسمی در دیتابیس (`plans`)
 
 | شناسه | نوع بسته | حجم | مدت زمان | قیمت (تومان) | وضعیت در پنل |
 | :---: | :--- | :---: | :---: | :---: | :--- |
@@ -52,112 +116,10 @@ rex connect 31.77.19.220:7444 -t 09d917757914ab724ab77412ed47550f
 | **3** | ⚡️ پلن استاندارد | ۴۵ گیگابایت | ۳۰ روز | **۲۹۵,۰۰۰** | فعال (`is_popular: 1` • پیشنهاد ویژه) |
 | **4** | 🚀 پلن حرفه‌ای VIP | ۷۵ گیگابایت | ۳۰ روز | **۳۹۵,۰۰۰** | فعال (`is_active: 1`) |
 
-* لوکیشن سرورها: سرورهای اختصاصی آلمان 🇩🇪 و هلند 🇳🇱.
-* کلیه پلن‌های قدیمی تست، غیرفعال یا حذف شده‌اند.
-
 ---
 
-## ۴. کپی‌رایتینگ و رابط کاربری ربات فروشگاه (`@RoozanehNetBot`)
-
-پیام‌های فروشگاه در `Modules/TelegramBot/Http/Controllers/WebhookController.php` به صورت کامل بازنویسی شده‌اند:
-* **رعایت دقیق راست‌چین (RTL):** هیچ کلمه انگلیسی یا ایموجی ناسازگار در ابتدای سطرها قرار نگرفته است تا از شکستگی یا چپ‌چین شدن متن تلگرام جلوگیری شود.
-* **استفاده از قابلیت‌های ریچ تلگرام:** کادر نقل‌قول رسمی (`<blockquote>`) و فونت برجسته استاندارد.
-* **۷ ویژگی تضمین‌شده ثبت‌شده در پیام خرید:**
-  1. پایداری بالا در اینترنت ملی و بین‌الملل
-  2. دسترسی روان و پرسرعت به سرویس‌های هوش مصنوعی (ChatGPT، Claude و...)
-  3. استریم و تماشای بدون وقفه یوتیوب با کیفیت بالا
-  4. سرورهای اختصاصی و بهینه‌شده آلمان 🇩🇪 و هلند 🇳🇱
-  5. آی‌پی ثابت اشتراکی مناسب مصارف حساس
-  6. پشتیبانی ۲۴/۷ توسط کارشناسان انسانی
-  7. ضمانت ۲۴ ساعته بازگشت وجه در صورت عدم رضایت
-* **شفافیت ادعا:** حذف کامل ادعاهای نامتعارف و غیرحرفه‌ای نظیر «پینگ زیر ۴۰ میلی‌ثانیه».
-
----
-
-## ۵. منشی هوشمند و پشتیبانی فرایدی (`@RozanehaiSupportBot`)
-
-منطق پشتیبانی منشی هوشمند روزنه با الگوگیری از استاندارد مارکتینگ گفتگو (Conversational Marketing) در مسیرهای زیر ارتقا یافت:
-* **فایل‌های اصلی:**
-  - `Modules/TelegramBot/Services/TelegramSecretaryService.php`
-  - `Modules/TelegramBot/Services/DeterministicSupportService.php`
-  - `Modules/TelegramBot/Services/IntentClassifier.php`
-  - `Modules/TelegramBot/Services/CustomerContextService.php`
-  - `Modules/TelegramBot/Services/RozanehExperience.php`
-* **اصلاحات کلیدی انجام‌شده:**
-  1. **معرفی کوتاه زیر ۳۰ کلمه:** پیام شروع («سلام [نام]، من فرایدی دستیار هوشمند روزنه هستم. اگر نیاز به بررسی دقیق‌تر بود، همکارانم در پشتیبانی انسانی همراه شما هستند...»).
-  2. **کاهش سردرگمی (۳ دکمه حیاتی):** دکمه‌های خوش‌آمدگویی از ۷ دکمه شلوغ به ۳ گزینه متمرکز کاهش یافت:
-     - 📊 وضعیت سرویس من
-     - 🔗 دریافت مجدد لینک اتصال
-     - 🛍 خرید و تمدید اشتراک (لینک مستقیم به `@RoozanehNetBot`)
-  3. **حل حلقه تکرار سلام (Loop Breaker):** در صورت ارسال مجدد «سلام / احوالپرسی»، فرایدی پیام طولانی تکرار نمی‌کند و با یک جمله محترمانه کوتاه بدون دکمه پاسخ می‌دهد: «سلام مجدد [نام] عزیز؛ چطور می‌تونم کمکتون کنم؟».
-  4. **پالایش نام‌های ناقص:** در صورت نبود نام یا نام‌های نامعتبر (مانند `..` یا `.` یا شکلک‌های ناقص)، به جای نام کاربر عبارت محترمانه «همراه گرامی» جایگزین شده و خطای گرامری «همراه گرامی عزیز» به طور ریشه‌ای برطرف شده است.
-  5. **توسعه دایره واژگان:** درک عبارات گفتاری خرید («بخرم»، «سرویس میخوام»، «قیمت چند») و هدایت آنی به ربات فروشگاه، همراه با تشخیص اختلالات شبکه.
-
----
-
-## ۶. تنظیمات BotFather برای ربات فروشگاه (`@RoozanehNetBot`)
-
-### بیو (Bio / About - حداکثر ۷۰ کاراکتر):
-```text
-دسترسی پایدار به اینترنت آزاد و نت ملی | سرورهای آلمان و هلند 🇩🇪🇳🇱
-```
-
-### توضیحات (Description / قبل از زدن Start):
-```text
-🛍 به فروشگاه رسمی روزنه خوش آمدید.
-
-روزنه ارائه‌دهنده سرویس‌های اینترنت پایدار و پرسرعت با سرورهای اختصاصی آلمان و هلند است.
-
-✨ ویژگی‌های سرویس روزنه:
-• پایداری تضمین‌شده در اینترنت ملی و بین‌الملل
-• اتصال روان به سرویس‌های هوش مصنوعی
-• تماشای بدون وقفه ویدیو و یوتیوب
-• آی‌پی ثابت اشتراکی بدون قطعی
-• ضمانت ۲۴ ساعته بازگشت کامل وجه
-• پشتیبانی ۲۴ ساعته توسط کارشناسان انسانی
-
-برای مشاهده پلن‌ها و خرید اشتراک روی /start کلیک کنید.
-```
-
-### لیست دستورات منوی ربات (Bot Commands):
-```text
-start - شروع و منوی اصلی فروشگاه
-plans - مشاهده و خرید بسته‌ها
-mysub - پیگیری و سرویس‌های من
-wallet - کیف پول و افزایش اعتبار
-support - ارتباط با پشتیبانی انسانی
-help - راهنمای اتصال و آموزش
-```
-
----
-
-## ۷. وضعیت دیتابیس و ریست تولیدی (Clean Production State)
-
-سیستم پس از اتمام تست‌ها به صورت ۱۰۰٪ آماده شروع تمیز شده است:
-* **جداول پاکسازی‌شده (Truncated):**
-  - `orders` (شمارنده `AUTO_INCREMENT` به **۱** بازنشانی شد؛ اولین خرید واقعی با شناسه `#1` ثبت می‌شود)
-  - `transactions` (شمارنده `AUTO_INCREMENT` به **۱** بازنشانی شد)
-  - `tickets` و `ticket_replies` (تخلیه کامل تیکت‌های تستی)
-  - `user_trials` و `referral_logs` (تخلیه گزارشات تستی)
-* **پاکسازی حافظه موقت ردیس:** کلیه کلیدهای کش و صف‌ها با `redis-cli FLUSHALL` پاکسازی شدند.
-* **ری‌استارت پروسس‌ها:** وب‌سرور، صف‌ها (`queue:restart`) و PHP-FPM راه‌اندازی مجدد شدند.
-
----
-
-## ۸. زیرساخت شبکه و اتصال X-UI
-
-* **پنل فعال:** `xui` (سنایی / Alireza0) روی آدرس `https://panel.cinemapluss.ir:2053/yQHgO7LO8bPYupHdmb`
-* **اینباندهای فعال پیکربندی:**
-  - **اینباند ۳:** آلمان تانل ملی (VLESS TCP TLS - پورت ۲۰۸۷)
-  - **اینباند ۷:** هلند مستقیم (VLESS TCP Reality - پورت ۴۴۳)
-  - **اینباند ۱۱:** هلند تانل ملی (VLESS TCP TLS - پورت ۲۰۸۸)
-  - **اینباند ۱۴:** هلند مودم (VLESS TCP HTTP - پورت ۲۰۸۳)
-* تمام اینباندها با لینک سابسکریپشن یکپارچه تحویل کاربر نهایی می‌شوند.
-
----
-
-## ۹. اطلاعات حساب بانکی فعال جهت واریز کارت به کارت
+## ۸. اطلاعات حساب بانکی جهت تایید فیش‌ها
 
 * **شماره کارت:** `5859-8311-1983-7713`
 * **نام صاحب حساب:** توانا محمدی
-* **شیفت تایید فیش‌ها:** ساعت ۰۵:۰۰ صبح تا ۱۴:۰۰ ظهر بازه استراحت تعریف شده و مابقی ساعات تایید کمتر از ۱۰ دقیقه می‌باشد.
+* **شیفت تایید فیش‌ها:** ساعت ۰۵:۰۰ صبح تا ۱۴:۰۰ ظهر بازه استراحت و مابقی ساعات تایید زیر ۱۰ دقیقه.
