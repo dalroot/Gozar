@@ -4668,12 +4668,13 @@ class WebhookController extends Controller
                 $durationHours = 72; // پیش‌فرض تست ۷۲ ساعته (۳ روزه)
             }
 
-            // ساخت نام کاربری تست به فرمت تمیز و ساده TEST<شماره> (مانند TEST159)
-            $seedNum = $user->id > 0 ? (100 + ($user->id % 900)) : rand(100, 999);
-            $uniqueUsername = "TEST" . $seedNum;
-            if (\App\Models\Order::where('panel_username', $uniqueUsername)->exists()) {
-                $uniqueUsername = "TEST" . rand(100, 999);
-            }
+            // ساخت نام کاربری تست به فرمت تمیز و ترتیبی (test1, test2, ...)
+            $trialCounter = (int) (\App\Models\Setting::where('key', 'trial_counter')->value('value') ?? 0);
+            do {
+                $trialCounter++;
+                $uniqueUsername = "test" . $trialCounter;
+            } while (\App\Models\Order::where('panel_username', $uniqueUsername)->exists());
+            \App\Models\Setting::updateOrCreate(['key' => 'trial_counter'], ['value' => (string) $trialCounter]);
 
             $expiresAt = now()->addHours($durationHours);
             $dataLimitBytes = $volumeMB * 1024 * 1024;
