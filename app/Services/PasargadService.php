@@ -337,6 +337,30 @@ class PasargadService
     }
 
     /**
+     * دریافت لیست نودها
+     */
+    public function getNodes(): array
+    {
+        if (!$this->accessToken && empty($this->apiKey)) {
+            if (!$this->login()) return [];
+        }
+
+        try {
+            $response = $this->request()->get($this->baseUrl . '/api/nodes');
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['nodes'] ?? (is_array($data) ? $data : []);
+            }
+            return [];
+
+        } catch (\Exception $e) {
+            Log::error('Pasargad Get Nodes Exception:', ['message' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
      * آمار سیستم
      */
     public function getSystemStats(): ?array
@@ -359,3 +383,4 @@ class PasargadService
         }
     }
 }
+

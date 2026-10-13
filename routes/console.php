@@ -9,13 +9,15 @@ Artisan::command('inspire', function () {
 
 use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('vpnmarket:send-daily-report', function () {
+Artisan::command('vpnmarket:send-daily-report {--dry-run : Print to console instead of sending to Telegram}', function () {
     try {
         $settings = \App\Models\Setting::all()->pluck('value', 'key');
         $logChannelId = $settings->get('telegram_log_channel_id');
         $botToken = $settings->get('telegram_bot_token');
 
-        if (!$logChannelId || !$botToken) {
+        $isDryRun = (bool) $this->option('dry-run');
+
+        if (!$isDryRun && (!$logChannelId || !$botToken)) {
             $this->error('Telegram log channel ID or bot token is not configured.');
             return;
         }
@@ -23,6 +25,8 @@ Artisan::command('vpnmarket:send-daily-report', function () {
         $nowTehran = now('Asia/Tehran');
         $startOfDay = $nowTehran->copy()->startOfDay()->setTimezone('UTC');
         $endOfDay = $nowTehran->copy()->endOfDay()->setTimezone('UTC');
+        $hour = (int) $nowTehran->format('H');
+        $reportTypeTitle = ($hour >= 11 && $hour <= 16) ? 'گزارش آماری نیم‌روز' : 'گزارش آماری پایانی روز';
 
         // Stats queries
         $newUsersCount = \App\Models\User::whereBetween('created_at', [$startOfDay, $endOfDay])->count();
@@ -57,17 +61,142 @@ Artisan::command('vpnmarket:send-daily-report', function () {
             $newTicketsCount = \Modules\Ticketing\Models\Ticket::whereBetween('created_at', [$startOfDay, $endOfDay])->count();
         }
 
-        $dateStr = $nowTehran->format('Y/m/d');
+        $formatBytes = function ($bytes, $precision = 2) {
+            $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            $bytes = max(0, (float) $bytes);
+            $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+            $pow = min((int)$pow, count($units) - 1);
+            $bytes /= pow(1024, $pow);
+            return round($bytes, $precision) . ' ' . $units[$pow];
+        };
 
-        $msg = "📊 <b>گزارش آماری روزانه ربات</b> (تاریخ: {$dateStr})\n\n";
+        // --- استعلام داده‌ها از پنل پاسارگاد ---
+        $pasargadService = new \App\Services\PasargadService(
+            $settings->get('pasargad_host'),
+            $settings->get('pasargad_sudo_username'),
+            $settings->get('pasargad_sudo_password'),
+            $settings->get('pasargad_node_hostname')
+        );
+
+        $systemStats = $pasargadService->getSystemStats();
+        $nodes = $pasargadService->getNodes();
+
+        // بازیابی اسنپ‌شات قبلی جهت محاسبه دلتای مصرف
+        $prevSnapshotRaw = \App\Models\Setting::where('key', 'pasargad_traffic_snapshot')->value('value');
+        $prevSnapshot = $prevSnapshotRaw ? json_decode($prevSnapshotRaw, true) : null;
+        $currentSnapshot = [
+            'timestamp' => now()->timestamp,
+            'nodes' => [],
+        ];
+
+        $nodesMsg = "";
+        $totalPeriodTraffic = 0;
+
+        if (!empty($nodes)) {
+            foreach ($nodes as $node) {
+                $nodeId = $node['id'] ?? 0;
+                $nodeName = $node['name'] ?? "نود {$nodeId}";
+                $status = ($node['status'] ?? '') === 'connected' ? '🟢 متصل' : '🔴 قطع';
+
+                $currentUp = (float) ($node['uplink'] ?? 0);
+                $currentDown = (float) ($node['downlink'] ?? 0);
+                $currentTotal = $currentUp + $currentDown;
+
+                $currentSnapshot['nodes'][$nodeId] = [
+                    'uplink' => $currentUp,
+                    'downlink' => $currentDown,
+                ];
+
+                // تشخیص پرچم کشور
+                $flag = '🌐';
+                if (stripos($nodeName, 'UK') !== false || stripos($nodeName, 'انگلستان') !== false) {
+                    $flag = '🇬🇧';
+                } elseif (stripos($nodeName, 'NL') !== false || stripos($nodeName, 'هلند') !== false) {
+                    $flag = '🇳🇱';
+                } elseif (stripos($nodeName, 'DE') !== false || stripos($nodeName, 'آلمان') !== false) {
+                    $flag = '🇩🇪';
+                }
+
+                if ($prevSnapshot && isset($prevSnapshot['nodes'][$nodeId])) {
+                    $prevUp = (float) ($prevSnapshot['nodes'][$nodeId]['uplink'] ?? 0);
+                    $prevDown = (float) ($prevSnapshot['nodes'][$nodeId]['downlink'] ?? 0);
+
+                    // اگر نود ریست شده باشد، اختلاف منفی نشود
+                    $diffUp = $currentUp >= $prevUp ? ($currentUp - $prevUp) : $currentUp;
+                    $diffDown = $currentDown >= $prevDown ? ($currentDown - $prevDown) : $currentDown;
+                    $diffTotal = $diffUp + $diffDown;
+                    $totalPeriodTraffic += $diffTotal;
+
+                    $nodesMsg .= "{$flag} <b>{$nodeName}:</b> {$status} | <code>" . $formatBytes($diffTotal) . "</code> مصرف (⬇️ " . $formatBytes($diffDown, 1) . " | ⬆️ " . $formatBytes($diffUp, 1) . ")\n";
+                } else {
+                    $totalPeriodTraffic += $currentTotal;
+                    $nodesMsg .= "{$flag} <b>{$nodeName}:</b> {$status} | کل ترافیک: <code>" . $formatBytes($currentTotal) . "</code>\n";
+                }
+            }
+
+            // ذخیره اسنپ‌شات جدید برای دوره بعد
+            \App\Models\Setting::updateOrCreate(
+                ['key' => 'pasargad_traffic_snapshot'],
+                ['value' => json_encode($currentSnapshot)]
+            );
+        }
+
+        $dateStr = $nowTehran->format('Y/m/d');
+        $timeStr = $nowTehran->format('H:i');
+
+        $msg = "📊 <b>{$reportTypeTitle} ربات و شبکه</b>\n";
+        $msg .= "🗓 <b>تاریخ:</b> <code>{$dateStr}</code> | ⏰ <b>ساعت:</b> <code>{$timeStr}</code>\n\n";
+
+        if (!empty($nodesMsg)) {
+            $msg .= "🖥 <b>وضعیت نودها و ترافیک (PasarGuard):</b>\n";
+            $msg .= $nodesMsg;
+            if ($prevSnapshot) {
+                $msg .= "⚡️ <b>مجموع مصرف شبکه در این بازه:</b> <code>" . $formatBytes($totalPeriodTraffic) . "</code>\n\n";
+            } else {
+                $msg .= "💡 <i>(اسنپ‌شات مبنای ترافیک ذخیره شد؛ از گزارش بعدی میزان مصرف دقیق محاسبه می‌شود)</i>\n\n";
+            }
+        }
+
+        if ($systemStats) {
+            $onlineUsers = (int) ($systemStats['online_users'] ?? 0);
+            $activeUsers = (int) ($systemStats['active_users'] ?? 0);
+            $limitedUsers = (int) ($systemStats['limited_users'] ?? 0);
+            $expiredUsers = (int) ($systemStats['expired_users'] ?? 0);
+            $memUsed = (float) ($systemStats['mem_used'] ?? 0);
+            $memTotal = max(1, (float) ($systemStats['mem_total'] ?? 1));
+            $memPercent = round(($memUsed / $memTotal) * 100);
+            $diskUsed = (float) ($systemStats['disk_used'] ?? 0);
+            $diskTotal = max(1, (float) ($systemStats['disk_total'] ?? 1));
+            $diskPercent = round(($diskUsed / $diskTotal) * 100);
+            $cpuUsage = round((float) ($systemStats['cpu_usage'] ?? 0), 1);
+
+            $msg .= "👥 <b>وضعیت کاربران و سلامت سرور:</b>\n";
+            $msg .= "🟢 <b>کاربران آنلاین هم‌اکنون:</b> <code>{$onlineUsers}</code> نفر\n";
+            $msg .= "📦 <b>اکانت‌های فعال پنل:</b> <code>{$activeUsers}</code> عدد\n";
+            if ($limitedUsers > 0) {
+                $msg .= "⚠️ <b>حجم تمام‌شده (فرصت تمدید):</b> <code>{$limitedUsers}</code> عدد\n";
+            }
+            if ($expiredUsers > 0) {
+                $msg .= "⏳ <b>منقضی‌شده زمانی:</b> <code>{$expiredUsers}</code> عدد\n";
+            }
+            $msg .= "💾 <b>منابع سرور:</b> رم <code>{$memPercent}%</code> | دیسک <code>{$diskPercent}%</code> | پردازنده <code>{$cpuUsage}%</code>\n\n";
+        }
+
+        $msg .= "───────────────\n";
+        $msg .= "📈 <b>آمار فروش و پشتیبانی ربات:</b>\n";
         $msg .= "👤 <b>کاربران جدید امروز:</b> <code>{$newUsersCount}</code> نفر\n";
         $msg .= "🧪 <b>اکانت‌های تست رایگان:</b> <code>{$trialOrdersCount}</code> عدد\n";
         $msg .= "🛒 <b>کل سفارشات نقدی موفق:</b> <code>{$paidOrdersCount}</code> عدد\n";
-        $msg .= "💰 <b>مجموع فروش نقدی:</b> <code>" . number_format($totalSales) . "</code> تومان\n\n";
-        $msg .= "───────────────\n";
-        $msg .= "💳 <b>شارژ کیف پول:</b> <code>{$walletChargesCount}</code> عدد (جمعاً <code>" . number_format($walletChargesSum) . "</code> تومان)\n";
-        $msg .= "📦 <b>خرید/تمدید سرویس:</b> <code>{$planPurchasesCount}</code> عدد (جمعاً <code>" . number_format($planPurchasesSum) . "</code> تومان)\n";
+        $msg .= "💰 <b>مجموع فروش نقدی:</b> <code>" . number_format($totalSales) . "</code> تومان\n";
+        $msg .= "💳 <b>شارژ کیف پول:</b> <code>{$walletChargesCount}</code> عدد (<code>" . number_format($walletChargesSum) . "</code> تومان)\n";
+        $msg .= "📦 <b>خرید/تمدید سرویس:</b> <code>{$planPurchasesCount}</code> عدد (<code>" . number_format($planPurchasesSum) . "</code> تومان)\n";
         $msg .= "👨🏻‍💻 <b>تیکت‌های جدید پشتیبانی:</b> <code>{$newTicketsCount}</code> عدد\n";
+
+        if ($isDryRun) {
+            $this->line($msg);
+            $this->info('Dry-run completed successfully!');
+            return;
+        }
 
         \Telegram\Bot\Laravel\Facades\Telegram::setAccessToken($botToken);
         \Telegram\Bot\Laravel\Facades\Telegram::sendMessage([
@@ -157,6 +286,7 @@ Artisan::command('vpnmarket:send-campaign-report', function () {
     }
 })->purpose('Send campaign activity report to Telegram log channel');
 
-Schedule::command('vpnmarket:send-daily-report')->dailyAt('23:59');
+Schedule::command('vpnmarket:send-daily-report')->timezone('Asia/Tehran')->dailyAt('14:00');
+Schedule::command('vpnmarket:send-daily-report')->timezone('Asia/Tehran')->dailyAt('23:59');
 Schedule::command('vpnmarket:send-backup')->hourly();
 Schedule::command('vpnmarket:monitor-trials')->everyFifteenMinutes();
