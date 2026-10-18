@@ -461,8 +461,8 @@ class OrderController extends Controller
                     throw new \Exception('سفارش اصلی جهت تمدید یافت نشد.');
                 }
 
-                // برای تمدید، از ID سفارش اصلی استفاده کن
-                $uniqueUsername = $order->panel_username ?? "user-{$user->id}-order-" . ($isRenewal ? $originalOrder->id : $order->id);
+                $tgId = $user->telegram_chat_id ?: $user->id;
+                $uniqueUsername = $order->panel_username ?: ($isRenewal ? ($originalOrder->panel_username ?: "rz_{$tgId}_{$originalOrder->id}") : "rz_{$tgId}_{$order->id}");
                 $newExpiresAt = $isRenewal
                     ? (new \DateTime($originalOrder->expires_at))->modify("+{$plan->duration_days} days")
                     : now()->addDays($plan->duration_days);

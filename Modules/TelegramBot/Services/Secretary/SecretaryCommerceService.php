@@ -188,8 +188,12 @@ final class SecretaryCommerceService
                 'discount_amount' => 0,
                 'discount_code_id' => null,
                 'renews_order_id' => $original?->id,
-                'panel_username' => $original?->panel_username ?: 'u' . $user->id . 'o' . Str::random(5),
+                'panel_username' => $original?->panel_username,
             ]);
+            if (!$order->panel_username) {
+                $tgId = $user->telegram_chat_id ?: $user->id;
+                $order->update(['panel_username' => "rz_{$tgId}_{$order->id}"]);
+            }
         }
 
         Order::where('user_id', $user->id)

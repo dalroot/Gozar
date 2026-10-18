@@ -559,8 +559,7 @@ class WebhookController extends Controller
                 return;
             }
 
-            $autoUsername = 'u' . $user->id . 'o' . Str::random(5);
-            $this->startPurchaseProcess($user, $plan->id, $autoUsername);
+            $this->startPurchaseProcess($user, $plan->id, null);
             return;
         } elseif ($text === '/start shop') {
             $this->sendPlans($chatId);
@@ -905,9 +904,8 @@ class WebhookController extends Controller
                     }
                 }
                 
-                $autoUsername = 'u' . $user->id . 'o' . Str::random(5);
                 $user->update(['bot_state' => "selected_loc:{$locationId}"]);
-                $this->startPurchaseProcess($user, $planId, $autoUsername, $messageId);
+                $this->startPurchaseProcess($user, $planId, null, $messageId);
                 return;
             }
         }
@@ -925,8 +923,7 @@ class WebhookController extends Controller
                 return;
             }
 
-            $autoUsername = 'u' . $user->id . 'o' . Str::random(5);
-            $this->startPurchaseProcess($user, $planId, $autoUsername, $messageId);
+            $this->startPurchaseProcess($user, $planId, null, $messageId);
             return;
         }
         elseif ($data === 'trial_request') {
@@ -1420,7 +1417,7 @@ class WebhookController extends Controller
     // 🛒 سیستم خرید و تخفیف
     // ========================================================================
 
-    protected function startPurchaseProcess($user, $planId, $username, $messageId = null)
+    protected function startPurchaseProcess($user, $planId, $username = null, $messageId = null)
     {
         $plan = Plan::whereKey($planId)->where('is_active', true)->first();
         if (!$plan) {
@@ -1485,8 +1482,17 @@ class WebhookController extends Controller
                 'amount' => $plan->price,
                 'discount_amount' => 0,
                 'discount_code_id' => null,
-                'panel_username' => $username
             ]);
+            $tgId = $user->telegram_chat_id ?: $user->id;
+            $panelUsername = !empty($username) ? $username : "rz_{$tgId}_{$order->id}";
+            $order->update(['panel_username' => $panelUsername]);
+            $username = $panelUsername;
+        } else {
+            $tgId = $user->telegram_chat_id ?: $user->id;
+            $username = $order->panel_username ?: (!empty($username) ? $username : "rz_{$tgId}_{$order->id}");
+            if (!$order->panel_username) {
+                $order->update(['panel_username' => $username]);
+            }
         }
 
         app(\App\Services\BotEventLogger::class)->record($order->wasRecentlyCreated ? 'order_created' : 'order_reopened', 'sales_bot', [
@@ -3072,7 +3078,7 @@ class WebhookController extends Controller
     protected function addTrafficToAccount(Order $order, float $trafficMB)
     {
         $settings = $this->settings;
-        $uniqueUsername = $order->panel_username ?? "user-{$order->user_id}-order-{$order->id}";
+        $uniqueUsername = $order->panel_username ?: ("rz_" . ($order->user?->telegram_chat_id ?: $order->user_id) . "_{$order->id}");
         $panelType = $settings->get('panel_type') ?? 'marzban';
         $trafficBytesToAdd = (int) ($trafficMB * 1024 * 1024);
 
@@ -3329,7 +3335,7 @@ class WebhookController extends Controller
     protected function provisionUserAccount(Order $order, Plan $plan)
     {
         $settings = $this->settings;
-        $uniqueUsername = $order->panel_username ?? "user-{$order->user_id}-order-{$order->id}";
+        $uniqueUsername = $order->panel_username ?: ("rz_" . ($order->user?->telegram_chat_id ?: $order->user_id) . "_{$order->id}");
         $configData = [
             'link' => null,
             'username' => null,
@@ -4018,7 +4024,7 @@ class WebhookController extends Controller
     {
         $settings = $this->settings;
         $user = $originalOrder->user;
-        $uniqueUsername = $originalOrder->panel_username ?? "user-{$user->id}-order-{$originalOrder->id}";
+        $uniqueUsername = $originalOrder->panel_username ?: ("rz_" . ($user->telegram_chat_id ?: $user->id) . "_{$originalOrder->id}");
 
         $isMultiLocationEnabled = filter_var(
             $settings->get('enable_multilocation', false),

@@ -43,8 +43,8 @@ trait ManagesServiceProvisioning
             }
         }
 
-        // نام کاربری بر اساس سفارش اصلی (در صورت تمدید) یا سفارش فعلی (در صورت خرید جدید)
-        $uniqueUsername = "user-{$user->id}-order-" . ($isRenewal ? $originalOrder->id : $order->id);
+        $tgId = $user->telegram_chat_id ?: $user->id;
+        $uniqueUsername = $order->panel_username ?: ($isRenewal ? ($originalOrder->panel_username ?: "rz_{$tgId}_{$originalOrder->id}") : "rz_{$tgId}_{$order->id}");
 
         // محاسبه تاریخ انقضای جدید
         $baseDate = now();
