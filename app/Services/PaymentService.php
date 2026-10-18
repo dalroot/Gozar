@@ -192,11 +192,17 @@ class PaymentService
                         $success = true;
                     } else throw new \Exception('خطا در تمدید کاربر در پنل پاسارگاد');
                 } else {
+                    $tgUsername = $user->telegram_username ? "@{$user->telegram_username}" : "NoUsername";
+                    $tgChatId = $user->telegram_chat_id ?? 'N/A';
+                    $userName = $user->name ?? 'کاربر';
+                    $orderNote = "TG: {$tgChatId} | {$tgUsername} | {$userName} | Order #{$order->id} ({$plan->name})";
+
                     $response = $pasargadService->createUser([
                         'username' => $uniqueUsername,
                         'expire' => $newExpiresAt->getTimestamp(),
                         'data_limit' => $plan->volume_gb * 1073741824,
                         'group_ids' => [(int)($plan->pasargad_group_id ?? $settings->get('pasargad_paid_group_id') ?? 1)],
+                        'note' => $orderNote,
                     ]);
                     if ($response && (isset($response['subscription_url']) || isset($response['username']))) {
                         $finalConfig = $response['subscription_url'] ?? $pasargadService->generateSubscriptionLink($uniqueUsername);

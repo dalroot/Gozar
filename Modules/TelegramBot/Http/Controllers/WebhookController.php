@@ -3611,11 +3611,18 @@ class WebhookController extends Controller
                     $settings->get('pasargad_node_hostname')
                 );
                 
+                $tgUser = $order->user;
+                $tgUsername = $tgUser?->telegram_username ? "@{$tgUser->telegram_username}" : "NoUsername";
+                $tgChatId = $tgUser?->telegram_chat_id ?? 'N/A';
+                $userName = $tgUser?->name ?? 'کاربر';
+                $orderNote = "TG: {$tgChatId} | {$tgUsername} | {$userName} | Order #{$order->id} ({$plan->name})";
+
                 $response = $pasargad->createUser([
                     'username' => $uniqueUsername,
                     'expire' => $order->expires_at->timestamp,
                     'data_limit' => $plan->volume_gb * 1024 * 1024 * 1024,
                     'group_ids' => [(int)($plan->pasargad_group_id ?? $settings->get('pasargad_paid_group_id') ?? 1)],
+                    'note' => $orderNote,
                 ]);
 
                 if (!empty($response['subscription_url'])) {
@@ -4766,7 +4773,8 @@ class WebhookController extends Controller
 
             $this->updateProgressMessage($chatId, $loadingMsgId, 40, 'اتصال به پنل روزنه و ثبت کاربر...');
 
-            $configLink = $this->createVpnAccount($uniqueUsername, $volumeMB, $durationHours, $locationName, $locationFlag);
+            $trialNote = "تست رایگان | TG: " . $user->telegram_chat_id . " | @" . ($user->telegram_username ?: 'none') . " | " . ($user->name ?: 'کاربر');
+            $configLink = $this->createVpnAccount($uniqueUsername, $volumeMB, $durationHours, $locationName, $locationFlag, $trialNote);
 
             if ($configLink) {
                 $user->increment('trial_accounts_taken');
@@ -4951,7 +4959,7 @@ class WebhookController extends Controller
         }
     }
 
-    protected function createVpnAccount($uniqueUsername, $volumeMB, $durationHours, &$locationName, &$locationFlag)
+    protected function createVpnAccount($uniqueUsername, $volumeMB, $durationHours, &$locationName, &$locationFlag, ?string $note = null)
     {
         $settings = $this->settings;
         $expiresAt = $durationHours > 0 ? now()->addHours($durationHours) : null;
@@ -5171,6 +5179,7 @@ class WebhookController extends Controller
                 'expire' => $expiresAt?->timestamp ?? 0,
                 'data_limit' => $dataLimitBytes,
                 'group_ids' => $settings->get('pasargad_trial_group_id') ? [(int)$settings->get('pasargad_trial_group_id')] : [1],
+                'note' => $note ?? 'اکانت تست روزنه',
             ]);
             if ($response && !empty($response['subscription_url'])) {
                 $configLink = $response['subscription_url'];

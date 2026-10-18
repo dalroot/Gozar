@@ -195,6 +195,9 @@ class PasargadService
             if (isset($userData['status'])) {
                 $payload['status'] = $userData['status'];
             }
+            if (isset($userData['note'])) {
+                $payload['note'] = $userData['note'];
+            }
 
             $response = $this->request()->put($this->baseUrl . "/api/user/{$username}", $payload);
 
