@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Inbound;
 use App\Models\Setting;
+use App\Services\PasargadService;
 use App\Services\RemnawaveService;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Section;
@@ -43,7 +44,49 @@ class ManageTrialSettings extends Page implements HasForms
             'trial_limit_per_user' => $settings['trial_limit_per_user'] ?? 1,
             'trial_server_id'      => $settings['trial_server_id'] ?? null,
             'remnawave_squad_uuid' => $settings['remnawave_squad_uuid'] ?? null,
+            'pasargad_trial_group_id' => $settings['pasargad_trial_group_id'] ?? null,
         ]);
+    }
+
+    /**
+     * لیست گروه‌های پاسارگاد رو به صورت زنده از API می‌گیره
+     */
+    public static function getPasargadGroups(): array
+    {
+        $settings = Setting::all()->pluck('value', 'key');
+        if ($settings->get('panel_type') !== 'pasargad') {
+            return [];
+        }
+
+        try {
+            $service = new PasargadService(
+                $settings->get('pasargad_host'),
+                $settings->get('pasargad_sudo_username'),
+                $settings->get('pasargad_sudo_password'),
+                $settings->get('pasargad_node_hostname'),
+                $settings->get('pasargad_api_key')
+            );
+
+            $groups = $service->getGroups();
+            if (empty($groups)) {
+                return [];
+            }
+
+            $options = [];
+            foreach ($groups as $group) {
+                $id = $group['id'] ?? null;
+                $name = $group['name'] ?? ('گروه ' . $id);
+                $usersCount = $group['total_users'] ?? 0;
+                $inboundsCount = count($group['inbound_tags'] ?? []);
+                if ($id !== null) {
+                    $options[(string)$id] = "{$name} (شناسه: {$id} | {$inboundsCount} اینباند | {$usersCount} کاربر)";
+                }
+            }
+            return $options;
+        } catch (\Throwable $e) {
+            Log::warning('Could not fetch Pasargad groups: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -94,6 +137,7 @@ class ManageTrialSettings extends Page implements HasForms
         $panelType = $settings->get('panel_type', '');
         $isRemnawave = $panelType === 'remnawave';
         $isXUI = $panelType === 'xui';
+        $isPasargad = $panelType === 'pasargad';
 
         return $form
             ->schema([
@@ -109,7 +153,7 @@ class ManageTrialSettings extends Page implements HasForms
 
                 // بخش ۲: انتخاب اینباند / سرور
                 Section::make('🔌 اینباند و سرور اکانت تست')
-                    ->description('مشخص کنید اکانت‌های تست روی کدام اینباند یا سرور ساخته شوند.')
+                    ->description('مشخص کنید اکانت‌های تست روی کدام اینباند، سرور یا گروه ساخته شوند.')
                     ->schema([
 
                         // انتخاب اینباند(ها) برای پنل X-UI — چندتایی، به صورت کارت‌های ۲ ستونه داخل کادر
@@ -135,6 +179,16 @@ class ManageTrialSettings extends Page implements HasForms
                             ->helperText('اینباندهایی که اکانت‌های تست روی آن‌ها ساخته می‌شوند را انتخاب فرمایید.')
                             ->visible($isXUI),
 
+                        // گروه انتخابی برای پاسارگاد (PasarGuard)
+                        Select::make('pasargad_trial_group_id')
+                            ->label('گروه مخصوص اکانت تست در پاسارگاد')
+                            ->helperText('اکانت‌های تست در پنل پاسارگاد روی این گروه ساخته شده و فقط اینباندهای متصل به آن را در سابسکریپشن دریافت می‌کنند.')
+                            ->options(fn () => self::getPasargadGroups())
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('انتخاب گروه تست...')
+                            ->visible($isPasargad),
+
                         // سرور مخصوص (برای پنل‌های multi-server)
                         Select::make('trial_server_id')
                             ->label('سرور مخصوص اکانت تست')
@@ -152,7 +206,7 @@ class ManageTrialSettings extends Page implements HasForms
                             ->preload()
                             ->placeholder('انتخاب کنید...')
                             ->helperText('اکانت‌های تست روی این سرور ساخته می‌شوند. اگر انتخاب نکنید، سیستم خودکار یک سرور خالی را انتخاب می‌کند.')
-                            ->visible(!$isRemnawave && !$isXUI),
+                            ->visible(!$isRemnawave && !$isXUI && !$isPasargad),
 
                         // Squad انتخابی برای Remnawave
                         Select::make('remnawave_squad_uuid')
