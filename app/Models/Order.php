@@ -24,7 +24,13 @@ class Order extends Model
         'trial_notified_80_at',
         'trial_notified_100_at',
         'trial_notified_idle_at',
+        'invoice_number',
     ];
+
+    public static function nextInvoiceNumber(): int
+    {
+        return ((int) static::whereNotNull('invoice_number')->max('invoice_number')) + 1;
+    }
 
     public function user()
     {
@@ -61,6 +67,22 @@ class Order extends Model
                 'panel_username' => $order->panel_username,
                 'user_id' => $order->user_id
             ]);
+
+            // اختصاص خودکار شماره فاکتور رسمی فقط برای خریدهای نقدی موفق (نه اکانت‌های تست)
+            if ($order->status === 'paid' && (float)$order->amount > 0 && empty($order->invoice_number)) {
+                if ($order->payment_method !== 'trial' && $order->plan_id != 1) {
+                    $order->invoice_number = static::nextInvoiceNumber();
+                }
+            }
+        });
+
+        static::updating(function ($order) {
+            // اختصاص شماره فاکتور در لحظه تایید پرداخت توسط ادمین یا درگاه
+            if ($order->status === 'paid' && (float)$order->amount > 0 && empty($order->invoice_number)) {
+                if ($order->payment_method !== 'trial' && $order->plan_id != 1) {
+                    $order->invoice_number = static::nextInvoiceNumber();
+                }
+            }
         });
     }
 

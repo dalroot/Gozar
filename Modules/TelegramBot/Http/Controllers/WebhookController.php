@@ -2482,7 +2482,9 @@ class WebhookController extends Controller
         }
 
         $username = $order->panel_username ?: "سرویس-{$order->id}";
-        $buttonText = "{$statusIcon} {$username} (ID: #{$order->id})";
+        $isTrial = ($order->payment_method === 'trial' || (float)$order->amount == 0 || $order->plan_id == 1);
+        $refStr = $isTrial ? '🎁 اکانت تست هدیه' : ('فاکتور #' . ($order->invoice_number ?: $order->id));
+        $buttonText = "{$statusIcon} {$username} ({$refStr})";
 
         $keyboard->row([
             $this->makeInlineButton([
@@ -6528,9 +6530,12 @@ I am here to build the most secure and stable connection path for you.
 
         try {
             if (\App\Services\PaymentService::approveOrder($order)) {
+                $order->refresh();
+                $invLabel = $order->invoice_number ? "فاکتور رسمی #{$order->invoice_number}" : "سفارش #{$orderId}";
+
                 Telegram::answerCallbackQuery([
                     'callback_query_id' => $callbackQueryId,
-                    'text' => "✅ سفارش #{$orderId} با موفقیت تایید و فعال شد.",
+                    'text' => "✅ {$invLabel} با موفقیت تایید و فعال شد.",
                     'show_alert' => true
                 ]);
 
@@ -6544,7 +6549,7 @@ I am here to build the most secure and stable connection path for you.
                 $usernameLine = !empty($user->username) ? "💬 <b>نام کاربری:</b> @" . ltrim($user->username, '@') . "\n" : "";
 
                 $this->sendToLogChannel(
-                    "✅ <b>فیش سفارش #{$orderId} توسط ادمین تایید و فعال شد</b>\n\n" .
+                    "✅ <b>فیش {$invLabel} توسط ادمین تایید و فعال شد</b>\n\n" .
                     "👤 <b>نام کاربر:</b> {$userLink}\n" .
                     "🆔 <b>شناسه تلگرام:</b> <code>{$user->telegram_chat_id}</code>\n" .
                     $usernameLine .

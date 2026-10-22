@@ -38,10 +38,12 @@ Artisan::command('vpnmarket:send-daily-report {--dry-run : Print to console inst
                   ->orWhere('amount', 0);
             })->count();
 
-        // سفارش‌های نقدی موفق (جدا از تست‌های رایگان)
+        // سفارش‌های نقدی موفق (جدا از تست‌های رایگان با شرط قطعی amount > 0)
         $paidOrders = \App\Models\Order::whereBetween('updated_at', [$startOfDay, $endOfDay])
             ->where('status', 'paid')
-            ->where('payment_method', '!=', 'trial')
+            ->where(function($q) {
+                $q->whereNull('payment_method')->orWhere('payment_method', '!=', 'trial');
+            })
             ->where('amount', '>', 0)
             ->get();
 
@@ -185,7 +187,7 @@ Artisan::command('vpnmarket:send-daily-report {--dry-run : Print to console inst
         $msg .= "───────────────\n";
         $msg .= "📈 <b>آمار فروش و پشتیبانی ربات:</b>\n";
         $msg .= "👤 <b>کاربران جدید امروز:</b> <code>{$newUsersCount}</code> نفر\n";
-        $msg .= "🧪 <b>اکانت‌های تست رایگان:</b> <code>{$trialOrdersCount}</code> عدد\n";
+        $msg .= "🎁 <b>اکانت‌های تست رایگان هدیه:</b> <code>{$trialOrdersCount}</code> عدد\n";
         $msg .= "🛒 <b>کل سفارشات نقدی موفق:</b> <code>{$paidOrdersCount}</code> عدد\n";
         $msg .= "💰 <b>مجموع فروش نقدی:</b> <code>" . number_format($totalSales) . "</code> تومان\n";
         $msg .= "💳 <b>شارژ کیف پول:</b> <code>{$walletChargesCount}</code> عدد (<code>" . number_format($walletChargesSum) . "</code> تومان)\n";
