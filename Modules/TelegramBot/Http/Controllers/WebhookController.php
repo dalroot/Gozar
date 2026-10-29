@@ -5788,7 +5788,13 @@ I am here to build the most secure and stable connection path for you.
                 }
                 
                 if ($referrer->telegram_chat_id) {
-                    $referrerMessage = "👤 *خبر خوب!*\n\nکاربر جدیدی با نام «{$user->name}» با لینک دعوت شما به ربات پیوست و یک اشتراک ۲ گیگابایتی هدیه گرفت.\n\n💡 پس از انجام اولین خرید توسط این کاربر، پاداش نقدی شما واریز خواهد شد.";
+                    if ($referrer->referral_code === 'rayanmusic' || $referrer->id === 13) {
+                        $referrerMessage = "👤 *ورودی جدید کمپین رایان موزیک!*\n\n"
+                            . "کاربر جدیدی با نام «{$user->name}» با لینک کمپین شما وارد ربات شد.\n\n"
+                            . "💡 با انجام اولین خرید توسط این کاربر، مبلغ ۳۰,۰۰۰ تومان پورسانت نقدی به حساب شما منظور خواهد شد.";
+                    } else {
+                        $referrerMessage = "👤 *خبر خوب!*\n\nکاربر جدیدی با نام «{$user->name}» با لینک دعوت شما به ربات پیوست و یک اشتراک ۲ گیگابایتی هدیه گرفت.\n\n💡 پس از انجام اولین خرید توسط این کاربر، پاداش نقدی شما واریز خواهد شد.";
+                    }
                     try {
                         Telegram::sendMessage([
                             'chat_id' => $referrer->telegram_chat_id,
